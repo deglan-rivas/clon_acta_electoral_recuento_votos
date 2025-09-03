@@ -1,12 +1,11 @@
-function App() {
+import { ElectoralDashboard } from "./components/ElectoralDashboard";
+import { Toaster } from "./components/ui/sonner";
+
+export default function App() {
   return (
     <>
-      <div className="bg-red-500 text-xl underline">
-        Hola mundo  
-      </div>        
+      <ElectoralDashboard />
+      <Toaster position="top-right" />
     </>
-  )
+  );
 }
-
-export default App
- 
