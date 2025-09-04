@@ -51,11 +51,11 @@ export const mockElectoralData: Record<string, ElectoralData> = {
       { code: "10", name: "PARTIDO POLÍTICO ESTAMOS EN ARMONÍA", votes: 8 },
     ],
     voteEntries: [
-      { tableNumber: 1, party: "02 | PARTIDO POLÍTICO PAZ Y AMOR", preferentialVote1: 7, preferentialVote2: 12 },
-      { tableNumber: 2, party: "05 | PARTIDO POLÍTICO EN LA DISTANCIA", preferentialVote1: 25, preferentialVote2: 1 },
-      { tableNumber: 3, party: "08 | PARTIDO POLÍTICO HOJAS AL VIENTO", preferentialVote1: 11, preferentialVote2: 22 },
-      { tableNumber: 4, party: "04 | PARTIDO POLÍTICO LA MAGIA DEL ENCUENTRO", preferentialVote1: 13, preferentialVote2: 19 },
-      { tableNumber: 5, party: "01 | PARTIDO POLÍTICO AMANECER DE NUEVO", preferentialVote1: 5, preferentialVote2: 30 },
+      // { tableNumber: 1, party: "02 | PARTIDO POLÍTICO PAZ Y AMOR", preferentialVote1: 7, preferentialVote2: 12 },
+      // { tableNumber: 2, party: "05 | PARTIDO POLÍTICO EN LA DISTANCIA", preferentialVote1: 25, preferentialVote2: 1 },
+      // { tableNumber: 3, party: "08 | PARTIDO POLÍTICO HOJAS AL VIENTO", preferentialVote1: 11, preferentialVote2: 22 },
+      // { tableNumber: 4, party: "04 | PARTIDO POLÍTICO LA MAGIA DEL ENCUENTRO", preferentialVote1: 13, preferentialVote2: 19 },
+      // { tableNumber: 5, party: "01 | PARTIDO POLÍTICO AMANECER DE NUEVO", preferentialVote1: 5, preferentialVote2: 30 },
     ],
     statistics: {
       participationRate: 93.33,

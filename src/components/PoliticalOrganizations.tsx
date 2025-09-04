@@ -9,13 +9,19 @@ interface VoteLimits {
   preferential2: number;
 }
 
+interface PreferentialConfig {
+  hasPreferential1: boolean;
+  hasPreferential2: boolean;
+}
+
 interface PoliticalOrganizationsProps {
   category: string;
   voteLimits: VoteLimits;
   setVoteLimits: (limits: VoteLimits) => void;
+  preferentialConfig: PreferentialConfig;
 }
 
-export function PoliticalOrganizations({ category, voteLimits, setVoteLimits }: PoliticalOrganizationsProps) {
+export function PoliticalOrganizations({ category, voteLimits, setVoteLimits, preferentialConfig }: PoliticalOrganizationsProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -67,86 +73,96 @@ export function PoliticalOrganizations({ category, voteLimits, setVoteLimits }: 
         </CardContent>
       </Card>
 
-      {/* Vote Limits Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Configuración de Límites de Votos Preferenciales</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label 
-                htmlFor="pref1-limit" 
-                className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
-              >
-                Límite Voto Preferencial 1
-              </label>
-              <Input
-                id="pref1-limit"
-                type="number"
-                min={1}
-                max={199}
-                step={1}
-                value={voteLimits.preferential1}
-                onChange={(e) => setVoteLimits({ 
-                  ...voteLimits, 
-                  preferential1: parseInt(e.target.value) || 1 
-                })}
-                className="max-w-xs"
-                placeholder="Ingrese límite para Voto Pref. 1"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Rango válido: 1 - 199
-              </p>
+      {/* Vote Limits Configuration - Only show if category has preferential votes */}
+      {(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Configuración de Límites de Votos Preferenciales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`grid grid-cols-1 gap-6 ${preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 ? 'md:grid-cols-2' : ''}`}>
+              {preferentialConfig.hasPreferential1 && (
+                <div>
+                  <label 
+                    htmlFor="pref1-limit" 
+                    className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
+                  >
+                    Límite Voto Preferencial 1
+                  </label>
+                  <Input
+                    id="pref1-limit"
+                    type="number"
+                    min={1}
+                    max={199}
+                    step={1}
+                    value={voteLimits.preferential1}
+                    onChange={(e) => setVoteLimits({ 
+                      ...voteLimits, 
+                      preferential1: parseInt(e.target.value) || 1 
+                    })}
+                    className="max-w-xs"
+                    placeholder="Ingrese límite para Voto Pref. 1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Rango válido: 1 - 199
+                  </p>
+                </div>
+              )}
+              
+              {preferentialConfig.hasPreferential2 && (
+                <div>
+                  <label 
+                    htmlFor="pref2-limit" 
+                    className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
+                  >
+                    Límite Voto Preferencial 2
+                  </label>
+                  <Input
+                    id="pref2-limit"
+                    type="number"
+                    min={1}
+                    max={199}
+                    step={1}
+                    value={voteLimits.preferential2}
+                    onChange={(e) => setVoteLimits({ 
+                      ...voteLimits, 
+                      preferential2: parseInt(e.target.value) || 1 
+                    })}
+                    className="max-w-xs"
+                    placeholder="Ingrese límite para Voto Pref. 2"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Rango válido: 1 - 199
+                  </p>
+                </div>
+              )}
             </div>
-            
-            <div>
-              <label 
-                htmlFor="pref2-limit" 
-                className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
-              >
-                Límite Voto Preferencial 2
-              </label>
-              <Input
-                id="pref2-limit"
-                type="number"
-                min={1}
-                max={199}
-                step={1}
-                value={voteLimits.preferential2}
-                onChange={(e) => setVoteLimits({ 
-                  ...voteLimits, 
-                  preferential2: parseInt(e.target.value) || 1 
-                })}
-                className="max-w-xs"
-                placeholder="Ingrese límite para Voto Pref. 2"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Rango válido: 1 - 199
-              </p>
-            </div>
-          </div>
 
-          {/* Current Limits Display */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">Límites Configurados Actualmente</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-                  Voto Pref. 1
-                </Badge>
-                <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential1}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-                  Voto Pref. 2
-                </Badge>
-                <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential2}</span>
+            {/* Current Limits Display */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">Límites Configurados Actualmente</h4>
+              <div className={`grid gap-4 ${preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {preferentialConfig.hasPreferential1 && (
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                      Voto Pref. 1
+                    </Badge>
+                    <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential1}</span>
+                  </div>
+                )}
+                {preferentialConfig.hasPreferential2 && (
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                      Voto Pref. 2
+                    </Badge>
+                    <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential2}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Additional Information */}
       <Card>

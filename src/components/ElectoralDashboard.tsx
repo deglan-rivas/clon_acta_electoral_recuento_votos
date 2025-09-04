@@ -16,6 +16,24 @@ export function ElectoralDashboard() {
     preferential2: 1,
   });
 
+  // Define preferential vote configuration by category
+  const getPreferentialVoteConfig = (category: string) => {
+    switch (category) {
+      case "presidencial":
+        return { hasPreferential1: false, hasPreferential2: false };
+      case "senadoresNacional":
+        return { hasPreferential1: true, hasPreferential2: true };
+      case "senadoresRegional":
+        return { hasPreferential1: true, hasPreferential2: false };
+      case "diputados":
+        return { hasPreferential1: true, hasPreferential2: true };
+      case "parlamentoAndino":
+        return { hasPreferential1: true, hasPreferential2: true };
+      default:
+        return { hasPreferential1: false, hasPreferential2: false };
+    }
+  };
+
   const categories = [
     { key: "presidencial", label: "Presidencial", icon: Crown },
     { key: "senadoresNacional", label: "Senadores Nacional", icon: Building2 },
@@ -32,14 +50,25 @@ export function ElectoralDashboard() {
 
   const renderSection = () => {
     const data = mockElectoralData[activeCategory];
+    const preferentialConfig = getPreferentialVoteConfig(activeCategory);
     
     switch (activeSection) {
       case "recuento":
         return <ElectoralCountTable data={data} category={activeCategory} />;
       case "ingreso":
-        return <VoteEntryForm category={activeCategory} existingEntries={data.voteEntries} voteLimits={voteLimits} />;
+        return <VoteEntryForm 
+          category={activeCategory} 
+          existingEntries={data.voteEntries} 
+          voteLimits={voteLimits} 
+          preferentialConfig={preferentialConfig}
+        />;
       case "organizaciones":
-        return <PoliticalOrganizations category={activeCategory} voteLimits={voteLimits} setVoteLimits={setVoteLimits} />;
+        return <PoliticalOrganizations 
+          category={activeCategory} 
+          voteLimits={voteLimits} 
+          setVoteLimits={setVoteLimits}
+          preferentialConfig={preferentialConfig}
+        />;
       default:
         return null;
     }

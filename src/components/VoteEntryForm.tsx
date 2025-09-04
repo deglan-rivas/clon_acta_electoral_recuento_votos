@@ -14,13 +14,19 @@ interface VoteLimits {
   preferential2: number;
 }
 
+interface PreferentialConfig {
+  hasPreferential1: boolean;
+  hasPreferential2: boolean;
+}
+
 interface VoteEntryFormProps {
   category: string;
   existingEntries?: VoteEntry[];
   voteLimits: VoteLimits;
+  preferentialConfig: PreferentialConfig;
 }
 
-export function VoteEntryForm({ category, existingEntries = [], voteLimits }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig }: VoteEntryFormProps) {
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
   // Calculate next table number based on current entries
@@ -43,16 +49,16 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
       return;
     }
 
-    // Validate vote limits
+    // Validate vote limits only for enabled preferential votes
     const pref1 = newEntry.preferentialVote1 || 0;
     const pref2 = newEntry.preferentialVote2 || 0;
 
-    if (pref1 > voteLimits.preferential1) {
+    if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
       toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
       return;
     }
 
-    if (pref2 > voteLimits.preferential2) {
+    if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
       toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
       return;
     }
@@ -100,7 +106,11 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
           <CardTitle className="text-base">Nuevo Registro de Votos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className={`grid grid-cols-1 gap-4 mb-4 ${
+            preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 
+              ? 'md:grid-cols-4' 
+              : 'md:grid-cols-3'
+          }`}>
             <div>
               <label className="text-sm font-medium mb-2 block">N° Votantes</label>
               <Input
@@ -125,44 +135,48 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
                 emptyText="No se encontraron partidos"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Voto Pref. 1 
-                <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential1})</span>
-              </label>
-              <Input
-                type="number"
-                min={0}
-                max={voteLimits.preferential1}
-                placeholder="0"
-                value={newEntry.preferentialVote1 || ""}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  if (value <= voteLimits.preferential1) {
-                    setNewEntry({ ...newEntry, preferentialVote1: value });
-                  }
-                }}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Voto Pref. 2 
-                <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential2})</span>
-              </label>
-              <Input
-                type="number"
-                min={0}
-                max={voteLimits.preferential2}
-                placeholder="0"
-                value={newEntry.preferentialVote2 || ""}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  if (value <= voteLimits.preferential2) {
-                    setNewEntry({ ...newEntry, preferentialVote2: value });
-                  }
-                }}
-              />
-            </div>
+            {preferentialConfig.hasPreferential1 && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Voto Pref. 1 
+                  <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential1})</span>
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={voteLimits.preferential1}
+                  placeholder="0"
+                  value={newEntry.preferentialVote1 || ""}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    if (value <= voteLimits.preferential1) {
+                      setNewEntry({ ...newEntry, preferentialVote1: value });
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {preferentialConfig.hasPreferential2 && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Voto Pref. 2 
+                  <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential2})</span>
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={voteLimits.preferential2}
+                  placeholder="0"
+                  value={newEntry.preferentialVote2 || ""}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    if (value <= voteLimits.preferential2) {
+                      setNewEntry({ ...newEntry, preferentialVote2: value });
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button onClick={handleAddEntry} className="flex items-center gap-2">
@@ -194,8 +208,12 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
                 <TableRow className="bg-red-600 text-white">
                   <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
-                  <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
-                  <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 2</TableHead>
+                  {preferentialConfig.hasPreferential1 && (
+                    <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
+                  )}
+                  {preferentialConfig.hasPreferential2 && (
+                    <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 2</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -203,8 +221,12 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
                   <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
                     <TableCell className="py-3">{entry.party}</TableCell>
-                    <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
-                    <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
+                    {preferentialConfig.hasPreferential1 && (
+                      <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
+                    )}
+                    {preferentialConfig.hasPreferential2 && (
+                      <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
+                    )}
                   </TableRow>
                 ))}
                 {/* Empty rows for visual consistency */}
@@ -212,8 +234,12 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
                   <TableRow key={`empty-${index}`} className={(entries.length + index) % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <TableCell className="text-center text-gray-400">{entries.length + index + 1}</TableCell>
                     <TableCell className="text-gray-400 py-3">-</TableCell>
-                    <TableCell className="text-center text-gray-400">-</TableCell>
-                    <TableCell className="text-center text-gray-400">-</TableCell>
+                    {preferentialConfig.hasPreferential1 && (
+                      <TableCell className="text-center text-gray-400">-</TableCell>
+                    )}
+                    {preferentialConfig.hasPreferential2 && (
+                      <TableCell className="text-center text-gray-400">-</TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
