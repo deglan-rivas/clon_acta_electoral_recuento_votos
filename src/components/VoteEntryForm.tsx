@@ -22,16 +22,24 @@ interface VoteEntryFormProps {
 
 export function VoteEntryForm({ category, existingEntries = [], voteLimits }: VoteEntryFormProps) {
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
+
+  // Calculate next table number based on current entries
+  const getNextTableNumber = () => {
+    if (entries.length === 0) return 1;
+    const maxTableNumber = Math.max(...entries.map(entry => entry.tableNumber));
+    return maxTableNumber + 1;
+  };
+
   const [newEntry, setNewEntry] = useState<Partial<VoteEntry>>({
-    tableNumber: undefined,
+    tableNumber: getNextTableNumber(),
     party: "",
     preferentialVote1: 0,
     preferentialVote2: 0,
   });
 
   const handleAddEntry = () => {
-    if (!newEntry.tableNumber || !newEntry.party) {
-      toast.error("Por favor complete todos los campos obligatorios");
+    if (!newEntry.party) {
+      toast.error("Por favor seleccione una organización política");
       return;
     }
 
@@ -56,9 +64,14 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
       preferentialVote2: pref2,
     };
 
-    setEntries([...entries, entry]);
+    const updatedEntries = [...entries, entry];
+    setEntries(updatedEntries);
+    
+    // Calculate next table number for the new entry
+    const nextTableNumber = Math.max(...updatedEntries.map(e => e.tableNumber)) + 1;
+    
     setNewEntry({
-      tableNumber: undefined,
+      tableNumber: nextTableNumber,
       party: "",
       preferentialVote1: 0,
       preferentialVote2: 0,
@@ -92,9 +105,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits }: Vo
               <label className="text-sm font-medium mb-2 block">N° Votantes</label>
               <Input
                 type="number"
-                placeholder="Número de cédula"
+                placeholder="Número automático"
                 value={newEntry.tableNumber || ""}
-                onChange={(e) => setNewEntry({ ...newEntry, tableNumber: parseInt(e.target.value) || undefined })}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
               />
             </div>
             <div>
