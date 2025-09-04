@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Input } from "./ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "./ui/badge";
 import { Plus, Save } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
+import { getVoteEntries, saveVoteEntries } from "../lib/localStorage";
 
 interface VoteLimits {
   preferential1: number;
@@ -27,7 +28,22 @@ interface VoteEntryFormProps {
 }
 
 export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig }: VoteEntryFormProps) {
-  const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
+  // Initialize entries from localStorage, fallback to existingEntries
+  const [entries, setEntries] = useState<VoteEntry[]>(() => {
+    const savedEntries = getVoteEntries(category);
+    return savedEntries.length > 0 ? savedEntries : existingEntries;
+  });
+
+  // Save entries to localStorage whenever they change
+  useEffect(() => {
+    saveVoteEntries(category, entries);
+  }, [category, entries]);
+
+  // Update entries when category changes (load from localStorage)
+  useEffect(() => {
+    const savedEntries = getVoteEntries(category);
+    setEntries(savedEntries.length > 0 ? savedEntries : existingEntries);
+  }, [category, existingEntries]);
 
   // Calculate next table number based on current entries
   const getNextTableNumber = () => {
@@ -42,6 +58,14 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     preferentialVote1: 0,
     preferentialVote2: 0,
   });
+
+  // Update table number when entries change
+  useEffect(() => {
+    setNewEntry(prev => ({
+      ...prev,
+      tableNumber: getNextTableNumber(),
+    }));
+  }, [entries]);
 
   const handleAddEntry = () => {
     if (!newEntry.party) {

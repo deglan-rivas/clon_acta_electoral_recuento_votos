@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -7,14 +7,32 @@ import { VoteEntryForm } from "./VoteEntryForm";
 import { PoliticalOrganizations } from "./PoliticalOrganizations";
 import { mockElectoralData } from "../data/mockData";
 import { Vote, Users, Building2, Globe, Crown } from "lucide-react";
+import {
+  getActiveCategory,
+  saveActiveCategory,
+  getActiveSection,
+  saveActiveSection,
+  getVoteLimits,
+  saveVoteLimits,
+} from "../lib/localStorage";
 
 export function ElectoralDashboard() {
-  const [activeCategory, setActiveCategory] = useState("presidencial");
-  const [activeSection, setActiveSection] = useState("recuento");
-  const [voteLimits, setVoteLimits] = useState({
-    preferential1: 1,
-    preferential2: 1,
-  });
+  const [activeCategory, setActiveCategory] = useState(() => getActiveCategory());
+  const [activeSection, setActiveSection] = useState(() => getActiveSection());
+  const [voteLimits, setVoteLimits] = useState(() => getVoteLimits());
+
+  // Save to localStorage when state changes
+  useEffect(() => {
+    saveActiveCategory(activeCategory);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    saveActiveSection(activeSection);
+  }, [activeSection]);
+
+  useEffect(() => {
+    saveVoteLimits(voteLimits);
+  }, [voteLimits]);
 
   // Define preferential vote configuration by category
   const getPreferentialVoteConfig = (category: string) => {
