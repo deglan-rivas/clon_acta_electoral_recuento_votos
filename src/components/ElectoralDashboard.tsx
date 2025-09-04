@@ -52,7 +52,7 @@ export function ElectoralDashboard() {
                 <span className="text-white font-bold text-sm">JNE</span>
               </div>
               <h1 className="text-xl font-semibold text-gray-900">
-                Sistema Electoral Digital
+                Recuento de Votos
               </h1>
             </div>
             <Badge variant="secondary" className="bg-green-100 text-green-800">
