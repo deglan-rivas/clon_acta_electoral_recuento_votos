@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Input } from "./ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Plus, Save } from "lucide-react";
@@ -79,21 +79,17 @@ export function VoteEntryForm({ category, existingEntries = [] }: VoteEntryFormP
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Organización Política</label>
-              <Select
+              <Combobox
                 value={newEntry.party}
                 onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar partido" />
-                </SelectTrigger>
-                <SelectContent>
-                  {politicalOrganizations.map((org) => (
-                    <SelectItem key={org.order} value={`${org.order} | ${org.name}`}>
-                      {org.order} | {org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={politicalOrganizations.map((org) => ({
+                  value: `${org.order} | ${org.name}`,
+                  label: `${org.order} | ${org.name}`,
+                }))}
+                placeholder="Seleccionar partido"
+                searchPlaceholder="Buscar partido..."
+                emptyText="No se encontraron partidos"
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Voto Pref. 1</label>
