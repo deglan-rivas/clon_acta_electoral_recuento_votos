@@ -9,12 +9,18 @@ import { Plus, Save } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
+interface VoteLimits {
+  preferential1: number;
+  preferential2: number;
+}
+
 interface VoteEntryFormProps {
   category: string;
   existingEntries?: VoteEntry[];
+  voteLimits: VoteLimits;
 }
 
-export function VoteEntryForm({ category, existingEntries = [] }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, existingEntries = [], voteLimits }: VoteEntryFormProps) {
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
   const [newEntry, setNewEntry] = useState<Partial<VoteEntry>>({
     tableNumber: undefined,
@@ -29,11 +35,25 @@ export function VoteEntryForm({ category, existingEntries = [] }: VoteEntryFormP
       return;
     }
 
+    // Validate vote limits
+    const pref1 = newEntry.preferentialVote1 || 0;
+    const pref2 = newEntry.preferentialVote2 || 0;
+
+    if (pref1 > voteLimits.preferential1) {
+      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      return;
+    }
+
+    if (pref2 > voteLimits.preferential2) {
+      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      return;
+    }
+
     const entry: VoteEntry = {
       tableNumber: newEntry.tableNumber!,
       party: newEntry.party!,
-      preferentialVote1: newEntry.preferentialVote1 || 0,
-      preferentialVote2: newEntry.preferentialVote2 || 0,
+      preferentialVote1: pref1,
+      preferentialVote2: pref2,
     };
 
     setEntries([...entries, entry]);
@@ -69,10 +89,10 @@ export function VoteEntryForm({ category, existingEntries = [] }: VoteEntryFormP
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">N° Mesa</label>
+              <label className="text-sm font-medium mb-2 block">N° Votantes</label>
               <Input
                 type="number"
-                placeholder="Número de mesa"
+                placeholder="Número de cédula"
                 value={newEntry.tableNumber || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, tableNumber: parseInt(e.target.value) || undefined })}
               />
@@ -92,21 +112,41 @@ export function VoteEntryForm({ category, existingEntries = [] }: VoteEntryFormP
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Voto Pref. 1</label>
+              <label className="text-sm font-medium mb-2 block">
+                Voto Pref. 1 
+                <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential1})</span>
+              </label>
               <Input
                 type="number"
+                min={0}
+                max={voteLimits.preferential1}
                 placeholder="0"
                 value={newEntry.preferentialVote1 || ""}
-                onChange={(e) => setNewEntry({ ...newEntry, preferentialVote1: parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  if (value <= voteLimits.preferential1) {
+                    setNewEntry({ ...newEntry, preferentialVote1: value });
+                  }
+                }}
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Voto Pref. 2</label>
+              <label className="text-sm font-medium mb-2 block">
+                Voto Pref. 2 
+                <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential2})</span>
+              </label>
               <Input
                 type="number"
+                min={0}
+                max={voteLimits.preferential2}
                 placeholder="0"
                 value={newEntry.preferentialVote2 || ""}
-                onChange={(e) => setNewEntry({ ...newEntry, preferentialVote2: parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  if (value <= voteLimits.preferential2) {
+                    setNewEntry({ ...newEntry, preferentialVote2: value });
+                  }
+                }}
               />
             </div>
           </div>

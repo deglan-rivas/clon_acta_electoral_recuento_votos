@@ -11,6 +11,10 @@ import { Vote, Users, Building2, Globe, Crown } from "lucide-react";
 export function ElectoralDashboard() {
   const [activeCategory, setActiveCategory] = useState("presidencial");
   const [activeSection, setActiveSection] = useState("recuento");
+  const [voteLimits, setVoteLimits] = useState({
+    preferential1: 1,
+    preferential2: 1,
+  });
 
   const categories = [
     { key: "presidencial", label: "Presidencial", icon: Crown },
@@ -33,9 +37,9 @@ export function ElectoralDashboard() {
       case "recuento":
         return <ElectoralCountTable data={data} category={activeCategory} />;
       case "ingreso":
-        return <VoteEntryForm category={activeCategory} existingEntries={data.voteEntries} />;
+        return <VoteEntryForm category={activeCategory} existingEntries={data.voteEntries} voteLimits={voteLimits} />;
       case "organizaciones":
-        return <PoliticalOrganizations category={activeCategory} />;
+        return <PoliticalOrganizations category={activeCategory} voteLimits={voteLimits} setVoteLimits={setVoteLimits} />;
       default:
         return null;
     }
