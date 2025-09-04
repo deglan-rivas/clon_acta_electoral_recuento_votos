@@ -10,29 +10,45 @@ import { Vote, Users, Building2, Globe, Crown } from "lucide-react";
 import {
   getActiveCategory,
   saveActiveCategory,
-  getActiveSection,
-  saveActiveSection,
-  getVoteLimits,
-  saveVoteLimits,
+  getAllCategoryData,
+  saveCategoryData,
+  type CategoryData,
 } from "../lib/localStorage";
 
 export function ElectoralDashboard() {
   const [activeCategory, setActiveCategory] = useState(() => getActiveCategory());
-  const [activeSection, setActiveSection] = useState(() => getActiveSection());
-  const [voteLimits, setVoteLimits] = useState(() => getVoteLimits());
+  const [categoryData, setCategoryData] = useState(() => getAllCategoryData());
 
-  // Save to localStorage when state changes
+  // Save activeCategory to localStorage when it changes
   useEffect(() => {
     saveActiveCategory(activeCategory);
   }, [activeCategory]);
 
+  // Save entire categoryData to localStorage when it changes
   useEffect(() => {
-    saveActiveSection(activeSection);
-  }, [activeSection]);
+    Object.entries(categoryData).forEach(([category, data]) => {
+      saveCategoryData(category, data);
+    });
+  }, [categoryData]);
 
-  useEffect(() => {
-    saveVoteLimits(voteLimits);
-  }, [voteLimits]);
+  // Helper functions to get current category data
+  const getCurrentCategoryData = (): CategoryData => {
+    return categoryData[activeCategory];
+  };
+
+  const updateCurrentCategoryData = (updates: Partial<CategoryData>): void => {
+    setCategoryData(prev => ({
+      ...prev,
+      [activeCategory]: {
+        ...prev[activeCategory],
+        ...updates,
+      }
+    }));
+  };
+
+  // Get current values from categoryData
+  const activeSection = getCurrentCategoryData()?.activeSection || 'recuento';
+  const voteLimits = getCurrentCategoryData()?.voteLimits || { preferential1: 1, preferential2: 1 };
 
   // Define preferential vote configuration by category
   const getPreferentialVoteConfig = (category: string) => {
@@ -69,6 +85,7 @@ export function ElectoralDashboard() {
   const renderSection = () => {
     const data = mockElectoralData[activeCategory];
     const preferentialConfig = getPreferentialVoteConfig(activeCategory);
+    const currentCategoryData = getCurrentCategoryData();
     
     switch (activeSection) {
       case "recuento":
@@ -76,15 +93,16 @@ export function ElectoralDashboard() {
       case "ingreso":
         return <VoteEntryForm 
           category={activeCategory} 
-          existingEntries={data.voteEntries} 
+          existingEntries={currentCategoryData?.voteEntries || []} 
           voteLimits={voteLimits} 
           preferentialConfig={preferentialConfig}
+          onEntriesChange={(entries) => updateCurrentCategoryData({ voteEntries: entries })}
         />;
       case "organizaciones":
         return <PoliticalOrganizations 
           category={activeCategory} 
           voteLimits={voteLimits} 
-          setVoteLimits={setVoteLimits}
+          onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
           preferentialConfig={preferentialConfig}
         />;
       default:
@@ -143,7 +161,10 @@ export function ElectoralDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs value={activeSection} onValueChange={setActiveSection}>
+                  <Tabs 
+                    value={activeSection} 
+                    onValueChange={(section) => updateCurrentCategoryData({ activeSection: section })}
+                  >
                     <TabsList className="grid w-full grid-cols-3 bg-gray-100">
                       {sections.map((section) => (
                         <TabsTrigger

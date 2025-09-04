@@ -2,9 +2,7 @@
 
 export const STORAGE_KEYS = {
   ACTIVE_CATEGORY: 'electoral_active_category',
-  ACTIVE_SECTION: 'electoral_active_section',
-  VOTE_LIMITS: 'electoral_vote_limits',
-  VOTE_ENTRIES: 'electoral_vote_entries',
+  CATEGORY_DATA: 'electoral_category_data',
 } as const;
 
 // Generic localStorage functions
@@ -43,34 +41,102 @@ export const saveActiveCategory = (category: string): void => {
   saveToLocalStorage(STORAGE_KEYS.ACTIVE_CATEGORY, category);
 };
 
-export const getActiveSection = (): string => {
-  return getFromLocalStorage(STORAGE_KEYS.ACTIVE_SECTION, 'recuento');
-};
+// Define the structure for category-specific data
+export interface CategoryData {
+  voteLimits: {
+    preferential1: number;
+    preferential2: number;
+  };
+  voteEntries: any[];
+  activeSection: string;
+}
 
-export const saveActiveSection = (section: string): void => {
-  saveToLocalStorage(STORAGE_KEYS.ACTIVE_SECTION, section);
-};
-
-export const getVoteLimits = () => {
-  return getFromLocalStorage(STORAGE_KEYS.VOTE_LIMITS, {
+// Get default data for a category
+const getDefaultCategoryData = (): CategoryData => ({
+  voteLimits: {
     preferential1: 1,
     preferential2: 1,
-  });
+  },
+  voteEntries: [],
+  activeSection: 'recuento',
+});
+
+// Initialize with default data for all categories
+const getInitialCategoryData = (): Record<string, CategoryData> => ({
+  "presidencial": {
+    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteEntries: [],
+    activeSection: "recuento"
+  },
+  "senadoresNacional": {
+    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteEntries: [],
+    activeSection: "recuento"
+  },
+  "senadoresRegional": {
+    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteEntries: [],
+    activeSection: "recuento"
+  },
+  "diputados": {
+    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteEntries: [],
+    activeSection: "recuento"
+  },
+  "parlamentoAndino": {
+    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteEntries: [],
+    activeSection: "recuento"
+  }
+});
+
+// Get all category data
+export const getAllCategoryData = (): Record<string, CategoryData> => {
+  return getFromLocalStorage(STORAGE_KEYS.CATEGORY_DATA, getInitialCategoryData());
 };
 
-export const saveVoteLimits = (limits: { preferential1: number; preferential2: number }): void => {
-  saveToLocalStorage(STORAGE_KEYS.VOTE_LIMITS, limits);
+// Get data for a specific category
+export const getCategoryData = (category: string): CategoryData => {
+  const allData = getAllCategoryData();
+  return allData[category] || getDefaultCategoryData();
+};
+
+// Save data for a specific category
+export const saveCategoryData = (category: string, data: CategoryData): void => {
+  const allData = getAllCategoryData();
+  allData[category] = data;
+  saveToLocalStorage(STORAGE_KEYS.CATEGORY_DATA, allData);
+};
+
+// Convenience functions for specific data types
+export const getVoteLimits = (category: string) => {
+  return getCategoryData(category).voteLimits;
+};
+
+export const saveVoteLimits = (category: string, limits: { preferential1: number; preferential2: number }): void => {
+  const categoryData = getCategoryData(category);
+  categoryData.voteLimits = limits;
+  saveCategoryData(category, categoryData);
 };
 
 export const getVoteEntries = (category: string) => {
-  const allEntries: Record<string, any[]> = getFromLocalStorage(STORAGE_KEYS.VOTE_ENTRIES, {});
-  return allEntries[category] || [];
+  return getCategoryData(category).voteEntries;
 };
 
 export const saveVoteEntries = (category: string, entries: any[]): void => {
-  const allEntries: Record<string, any[]> = getFromLocalStorage(STORAGE_KEYS.VOTE_ENTRIES, {});
-  allEntries[category] = entries;
-  saveToLocalStorage(STORAGE_KEYS.VOTE_ENTRIES, allEntries);
+  const categoryData = getCategoryData(category);
+  categoryData.voteEntries = entries;
+  saveCategoryData(category, categoryData);
+};
+
+export const getActiveSection = (category: string): string => {
+  return getCategoryData(category).activeSection;
+};
+
+export const saveActiveSection = (category: string, section: string): void => {
+  const categoryData = getCategoryData(category);
+  categoryData.activeSection = section;
+  saveCategoryData(category, categoryData);
 };
 
 // Clear all electoral data (useful for development/testing)

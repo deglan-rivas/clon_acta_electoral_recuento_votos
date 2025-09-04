@@ -8,7 +8,6 @@ import { Badge } from "./ui/badge";
 import { Plus, Save } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
-import { getVoteEntries, saveVoteEntries } from "../lib/localStorage";
 
 interface VoteLimits {
   preferential1: number;
@@ -25,25 +24,23 @@ interface VoteEntryFormProps {
   existingEntries?: VoteEntry[];
   voteLimits: VoteLimits;
   preferentialConfig: PreferentialConfig;
+  onEntriesChange: (entries: VoteEntry[]) => void;
 }
 
-export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig }: VoteEntryFormProps) {
-  // Initialize entries from localStorage, fallback to existingEntries
-  const [entries, setEntries] = useState<VoteEntry[]>(() => {
-    const savedEntries = getVoteEntries(category);
-    return savedEntries.length > 0 ? savedEntries : existingEntries;
-  });
+export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange }: VoteEntryFormProps) {
+  // Use existingEntries directly from parent (which comes from categoryData)
+  const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
-  // Save entries to localStorage whenever they change
+  // Update local entries when existingEntries change (category switch)
   useEffect(() => {
-    saveVoteEntries(category, entries);
-  }, [category, entries]);
+    setEntries(existingEntries);
+  }, [existingEntries]);
 
-  // Update entries when category changes (load from localStorage)
-  useEffect(() => {
-    const savedEntries = getVoteEntries(category);
-    setEntries(savedEntries.length > 0 ? savedEntries : existingEntries);
-  }, [category, existingEntries]);
+  // Report entries changes to parent component
+  const updateEntries = (newEntries: VoteEntry[]) => {
+    setEntries(newEntries);
+    onEntriesChange(newEntries);
+  };
 
   // Calculate next table number based on current entries
   const getNextTableNumber = () => {
@@ -95,7 +92,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     };
 
     const updatedEntries = [...entries, entry];
-    setEntries(updatedEntries);
+    updateEntries(updatedEntries);
     
     // Calculate next table number for the new entry
     const nextTableNumber = Math.max(...updatedEntries.map(e => e.tableNumber)) + 1;

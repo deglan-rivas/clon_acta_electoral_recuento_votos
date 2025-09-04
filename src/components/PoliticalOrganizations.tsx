@@ -17,11 +17,11 @@ interface PreferentialConfig {
 interface PoliticalOrganizationsProps {
   category: string;
   voteLimits: VoteLimits;
-  setVoteLimits: (limits: VoteLimits) => void;
+  onVoteLimitsChange: (limits: VoteLimits) => void;
   preferentialConfig: PreferentialConfig;
 }
 
-export function PoliticalOrganizations({ category, voteLimits, setVoteLimits, preferentialConfig }: PoliticalOrganizationsProps) {
+export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig }: PoliticalOrganizationsProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -96,7 +96,7 @@ export function PoliticalOrganizations({ category, voteLimits, setVoteLimits, pr
                     max={199}
                     step={1}
                     value={voteLimits.preferential1}
-                    onChange={(e) => setVoteLimits({ 
+                    onChange={(e) => onVoteLimitsChange({ 
                       ...voteLimits, 
                       preferential1: parseInt(e.target.value) || 1 
                     })}
@@ -124,7 +124,7 @@ export function PoliticalOrganizations({ category, voteLimits, setVoteLimits, pr
                     max={199}
                     step={1}
                     value={voteLimits.preferential2}
-                    onChange={(e) => setVoteLimits({ 
+                    onChange={(e) => onVoteLimitsChange({ 
                       ...voteLimits, 
                       preferential2: parseInt(e.target.value) || 1 
                     })}
