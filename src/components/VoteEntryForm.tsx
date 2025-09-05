@@ -112,110 +112,9 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg uppercase tracking-wide text-red-700">
-            INGRESO DE VOTOS - {category.toUpperCase()}
-          </CardTitle>
-        </CardHeader>
-      </Card>
 
-      {/* Entry Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Nuevo Registro de Votos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`grid grid-cols-1 gap-4 mb-4 ${
-            preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 
-              ? 'md:grid-cols-4' 
-              : 'md:grid-cols-3'
-          }`}>
-            <div>
-              <label className="text-sm font-medium mb-2 block">N° Votantes</label>
-              <Input
-                type="number"
-                placeholder="Número automático"
-                value={newEntry.tableNumber || ""}
-                disabled
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Organización Política</label>
-              <Combobox
-                value={newEntry.party}
-                onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
-                options={politicalOrganizations.map((org) => ({
-                  value: `${org.order} | ${org.name}`,
-                  label: `${org.order} | ${org.name}`,
-                }))}
-                placeholder="Seleccionar partido"
-                searchPlaceholder="Buscar partido..."
-                emptyText="No se encontraron partidos"
-              />
-            </div>
-            {preferentialConfig.hasPreferential1 && (
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Voto Pref. 1 
-                  <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential1})</span>
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={voteLimits.preferential1}
-                  placeholder="0"
-                  value={newEntry.preferentialVote1 || ""}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    if (value <= voteLimits.preferential1) {
-                      setNewEntry({ ...newEntry, preferentialVote1: value });
-                    }
-                  }}
-                />
-              </div>
-            )}
-            {preferentialConfig.hasPreferential2 && (
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Voto Pref. 2 
-                  <span className="text-xs text-gray-500 ml-1">(Máx: {voteLimits.preferential2})</span>
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={voteLimits.preferential2}
-                  placeholder="0"
-                  value={newEntry.preferentialVote2 || ""}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    if (value <= voteLimits.preferential2) {
-                      setNewEntry({ ...newEntry, preferentialVote2: value });
-                    }
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleAddEntry} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Agregar Voto
-            </Button>
-            {entries.length > 0 && (
-              <Button onClick={handleSaveAll} variant="secondary" className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Guardar Todo ({entries.length})
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Entries Table */}
-      {entries.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
@@ -235,9 +134,73 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                   {preferentialConfig.hasPreferential2 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 2</TableHead>
                   )}
+                  <TableHead className="text-white w-32 text-center font-semibold">ACCIÓN</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Form row */}
+                <TableRow className="bg-yellow-100 border-2 border-yellow-400">
+                  <TableCell className="text-center text-lg font-bold text-blue-600">
+                    {getNextTableNumber()}
+                  </TableCell>
+                  <TableCell className="px-2">
+                    <Combobox
+                      value={newEntry.party}
+                      onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
+                      options={politicalOrganizations.map((org) => ({
+                        value: `${org.order} | ${org.name}`,
+                        label: `${org.order} | ${org.name}`,
+                      }))}
+                      placeholder="Seleccionar partido..."
+                      searchPlaceholder="Buscar partido..."
+                      emptyText="No se encontraron partidos"
+                      className="h-12 text-base"
+                    />
+                  </TableCell>
+                  {preferentialConfig.hasPreferential1 && (
+                    <TableCell className="px-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={voteLimits.preferential1}
+                        placeholder="0"
+                        value={newEntry.preferentialVote1 || ""}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          if (value <= voteLimits.preferential1) {
+                            setNewEntry({ ...newEntry, preferentialVote1: value });
+                          }
+                        }}
+                        className="h-12 text-center text-lg font-semibold"
+                      />
+                    </TableCell>
+                  )}
+                  {preferentialConfig.hasPreferential2 && (
+                    <TableCell className="px-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={voteLimits.preferential2}
+                        placeholder="0"
+                        value={newEntry.preferentialVote2 || ""}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          if (value <= voteLimits.preferential2) {
+                            setNewEntry({ ...newEntry, preferentialVote2: value });
+                          }
+                        }}
+                        className="h-12 text-center text-lg font-semibold"
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell className="px-2">
+                    <Button onClick={handleAddEntry} className="h-12 px-6 text-base font-semibold bg-green-600 hover:bg-green-700">
+                      <Plus className="h-5 w-5 mr-2" />
+                      AGREGAR
+                    </Button>
+                  </TableCell>
+                </TableRow>
+                
                 {entries.map((entry, index) => (
                   <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
@@ -248,26 +211,15 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     {preferentialConfig.hasPreferential2 && (
                       <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
                     )}
-                  </TableRow>
-                ))}
-                {/* Empty rows for visual consistency */}
-                {Array.from({ length: Math.max(0, 10 - entries.length) }).map((_, index) => (
-                  <TableRow key={`empty-${index}`} className={(entries.length + index) % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center text-gray-400">{entries.length + index + 1}</TableCell>
-                    <TableCell className="text-gray-400 py-3">-</TableCell>
-                    {preferentialConfig.hasPreferential1 && (
-                      <TableCell className="text-center text-gray-400">-</TableCell>
-                    )}
-                    {preferentialConfig.hasPreferential2 && (
-                      <TableCell className="text-center text-gray-400">-</TableCell>
-                    )}
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="text-sm">Registrado</Badge>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-      )}
     </div>
   );
 }
