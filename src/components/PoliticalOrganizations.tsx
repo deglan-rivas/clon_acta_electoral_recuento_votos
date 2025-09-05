@@ -38,7 +38,7 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-green-600 text-white">
+              <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
                 <TableHead className="text-white w-20 text-center font-semibold">ORDEN</TableHead>
                 <TableHead className="text-white font-semibold">ORGANIZACIÓN POLÍTICA</TableHead>
                 <TableHead className="text-white w-32 text-center font-semibold">PREFERENCIA 1</TableHead>

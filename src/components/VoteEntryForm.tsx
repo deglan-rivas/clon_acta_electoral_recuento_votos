@@ -125,7 +125,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow className="bg-red-600 text-white">
+                <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
                   <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
@@ -139,8 +139,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
               </TableHeader>
               <TableBody>
                 {/* Form row */}
-                <TableRow className="bg-yellow-100 border-2 border-yellow-400">
-                  <TableCell className="text-center text-lg font-bold text-blue-600">
+                <TableRow className="border-2" style={{backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)"}}>
+                  <TableCell className="text-center text-lg font-bold" style={{color: "oklch(0.5200 0.2100 15)"}}>
                     {getNextTableNumber()}
                   </TableCell>
                   <TableCell className="px-2">
@@ -194,7 +194,11 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     </TableCell>
                   )}
                   <TableCell className="px-2">
-                    <Button onClick={handleAddEntry} className="h-12 px-6 text-base font-semibold bg-green-600 hover:bg-green-700">
+                    <Button 
+                      onClick={handleAddEntry} 
+                      className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
+                      style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+                    >
                       <Plus className="h-5 w-5 mr-2" />
                       AGREGAR
                     </Button>

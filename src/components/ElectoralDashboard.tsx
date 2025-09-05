@@ -143,7 +143,11 @@ export function ElectoralDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Badge 
+              variant="secondary" 
+              className="text-white font-semibold text-base px-4 py-2"
+              style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+            >
               Elecciones Generales 2026
             </Badge>
           </div>
