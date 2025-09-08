@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ElectoralCountTable } from "./ElectoralCountTable";
 import { VoteEntryForm } from "./VoteEntryForm";
 import { PoliticalOrganizations } from "./PoliticalOrganizations";
 import { mockElectoralData } from "../data/mockData";
-import { Vote, Users, Building2, Globe, Crown } from "lucide-react";
+import { Vote, Users, Building2, Globe, Crown, FileText, BarChart3, Settings } from "lucide-react";
 import {
   getActiveCategory,
   saveActiveCategory,
@@ -77,9 +76,9 @@ export function ElectoralDashboard() {
   ];
 
   const sections = [
-    { key: "ingreso", label: "Ingreso de Votos" },
-    { key: "recuento", label: "Recuento" },
-    { key: "organizaciones", label: "Organizaciones Políticas" },
+    { key: "ingreso", label: "Ingreso de Votos", icon: FileText },
+    { key: "recuento", label: "Recuento", icon: BarChart3 },
+    { key: "organizaciones", label: "Organizaciones Políticas", icon: Settings },
   ];
 
   const renderSection = () => {
@@ -142,6 +141,26 @@ export function ElectoralDashboard() {
                   })}
                 </SelectContent>
               </Select>
+
+              {/* Section Navigation in Header */}
+              <Select value={activeSection} onValueChange={(section) => updateCurrentCategoryData({ activeSection: section })}>
+              <SelectTrigger className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <SelectItem key={section.key} value={section.key}>
+                      <div className="flex items-center space-x-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{section.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
             </div>
             <Badge 
               variant="secondary" 
@@ -152,25 +171,6 @@ export function ElectoralDashboard() {
             </Badge>
           </div>
           
-          {/* Section Navigation in Header */}
-          <div className="pb-3">
-            <Tabs 
-              value={activeSection} 
-              onValueChange={(section) => updateCurrentCategoryData({ activeSection: section })}
-            >
-              <TabsList className="grid w-full grid-cols-3 bg-gray-100">
-                {sections.map((section) => (
-                  <TabsTrigger
-                    key={section.key}
-                    value={section.key}
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900"
-                  >
-                    {section.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
         </div>
       </header>
 
