@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
@@ -64,6 +64,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     }));
   }, [entries]);
 
+  // Edit state management
+  const [editingTableNumber, setEditingTableNumber] = useState<number | null>(null);
+  const [originalEntry, setOriginalEntry] = useState<VoteEntry | null>(null);
+
 
   const handleAddEntry = () => {
     if (!newEntry.party) {
@@ -111,6 +115,73 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const updatedEntries = entries.filter(entry => entry.tableNumber !== tableNumber);
     updateEntries(updatedEntries);
     toast.success("Voto eliminado exitosamente");
+  };
+
+  const handleEditEntry = (entry: VoteEntry) => {
+    setEditingTableNumber(entry.tableNumber);
+    setOriginalEntry({ ...entry });
+    setNewEntry({
+      tableNumber: entry.tableNumber,
+      party: entry.party,
+      preferentialVote1: entry.preferentialVote1,
+      preferentialVote2: entry.preferentialVote2,
+    });
+  };
+
+  const handleConfirmEdit = () => {
+    if (!newEntry.party) {
+      toast.error("Por favor seleccione una organización política");
+      return;
+    }
+
+    // Validate vote limits only for enabled preferential votes
+    const pref1 = newEntry.preferentialVote1 || 0;
+    const pref2 = newEntry.preferentialVote2 || 0;
+
+    if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
+      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      return;
+    }
+
+    if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
+      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      return;
+    }
+
+    const updatedEntry: VoteEntry = {
+      tableNumber: newEntry.tableNumber!,
+      party: newEntry.party!,
+      preferentialVote1: pref1,
+      preferentialVote2: pref2,
+    };
+
+    const updatedEntries = entries.map(entry => 
+      entry.tableNumber === editingTableNumber ? updatedEntry : entry
+    );
+    updateEntries(updatedEntries);
+    
+    // Reset edit state and form
+    setEditingTableNumber(null);
+    setOriginalEntry(null);
+    setNewEntry({
+      tableNumber: getNextTableNumber(),
+      party: "",
+      preferentialVote1: 0,
+      preferentialVote2: 0,
+    });
+    
+    toast.success("Voto actualizado exitosamente");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTableNumber(null);
+    setOriginalEntry(null);
+    setNewEntry({
+      tableNumber: getNextTableNumber(),
+      party: "",
+      preferentialVote1: 0,
+      preferentialVote2: 0,
+    });
   };
 
 
@@ -204,14 +275,35 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     </TableCell>
                   )}
                   <TableCell className="px-2">
-                    <Button 
-                      onClick={handleAddEntry} 
-                      className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
-                      style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      AGREGAR
-                    </Button>
+                    {editingTableNumber ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleConfirmEdit}
+                          className="p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200"
+                          title="Confirmar"
+                          aria-label="Confirmar"
+                        >
+                          <Check className="h-6 w-6" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                          title="Cancelar"
+                          aria-label="Cancelar"
+                        >
+                          <X className="h-6 w-6" />
+                        </button>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={handleAddEntry} 
+                        className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
+                        style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        AGREGAR
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
                 
@@ -226,14 +318,47 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                       <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
                     )}
                     <TableCell className="text-center">
-                      <button
-                        onClick={() => handleDeleteEntry(entry.tableNumber)}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors duration-200"
-                        title="Eliminar voto"
-                        aria-label="Eliminar voto"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
+                      {editingTableNumber === entry.tableNumber ? (
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={handleConfirmEdit}
+                            className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200"
+                            title="Confirmar"
+                            aria-label="Confirmar"
+                          >
+                            <Check className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                            title="Cancelar"
+                            aria-label="Cancelar"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => handleEditEntry(entry)}
+                            className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                            title="Editar"
+                            aria-label="Editar"
+                            disabled={editingTableNumber !== null}
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEntry(entry.tableNumber)}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors duration-200"
+                            title="Eliminar voto"
+                            aria-label="Eliminar voto"
+                            disabled={editingTableNumber !== null}
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
