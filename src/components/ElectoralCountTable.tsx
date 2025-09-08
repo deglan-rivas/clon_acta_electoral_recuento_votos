@@ -51,11 +51,11 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="w-20 text-center font-semibold">CÓDIGO</TableHead>
-                <TableHead className="font-semibold">ORGANIZACIÓN POLÍTICA</TableHead>
-                <TableHead className="w-32 text-center font-semibold">TOTAL DE VOTOS</TableHead>
-                <TableHead className="w-24 text-center font-semibold">%</TableHead>
+              <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
+                <TableHead className="w-20 text-center font-semibold text-white">CÓDIGO</TableHead>
+                <TableHead className="font-semibold text-white">ORGANIZACIÓN POLÍTICA</TableHead>
+                <TableHead className="w-32 text-center font-semibold text-white">TOTAL DE VOTOS</TableHead>
+                <TableHead className="w-24 text-center font-semibold text-white">%</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
