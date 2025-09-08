@@ -111,11 +111,6 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     toast.success("Voto registrado exitosamente");
   };
 
-  const handleDeleteEntry = (tableNumber: number) => {
-    const updatedEntries = entries.filter(entry => entry.tableNumber !== tableNumber);
-    updateEntries(updatedEntries);
-    toast.success("Voto eliminado exitosamente");
-  };
 
   const handleEditEntry = (entry: VoteEntry) => {
     setEditingTableNumber(entry.tableNumber);
@@ -183,6 +178,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
       preferentialVote2: 0,
     });
   };
+
 
 
   return (
@@ -307,61 +303,36 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                   </TableCell>
                 </TableRow>
                 
-                {[...entries].reverse().map((entry, index) => (
-                  <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
-                    <TableCell className="py-3">{entry.party}</TableCell>
-                    {preferentialConfig.hasPreferential1 && (
-                      <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
-                    )}
-                    {preferentialConfig.hasPreferential2 && (
-                      <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
-                    )}
-                    <TableCell className="text-center">
-                      {editingTableNumber === entry.tableNumber ? (
-                        <div className="flex justify-center gap-1">
-                          <button
-                            onClick={handleConfirmEdit}
-                            className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200"
-                            title="Confirmar"
-                            aria-label="Confirmar"
-                          >
-                            <Check className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
-                            title="Cancelar"
-                            aria-label="Cancelar"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-center gap-1">
-                          <button
-                            onClick={() => handleEditEntry(entry)}
-                            className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
-                            title="Editar"
-                            aria-label="Editar"
-                            disabled={editingTableNumber !== null}
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEntry(entry.tableNumber)}
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors duration-200"
-                            title="Eliminar voto"
-                            aria-label="Eliminar voto"
-                            disabled={editingTableNumber !== null}
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
+                {[...entries].reverse().map((entry, index) => {
+                  const isLastEntry = index === 0; // First item in reversed array is the last added entry
+                  return (
+                    <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
+                      <TableCell className="py-3">{entry.party}</TableCell>
+                      {preferentialConfig.hasPreferential1 && (
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
                       )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      {preferentialConfig.hasPreferential2 && (
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
+                      )}
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          {isLastEntry && (
+                            <button
+                              onClick={() => handleEditEntry(entry)}
+                              className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                              title="Editar"
+                              aria-label="Editar"
+                              disabled={editingTableNumber !== null}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
