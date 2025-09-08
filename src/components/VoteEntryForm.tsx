@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Plus, Save } from "lucide-react";
+import { Plus } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
@@ -42,29 +42,21 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     onEntriesChange(newEntries);
   };
 
-  // Calculate next table number based on current entries
-  const getNextTableNumber = () => {
-    if (entries.length === 0) return 1;
-    const maxTableNumber = Math.max(...entries.map(entry => entry.tableNumber));
-    return maxTableNumber + 1;
-  };
 
   const [newEntry, setNewEntry] = useState<Partial<VoteEntry>>({
-    tableNumber: getNextTableNumber(),
+    cedula: "",
     party: "",
     preferentialVote1: 0,
     preferentialVote2: 0,
   });
 
-  // Update table number when entries change
-  useEffect(() => {
-    setNewEntry(prev => ({
-      ...prev,
-      tableNumber: getNextTableNumber(),
-    }));
-  }, [entries]);
 
   const handleAddEntry = () => {
+    if (!newEntry.cedula) {
+      toast.error("Por favor ingrese el número de cédula");
+      return;
+    }
+
     if (!newEntry.party) {
       toast.error("Por favor seleccione una organización política");
       return;
@@ -85,7 +77,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     }
 
     const entry: VoteEntry = {
-      tableNumber: newEntry.tableNumber!,
+      cedula: newEntry.cedula!,
       party: newEntry.party!,
       preferentialVote1: pref1,
       preferentialVote2: pref2,
@@ -94,11 +86,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const updatedEntries = [...entries, entry];
     updateEntries(updatedEntries);
     
-    // Calculate next table number for the new entry
-    const nextTableNumber = Math.max(...updatedEntries.map(e => e.tableNumber)) + 1;
-    
     setNewEntry({
-      tableNumber: nextTableNumber,
+      cedula: newEntry.cedula,
       party: "",
       preferentialVote1: 0,
       preferentialVote2: 0,
@@ -106,9 +95,6 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     toast.success("Voto registrado exitosamente");
   };
 
-  const handleSaveAll = () => {
-    toast.success(`${entries.length} votos guardados para ${category}`);
-  };
 
   return (
     <div className="space-y-6">
@@ -126,7 +112,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
             <Table>
               <TableHeader>
                 <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
+                  <TableHead className="text-white text-center font-semibold">N° CEDULA</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
@@ -140,16 +126,22 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
               <TableBody>
                 {/* Form row */}
                 <TableRow className="border-2" style={{backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableCell className="text-center text-lg font-bold" style={{color: "oklch(0.5200 0.2100 15)"}}>
-                    {getNextTableNumber()}
+                  <TableCell className="px-2">
+                    <Input
+                      type="text"
+                      placeholder="Ingrese cédula"
+                      value={newEntry.cedula || ""}
+                      onChange={(e) => setNewEntry({ ...newEntry, cedula: e.target.value })}
+                      className="h-12 text-center text-lg font-semibold"
+                    />
                   </TableCell>
                   <TableCell className="px-2">
                     <Combobox
                       value={newEntry.party}
                       onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
                       options={politicalOrganizations.map((org) => ({
-                        value: `${org.order} | ${org.name}`,
-                        label: `${org.order} | ${org.name}`,
+                        value: org.order ? `${org.order} | ${org.name}` : org.name,
+                        label: org.order ? `${org.order} | ${org.name}` : org.name,
                       }))}
                       placeholder="Seleccionar partido..."
                       searchPlaceholder="Buscar partido..."
@@ -205,9 +197,9 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                   </TableCell>
                 </TableRow>
                 
-                {entries.map((entry, index) => (
-                  <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
+                {[...entries].reverse().map((entry, index) => (
+                  <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <TableCell className="text-center font-medium">{entry.cedula}</TableCell>
                     <TableCell className="py-3">{entry.party}</TableCell>
                     {preferentialConfig.hasPreferential1 && (
                       <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>

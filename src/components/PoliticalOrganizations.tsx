@@ -25,13 +25,13 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-lg uppercase tracking-wide text-red-700">
             ORGANIZACIONES POLÍTICAS - {category.toUpperCase()}
           </CardTitle>
         </CardHeader>
-      </Card>
+      </Card> */}
 
       {/* Organizations Table */}
       <Card>
@@ -41,33 +41,15 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
               <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
                 <TableHead className="text-white w-20 text-center font-semibold">ORDEN</TableHead>
                 <TableHead className="text-white font-semibold">ORGANIZACIÓN POLÍTICA</TableHead>
-                <TableHead className="text-white w-32 text-center font-semibold">PREFERENCIA 1</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {politicalOrganizations.map((org, index) => (
-                <TableRow key={org.order} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                   <TableCell className="text-center font-medium">{org.order}</TableCell>
                   <TableCell className="py-3">{org.name}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                      {org.preference}
-                    </Badge>
-                  </TableCell>
                 </TableRow>
               ))}
-              
-              {/* Additional empty rows */}
-              <TableRow className="bg-white">
-                <TableCell className="text-center text-gray-400">BLANCO</TableCell>
-                <TableCell className="text-gray-400 py-3">-</TableCell>
-                <TableCell className="text-center text-gray-400">-</TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-50">
-                <TableCell className="text-center text-gray-400">NULO</TableCell>
-                <TableCell className="text-gray-400 py-3">-</TableCell>
-                <TableCell className="text-center text-gray-400">-</TableCell>
-              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
