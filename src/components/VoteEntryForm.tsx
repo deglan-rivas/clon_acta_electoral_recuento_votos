@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
@@ -42,21 +42,34 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     onEntriesChange(newEntries);
   };
 
+  // Calculate next table number based on current entries
+  const getNextTableNumber = () => {
+    if (entries.length === 0) return 1;
+    const maxTableNumber = Math.max(...entries.map(entry => entry.tableNumber || 0));
+    return maxTableNumber + 1;
+  };
 
   const [newEntry, setNewEntry] = useState<Partial<VoteEntry>>({
-    cedula: "",
+    tableNumber: getNextTableNumber(),
     party: "",
     preferentialVote1: 0,
     preferentialVote2: 0,
   });
 
+  // Update table number when entries change
+  useEffect(() => {
+    setNewEntry(prev => ({
+      ...prev,
+      tableNumber: getNextTableNumber(),
+    }));
+  }, [entries]);
+
+  // Edit state management
+  const [editingTableNumber, setEditingTableNumber] = useState<number | null>(null);
+  const [originalEntry, setOriginalEntry] = useState<VoteEntry | null>(null);
+
 
   const handleAddEntry = () => {
-    if (!newEntry.cedula) {
-      toast.error("Por favor ingrese el número de cédula");
-      return;
-    }
-
     if (!newEntry.party) {
       toast.error("Por favor seleccione una organización política");
       return;
@@ -77,7 +90,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     }
 
     const entry: VoteEntry = {
-      cedula: newEntry.cedula!,
+      tableNumber: newEntry.tableNumber!,
       party: newEntry.party!,
       preferentialVote1: pref1,
       preferentialVote2: pref2,
@@ -86,14 +99,86 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const updatedEntries = [...entries, entry];
     updateEntries(updatedEntries);
     
+    // Calculate next table number for the new entry
+    const nextTableNumber = Math.max(...updatedEntries.map(e => e.tableNumber || 0)) + 1;
+    
     setNewEntry({
-      cedula: newEntry.cedula,
+      tableNumber: nextTableNumber,
       party: "",
       preferentialVote1: 0,
       preferentialVote2: 0,
     });
     toast.success("Voto registrado exitosamente");
   };
+
+
+  const handleEditEntry = (entry: VoteEntry) => {
+    setEditingTableNumber(entry.tableNumber);
+    setOriginalEntry({ ...entry });
+    setNewEntry({
+      tableNumber: entry.tableNumber,
+      party: entry.party,
+      preferentialVote1: entry.preferentialVote1,
+      preferentialVote2: entry.preferentialVote2,
+    });
+  };
+
+  const handleConfirmEdit = () => {
+    if (!newEntry.party) {
+      toast.error("Por favor seleccione una organización política");
+      return;
+    }
+
+    // Validate vote limits only for enabled preferential votes
+    const pref1 = newEntry.preferentialVote1 || 0;
+    const pref2 = newEntry.preferentialVote2 || 0;
+
+    if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
+      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      return;
+    }
+
+    if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
+      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      return;
+    }
+
+    const updatedEntry: VoteEntry = {
+      tableNumber: newEntry.tableNumber!,
+      party: newEntry.party!,
+      preferentialVote1: pref1,
+      preferentialVote2: pref2,
+    };
+
+    const updatedEntries = entries.map(entry => 
+      entry.tableNumber === editingTableNumber ? updatedEntry : entry
+    );
+    updateEntries(updatedEntries);
+    
+    // Reset edit state and form
+    setEditingTableNumber(null);
+    setOriginalEntry(null);
+    setNewEntry({
+      tableNumber: getNextTableNumber(),
+      party: "",
+      preferentialVote1: 0,
+      preferentialVote2: 0,
+    });
+    
+    toast.success("Voto actualizado exitosamente");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTableNumber(null);
+    setOriginalEntry(null);
+    setNewEntry({
+      tableNumber: getNextTableNumber(),
+      party: "",
+      preferentialVote1: 0,
+      preferentialVote2: 0,
+    });
+  };
+
 
 
   return (
@@ -112,7 +197,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
             <Table>
               <TableHeader>
                 <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-white text-center font-semibold">N° CEDULA</TableHead>
+                  <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
@@ -128,11 +213,11 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                 <TableRow className="border-2" style={{backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)"}}>
                   <TableCell className="px-2">
                     <Input
-                      type="text"
-                      placeholder="Ingrese cédula"
-                      value={newEntry.cedula || ""}
-                      onChange={(e) => setNewEntry({ ...newEntry, cedula: e.target.value })}
-                      className="h-12 text-center text-lg font-semibold"
+                      type="number"
+                      placeholder="Número automático"
+                      value={newEntry.tableNumber || ""}
+                      disabled
+                      className="h-12 text-center text-lg font-semibold bg-gray-50 cursor-not-allowed"
                     />
                   </TableCell>
                   <TableCell className="px-2">
@@ -186,32 +271,68 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     </TableCell>
                   )}
                   <TableCell className="px-2">
-                    <Button 
-                      onClick={handleAddEntry} 
-                      className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
-                      style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      AGREGAR
-                    </Button>
+                    {editingTableNumber ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleConfirmEdit}
+                          className="p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200"
+                          title="Confirmar"
+                          aria-label="Confirmar"
+                        >
+                          <Check className="h-6 w-6" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                          title="Cancelar"
+                          aria-label="Cancelar"
+                        >
+                          <X className="h-6 w-6" />
+                        </button>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={handleAddEntry} 
+                        className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
+                        style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        AGREGAR
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
                 
-                {[...entries].reverse().map((entry, index) => (
-                  <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center font-medium">{entry.cedula}</TableCell>
-                    <TableCell className="py-3">{entry.party}</TableCell>
-                    {preferentialConfig.hasPreferential1 && (
-                      <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
-                    )}
-                    {preferentialConfig.hasPreferential2 && (
-                      <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
-                    )}
-                    <TableCell className="text-center">
-                      <Badge variant="secondary" className="text-sm">Registrado</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {[...entries].reverse().map((entry, index) => {
+                  const isLastEntry = index === 0; // First item in reversed array is the last added entry
+                  return (
+                    <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
+                      <TableCell className="py-3">{entry.party}</TableCell>
+                      {preferentialConfig.hasPreferential1 && (
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
+                      )}
+                      {preferentialConfig.hasPreferential2 && (
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
+                      )}
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          {isLastEntry && (
+                            <button
+                              onClick={() => handleEditEntry(entry)}
+                              className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                              title="Editar"
+                              aria-label="Editar"
+                              disabled={editingTableNumber !== null}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
