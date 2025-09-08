@@ -140,8 +140,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                       value={newEntry.party}
                       onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
                       options={politicalOrganizations.map((org) => ({
-                        value: `${org.order} | ${org.name}`,
-                        label: `${org.order} | ${org.name}`,
+                        value: org.order ? `${org.order} | ${org.name}` : org.name,
+                        label: org.order ? `${org.order} | ${org.name}` : org.name,
                       }))}
                       placeholder="Seleccionar partido..."
                       searchPlaceholder="Buscar partido..."
@@ -197,8 +197,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                   </TableCell>
                 </TableRow>
                 
-                {entries.map((entry, index) => (
-                  <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                {[...entries].reverse().map((entry, index) => (
+                  <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <TableCell className="text-center font-medium">{entry.cedula}</TableCell>
                     <TableCell className="py-3">{entry.party}</TableCell>
                     {preferentialConfig.hasPreferential1 && (

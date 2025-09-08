@@ -1547,7 +1547,7 @@
   }
 
   .bg-input-background {
-    background-color: var(--input-background);
+    background-color: white; /*var(--input-background);*/
   }
 
   .bg-muted {
