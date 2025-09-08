@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
@@ -93,6 +93,13 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
       preferentialVote2: 0,
     });
     toast.success("Voto registrado exitosamente");
+  };
+
+  const handleDeleteEntry = (index: number) => {
+    const actualIndex = entries.length - 1 - index; // Convert from reversed display index to actual index
+    const updatedEntries = entries.filter((_, i) => i !== actualIndex);
+    updateEntries(updatedEntries);
+    toast.success("Voto eliminado exitosamente");
   };
 
 
@@ -208,7 +215,14 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                       <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
                     )}
                     <TableCell className="text-center">
-                      <Badge variant="secondary" className="text-sm">Registrado</Badge>
+                      <button
+                        onClick={() => handleDeleteEntry(index)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors duration-200"
+                        title="Eliminar voto"
+                        aria-label="Eliminar voto"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))}
