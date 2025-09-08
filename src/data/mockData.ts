@@ -9,7 +9,7 @@ export interface PoliticalParty {
 }
 
 export interface VoteEntry {
-  cedula: string;
+  tableNumber: number;
   party: string;
   preferentialVote1: number;
   preferentialVote2: number;

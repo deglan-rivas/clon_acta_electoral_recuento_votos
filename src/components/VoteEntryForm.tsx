@@ -42,21 +42,30 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     onEntriesChange(newEntries);
   };
 
+  // Calculate next table number based on current entries
+  const getNextTableNumber = () => {
+    if (entries.length === 0) return 1;
+    const maxTableNumber = Math.max(...entries.map(entry => entry.tableNumber || 0));
+    return maxTableNumber + 1;
+  };
 
   const [newEntry, setNewEntry] = useState<Partial<VoteEntry>>({
-    cedula: "",
+    tableNumber: getNextTableNumber(),
     party: "",
     preferentialVote1: 0,
     preferentialVote2: 0,
   });
 
+  // Update table number when entries change
+  useEffect(() => {
+    setNewEntry(prev => ({
+      ...prev,
+      tableNumber: getNextTableNumber(),
+    }));
+  }, [entries]);
+
 
   const handleAddEntry = () => {
-    if (!newEntry.cedula) {
-      toast.error("Por favor ingrese el número de cédula");
-      return;
-    }
-
     if (!newEntry.party) {
       toast.error("Por favor seleccione una organización política");
       return;
@@ -77,7 +86,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     }
 
     const entry: VoteEntry = {
-      cedula: newEntry.cedula!,
+      tableNumber: newEntry.tableNumber!,
       party: newEntry.party!,
       preferentialVote1: pref1,
       preferentialVote2: pref2,
@@ -86,8 +95,11 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const updatedEntries = [...entries, entry];
     updateEntries(updatedEntries);
     
+    // Calculate next table number for the new entry
+    const nextTableNumber = Math.max(...updatedEntries.map(e => e.tableNumber || 0)) + 1;
+    
     setNewEntry({
-      cedula: newEntry.cedula,
+      tableNumber: nextTableNumber,
       party: "",
       preferentialVote1: 0,
       preferentialVote2: 0,
@@ -95,9 +107,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     toast.success("Voto registrado exitosamente");
   };
 
-  const handleDeleteEntry = (index: number) => {
-    const actualIndex = entries.length - 1 - index; // Convert from reversed display index to actual index
-    const updatedEntries = entries.filter((_, i) => i !== actualIndex);
+  const handleDeleteEntry = (tableNumber: number) => {
+    const updatedEntries = entries.filter(entry => entry.tableNumber !== tableNumber);
     updateEntries(updatedEntries);
     toast.success("Voto eliminado exitosamente");
   };
@@ -119,7 +130,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
             <Table>
               <TableHeader>
                 <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-white text-center font-semibold">N° CEDULA</TableHead>
+                  <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
@@ -135,11 +146,11 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                 <TableRow className="border-2" style={{backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)"}}>
                   <TableCell className="px-2">
                     <Input
-                      type="text"
-                      placeholder="Ingrese cédula"
-                      value={newEntry.cedula || ""}
-                      onChange={(e) => setNewEntry({ ...newEntry, cedula: e.target.value })}
-                      className="h-12 text-center text-lg font-semibold"
+                      type="number"
+                      placeholder="Número automático"
+                      value={newEntry.tableNumber || ""}
+                      disabled
+                      className="h-12 text-center text-lg font-semibold bg-gray-50 cursor-not-allowed"
                     />
                   </TableCell>
                   <TableCell className="px-2">
@@ -206,7 +217,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                 
                 {[...entries].reverse().map((entry, index) => (
                   <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center font-medium">{entry.cedula}</TableCell>
+                    <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
                     <TableCell className="py-3">{entry.party}</TableCell>
                     {preferentialConfig.hasPreferential1 && (
                       <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
@@ -216,7 +227,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     )}
                     <TableCell className="text-center">
                       <button
-                        onClick={() => handleDeleteEntry(index)}
+                        onClick={() => handleDeleteEntry(entry.tableNumber)}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors duration-200"
                         title="Eliminar voto"
                         aria-label="Eliminar voto"
