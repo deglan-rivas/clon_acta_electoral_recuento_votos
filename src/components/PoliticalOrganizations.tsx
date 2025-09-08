@@ -25,13 +25,13 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-lg uppercase tracking-wide text-red-700">
             ORGANIZACIONES POLÍTICAS - {category.toUpperCase()}
           </CardTitle>
         </CardHeader>
-      </Card>
+      </Card> */}
 
       {/* Organizations Table */}
       <Card>

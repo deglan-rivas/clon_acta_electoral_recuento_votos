@@ -16,9 +16,9 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
       {/* Header Information */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg uppercase tracking-wide text-red-700">
+          {/* <CardTitle className="text-lg uppercase tracking-wide text-red-700">
             ELECCIONES GENERALES 2026 - {category.toUpperCase()}
-          </CardTitle>
+          </CardTitle> */}
           <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <span className="text-sm font-medium text-gray-600">DEPARTAMENTO:</span>
