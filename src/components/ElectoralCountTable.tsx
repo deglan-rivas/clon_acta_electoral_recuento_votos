@@ -103,26 +103,26 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                <TableHead className="w-20 text-center font-semibold text-white">CÓDIGO</TableHead>
-                <TableHead className="font-semibold text-white">ORGANIZACIÓN POLÍTICA</TableHead>
-                <TableHead className="w-32 text-center font-semibold text-white">TOTAL DE VOTOS</TableHead>
+              <TableRow className="text-white h-6" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
+                <TableHead className="w-20 text-center font-semibold text-white py-1 h-6">CÓDIGO</TableHead>
+                <TableHead className="font-semibold text-white py-1 h-6">ORGANIZACIÓN POLÍTICA</TableHead>
+                <TableHead className="w-32 text-center font-semibold text-white py-1 h-6">TOTAL DE VOTOS</TableHead>
                 {showPreferentialColumns && (
                   <>
-                    <TableHead className="text-center font-semibold text-white border-l-2 border-white" colSpan={30}>VOTO PREFERENCIAL</TableHead>
-                    <TableHead className="w-20 text-center font-semibold text-white border-l-2 border-white">TOTAL VP</TableHead>
+                    <TableHead className="text-center font-semibold text-white border-l-2 border-white py-1 h-6" colSpan={30}>VOTO PREFERENCIAL</TableHead>
+                    <TableHead className="w-20 text-center font-semibold text-white border-l-2 border-white py-1 h-6">TOTAL VP</TableHead>
                   </>
                 )}
               </TableRow>
               {showPreferentialColumns && (
-                <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-transparent">.</TableHead>
-                  <TableHead className="text-transparent">.</TableHead>
-                  <TableHead className="text-transparent">.</TableHead>
+                <TableRow className="text-white h-6" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
+                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
+                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
+                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
                   {Array.from({length: 30}, (_, i) => (
-                    <TableHead key={i + 1} className="w-8 text-center font-semibold text-red-600 bg-gray-300 text-xs px-1">{i + 1}</TableHead>
+                    <TableHead key={i + 1} className="w-8 text-center font-semibold text-red-600 bg-gray-300 text-xs px-1 py-0 h-6">{i + 1}</TableHead>
                   ))}
-                  <TableHead className="text-transparent">.</TableHead>
+                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
                 </TableRow>
               )}
             </TableHeader>
@@ -134,16 +134,16 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
                 const isBlancoOrNulo = org.name === 'BLANCO' || org.name === 'NULO';
                 
                 return (
-                  <TableRow key={org.key || `${org.order}-${index}`} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="text-center font-medium">{org.order || "-"}</TableCell>
-                    <TableCell className="py-3">{org.name}</TableCell>
-                    <TableCell className="text-center font-semibold">{totalVotes}</TableCell>
+                  <TableRow key={org.key || `${org.order}-${index}`} className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} h-6`}>
+                    <TableCell className="text-center font-medium py-1">{org.order || "-"}</TableCell>
+                    <TableCell className="py-1">{org.name}</TableCell>
+                    <TableCell className="text-center font-semibold py-1">{totalVotes}</TableCell>
                     {showPreferentialColumns && (
                       <>
                         {isBlancoOrNulo ? (
                           <TableCell 
                             colSpan={31} 
-                            className="text-center text-gray-400 border-l border-gray-200"
+                            className="text-center text-gray-400 border-l border-gray-200 py-1"
                           >
                             {/* Empty cell for BLANCO and NULO */}
                           </TableCell>
@@ -155,7 +155,7 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
                               return (
                                 <TableCell 
                                   key={i + 1} 
-                                  className={`w-8 text-center text-xs px-1 border-l border-gray-200 ${
+                                  className={`w-8 text-center text-xs px-1 py-1 border-l border-gray-200 ${
                                     isNonZero 
                                       ? 'text-red-600 bg-green-100' 
                                       : ''
@@ -165,7 +165,7 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
                                 </TableCell>
                               );
                             })}
-                            <TableCell className="w-20 text-center font-semibold border-l-2 border-gray-300">
+                            <TableCell className="w-20 text-center font-semibold border-l-2 border-gray-300 py-1">
                               {partyMatrix ? partyMatrix.total || 0 : 0}
                             </TableCell>
                           </>
