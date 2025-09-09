@@ -8,9 +8,14 @@ import { politicalOrganizations } from "../data/mockData";
 interface ElectoralCountTableProps {
   data: ElectoralData;
   category: string;
+  selectedLocation?: {
+    departamento: string;
+    provincia: string;
+    distrito: string;
+  };
 }
 
-export function ElectoralCountTable({ data, category }: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, selectedLocation }: ElectoralCountTableProps) {
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
@@ -99,20 +104,22 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
           {/* <CardTitle className="text-lg uppercase tracking-wide text-red-700">
             ELECCIONES GENERALES 2026 - {category.toUpperCase()}
           </CardTitle> */}
-          <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <span className="text-sm font-medium text-gray-600">DEPARTAMENTO:</span>
-              <p className="font-medium">{data.department}</p>
+          {/*selectedLocation && (selectedLocation.departamento || selectedLocation.provincia || selectedLocation.distrito) && (
+            <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <span className="text-sm font-medium text-gray-600">DEPARTAMENTO:</span>
+                <p className="font-medium">{selectedLocation.departamento || 'No seleccionado'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-600">PROVINCIA:</span>
+                <p className="font-medium">{selectedLocation.provincia || 'No seleccionado'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-600">DISTRITO:</span>
+                <p className="font-medium">{selectedLocation.distrito || 'No seleccionado'}</p>
+              </div>
             </div>
-            <div>
-              <span className="text-sm font-medium text-gray-600">PROVINCIA:</span>
-              <p className="font-medium">{data.province}</p>
-            </div>
-            <div>
-              <span className="text-sm font-medium text-gray-600">DISTRITO:</span>
-              <p className="font-medium">{data.district}</p>
-            </div>
-          </div>
+          )*/}
           <div className="grid grid-cols-2 gap-4 mt-2">
             <div className="bg-blue-50 p-3 rounded-lg">
               <span className="text-sm font-medium text-blue-700">Total de Electores Hábiles:</span>
