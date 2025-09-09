@@ -20896,14 +20896,44 @@ function ElectoralCountTable({ data, category, selectedLocation }) {
   };
   const stats = calculateStatistics();
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-6", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardHeader, { className: "pb-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-2 gap-4 mt-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-blue-50 p-3 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium text-blue-700", children: "Total de Electores Hábiles:" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xl font-semibold text-blue-900", children: data.totalEligibleVoters })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-8 gap-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-blue-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-blue-700", children: "Electores Hábiles" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-blue-900", children: "300" })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-green-50 p-3 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium text-green-700", children: "Total de Ciudadanos que Votaron:" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xl font-semibold text-green-900", children: stats.totalVotersWhoVoted })
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-green-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-green-700", children: "Ciudadanos que Votaron" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-green-900", children: "290" })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-blue-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-blue-700", children: "Recuento de Votos" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-green-900", children: stats.totalVotersWhoVoted })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-green-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-green-700", children: "Votos Válidos" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-green-900", children: stats.totalVotesEmitted })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-gray-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-gray-700", children: "Votos Blancos" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-gray-900", children: voteCount["BLANCO"] || 0 })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-gray-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-gray-700", children: "Votos Nulos" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-gray-900", children: voteCount["NULO"] || 0 })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-green-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-green-700", children: "% Participación" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-lg font-semibold text-green-900", children: [
+          stats.participationRate.toFixed(2),
+          "%"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-yellow-50 p-3 rounded-lg text-center border border-gray-200", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-yellow-700", children: "% Ausentismo" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-lg font-semibold text-yellow-900", children: [
+          stats.absenteeismRate.toFixed(2),
+          "%"
+        ] })
       ] })
     ] }) }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Table, { children: [
@@ -20951,30 +20981,6 @@ function ElectoralCountTable({ data, category, selectedLocation }) {
           ] }) })
         ] }, org.key || `${org.order}-${index2}`);
       }) })
-    ] }) }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center p-4 bg-blue-50 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-lg font-semibold text-blue-900", children: stats.totalVotesEmitted }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm text-blue-700", children: "TOTAL DE VOTOS EMITIDOS" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center p-4 bg-green-50 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-lg font-semibold text-green-900", children: [
-          stats.participationRate.toFixed(2),
-          "%"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm text-green-700", children: "% DE PARTICIPACIÓN" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center p-4 bg-yellow-50 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-lg font-semibold text-yellow-900", children: [
-          stats.absenteeismRate.toFixed(2),
-          "%"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm text-yellow-700", children: "% AUSENTISMO" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center p-4 bg-red-50 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-lg font-semibold text-red-900", children: stats.blankAndNullVotes }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm text-red-700", children: "VOTOS EN BLANCO + NULOS" })
-      ] })
     ] }) }) })
   ] });
 }

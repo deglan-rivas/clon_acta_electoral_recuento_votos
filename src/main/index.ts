@@ -1,7 +1,7 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import icon from '../../resources/icon.ico?asset'
 
 function createWindow(): void {
   // Create the browser window.
@@ -9,15 +9,92 @@ function createWindow(): void {
     width: 1920,
     height: 1080,
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false, // Show menu bar to access developer options
     resizable: false,
     maximizable: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+
+  // Create application menu
+  const template = [
+    {
+      label: 'Archivo',
+      submenu: [
+        {
+          label: 'Salir',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => {
+            app.quit()
+          }
+        }
+      ]
+    },
+    {
+      label: 'Herramientas',
+      submenu: [
+        {
+          label: 'Reiniciar Datos de la Aplicación',
+          click: () => {
+            mainWindow.webContents.executeJavaScript(`
+              const confirmed = confirm('¿Está seguro de que desea eliminar todos los datos guardados?\\n\\nEsta acción eliminará:\\n- Todas las configuraciones\\n- Todos los votos ingresados\\n- Límites configurados\\n\\nEsta acción no se puede deshacer.');
+              
+              if (confirmed) {
+                if (window.clearElectoralData) {
+                  window.clearElectoralData();
+                } else {
+                  localStorage.clear();
+                }
+                alert('Datos eliminados exitosamente. La aplicación se reiniciará.');
+                location.reload();
+              }
+            `)
+          }
+        },
+        {
+          label: 'Recargar Aplicación',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            mainWindow.reload()
+          }
+        }
+      ]
+    }
+  ]
+  
+  // Add developer options only in development
+  if (is.dev) {
+    template.push({
+      label: 'Desarrollador',
+      submenu: [
+        {
+          label: 'Ver Datos en Consola',
+          click: () => {
+            mainWindow.webContents.executeJavaScript(`
+              if (window.debugElectoralData) {
+                window.debugElectoralData();
+              } else {
+                console.log('LocalStorage contents:', {...localStorage});
+              }
+            `)
+          }
+        },
+        {
+          label: 'Abrir DevTools',
+          accelerator: 'F12',
+          click: () => {
+            mainWindow.webContents.openDevTools()
+          }
+        }
+      ]
+    })
+  }
+
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()

@@ -2,7 +2,17 @@ import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  // Expose localStorage utilities for developer menu
+  clearElectoralData: () => {
+    // This will be implemented in the renderer
+    return window.postMessage({ type: 'CLEAR_ELECTORAL_DATA' }, '*')
+  },
+  debugElectoralData: () => {
+    // This will be implemented in the renderer
+    return window.postMessage({ type: 'DEBUG_ELECTORAL_DATA' }, '*')
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

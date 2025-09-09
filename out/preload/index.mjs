@@ -77,7 +77,15 @@ const electronAPI = {
     }
   }
 };
-const api = {};
+const api = {
+  // Expose localStorage utilities for developer menu
+  clearElectoralData: () => {
+    return window.postMessage({ type: "CLEAR_ELECTORAL_DATA" }, "*");
+  },
+  debugElectoralData: () => {
+    return window.postMessage({ type: "DEBUG_ELECTORAL_DATA" }, "*");
+  }
+};
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld("electron", electronAPI);
