@@ -98,39 +98,52 @@ export function ElectoralCountTable({ data, category, selectedLocation }: Electo
 
   return (
     <div className="space-y-6">
-      {/* Header Information */}
+      {/* Combined Statistics Header */}
       <Card>
-        <CardHeader className="pb-4">
-          {/* <CardTitle className="text-lg uppercase tracking-wide text-red-700">
-            ELECCIONES GENERALES 2026 - {category.toUpperCase()}
-          </CardTitle> */}
-          {/*selectedLocation && (selectedLocation.departamento || selectedLocation.provincia || selectedLocation.distrito) && (
-            <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <span className="text-sm font-medium text-gray-600">DEPARTAMENTO:</span>
-                <p className="font-medium">{selectedLocation.departamento || 'No seleccionado'}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-600">PROVINCIA:</span>
-                <p className="font-medium">{selectedLocation.provincia || 'No seleccionado'}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-600">DISTRITO:</span>
-                <p className="font-medium">{selectedLocation.distrito || 'No seleccionado'}</p>
-              </div>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-8 gap-3">
+            {/* Group 1: Electores y Votantes */}
+            <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-blue-700">Electores Hábiles</span>
+              {/* <p className="text-lg font-semibold text-blue-900">{data.totalEligibleVoters}</p> */}
+              <p className="text-lg font-semibold text-blue-900">300</p>
             </div>
-          )*/}
-          <div className="grid grid-cols-2 gap-4 mt-2">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <span className="text-sm font-medium text-blue-700">Total de Electores Hábiles:</span>
-              <p className="text-xl font-semibold text-blue-900">{data.totalEligibleVoters}</p>
+            <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-green-700">Ciudadanos que Votaron</span>
+              <p className="text-lg font-semibold text-green-900">290</p>
+              {/* <p className="text-lg font-semibold text-green-900">{stats.totalVotersWhoVoted}</p> */}
             </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <span className="text-sm font-medium text-green-700">Total de Ciudadanos que Votaron:</span>
-              <p className="text-xl font-semibold text-green-900">{stats.totalVotersWhoVoted}</p>
+            <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-blue-700">Recuento de Votos</span>
+              {/* <p className="text-lg font-semibold text-blue-900">{stats.totalVotesEmitted}</p> */}
+              <p className="text-lg font-semibold text-green-900">{stats.totalVotersWhoVoted}</p>
+            </div>
+            
+            {/* Group 2: Tipos de Votos */}
+            <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-green-700">Votos Válidos</span>
+              <p className="text-lg font-semibold text-green-900">{stats.totalVotesEmitted}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-gray-700">Votos Blancos</span>
+              <p className="text-lg font-semibold text-gray-900">{voteCount['BLANCO'] || 0}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-gray-700">Votos Nulos</span>
+              <p className="text-lg font-semibold text-gray-900">{voteCount['NULO'] || 0}</p>
+            </div>
+            
+            {/* Group 3: Porcentajes */}
+            <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-green-700">% Participación</span>
+              <p className="text-lg font-semibold text-green-900">{stats.participationRate.toFixed(2)}%</p>
+            </div>
+            <div className="bg-yellow-50 p-3 rounded-lg text-center border border-gray-200">
+              <span className="text-xs font-medium text-yellow-700">% Ausentismo</span>
+              <p className="text-lg font-semibold text-yellow-900">{stats.absenteeismRate.toFixed(2)}%</p>
             </div>
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
 
       {/* Main Results Table */}
@@ -208,30 +221,6 @@ export function ElectoralCountTable({ data, category, selectedLocation }: Electo
               })}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      {/* Statistics */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-lg font-semibold text-blue-900">{stats.totalVotesEmitted}</div>
-              <div className="text-sm text-blue-700">TOTAL DE VOTOS EMITIDOS</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-lg font-semibold text-green-900">{stats.participationRate.toFixed(2)}%</div>
-              <div className="text-sm text-green-700">% DE PARTICIPACIÓN</div>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-lg font-semibold text-yellow-900">{stats.absenteeismRate.toFixed(2)}%</div>
-              <div className="text-sm text-yellow-700">% AUSENTISMO</div>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-lg font-semibold text-red-900">{stats.blankAndNullVotes}</div>
-              <div className="text-sm text-red-700">VOTOS EN BLANCO + NULOS</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

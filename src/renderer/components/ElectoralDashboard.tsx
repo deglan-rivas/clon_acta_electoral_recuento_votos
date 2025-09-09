@@ -6,6 +6,8 @@ import { VoteEntryForm } from "./VoteEntryForm";
 import { PoliticalOrganizations } from "./PoliticalOrganizations";
 import { mockElectoralData } from "../data/mockData";
 import { Vote, Users, Building2, Globe, Crown, FileText, BarChart3, Settings } from "lucide-react";
+import logoJne from '/logo_jne.svg';
+import csvFile from '/TB_UBIGEOS.csv?url';
 import {
   getActiveCategory,
   saveActiveCategory,
@@ -39,7 +41,7 @@ export function ElectoralDashboard() {
   useEffect(() => {
     const loadUbigeoData = async () => {
       try {
-        const response = await fetch('/TB_UBIGEOS.csv');
+        const response = await fetch(csvFile);
         const text = await response.text();
         const lines = text.split('\n').slice(1); // Skip header
         const records: UbigeoRecord[] = lines
@@ -209,17 +211,17 @@ export function ElectoralDashboard() {
       {/* Compact Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between py-3 gap-4">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
               <div className="flex items-center space-x-3">
-                <img src="./logo_jne.svg" className="w-8 h-8" />
+                <img src={logoJne} className="w-8 h-8" />
                 <h1 className="text-xl font-semibold text-gray-900">
                   Recuento de Votos
                 </h1>
               </div>
               {/* Category Selector */}
               <Select value={activeCategory} onValueChange={setActiveCategory}>
-                <SelectTrigger className="w-52">
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,7 +241,7 @@ export function ElectoralDashboard() {
 
               {/* Section Navigation in Header */}
               <Select value={activeSection} onValueChange={(section) => updateCurrentCategoryData({ activeSection: section })}>
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-52">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -262,7 +264,7 @@ export function ElectoralDashboard() {
               <>
                 {/* Departamento Dropdown */}
                 <Select value={selectedDepartamento} onValueChange={handleDepartamentoChange}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Departamento" />
                   </SelectTrigger>
                   <SelectContent>
@@ -280,7 +282,7 @@ export function ElectoralDashboard() {
                   onValueChange={handleProvinciaChange}
                   disabled={!selectedDepartamento}
                 >
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Provincia" />
                   </SelectTrigger>
                   <SelectContent>
@@ -298,7 +300,7 @@ export function ElectoralDashboard() {
                   onValueChange={setSelectedDistrito}
                   disabled={!selectedProvincia}
                 >
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Distrito" />
                   </SelectTrigger>
                   <SelectContent>
@@ -314,7 +316,7 @@ export function ElectoralDashboard() {
             </div>
             <Badge 
               variant="secondary" 
-              className="text-white font-semibold text-base px-4 py-2"
+              className="text-white font-semibold text-base px-4 py-2 shrink-0"
               style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
             >
               Elecciones Generales 2026
