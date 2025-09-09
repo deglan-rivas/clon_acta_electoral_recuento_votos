@@ -47,7 +47,7 @@ export function ElectoralDashboard() {
 
   // Get current values from categoryData
   const activeSection = getCurrentCategoryData()?.activeSection || 'recuento';
-  const voteLimits = getCurrentCategoryData()?.voteLimits || { preferential1: 1, preferential2: 1 };
+  const voteLimits = getCurrentCategoryData()?.voteLimits || { preferential1: 30, preferential2: 30 };
 
   // Define preferential vote configuration by category
   const getPreferentialVoteConfig = (category: string) => {

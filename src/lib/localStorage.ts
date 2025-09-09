@@ -54,8 +54,8 @@ export interface CategoryData {
 // Get default data for a category
 const getDefaultCategoryData = (): CategoryData => ({
   voteLimits: {
-    preferential1: 1,
-    preferential2: 1,
+    preferential1: 30,
+    preferential2: 30,
   },
   voteEntries: [],
   activeSection: 'recuento',
@@ -64,27 +64,27 @@ const getDefaultCategoryData = (): CategoryData => ({
 // Initialize with default data for all categories
 const getInitialCategoryData = (): Record<string, CategoryData> => ({
   "presidencial": {
-    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteLimits: { preferential1: 30, preferential2: 30 },
     voteEntries: [],
     activeSection: "recuento"
   },
   "senadoresNacional": {
-    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteLimits: { preferential1: 30, preferential2: 30 },
     voteEntries: [],
     activeSection: "recuento"
   },
   "senadoresRegional": {
-    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteLimits: { preferential1: 30, preferential2: 30 },
     voteEntries: [],
     activeSection: "recuento"
   },
   "diputados": {
-    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteLimits: { preferential1: 30, preferential2: 30 },
     voteEntries: [],
     activeSection: "recuento"
   },
   "parlamentoAndino": {
-    voteLimits: { preferential1: 1, preferential2: 1 },
+    voteLimits: { preferential1: 30, preferential2: 30 },
     voteEntries: [],
     activeSection: "recuento"
   }
