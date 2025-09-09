@@ -14,9 +14,56 @@ import {
   type CategoryData,
 } from "../lib/localStorage";
 
+// Types for Ubigeo data
+type UbigeoRecord = {
+  ubigeo_reniec: string;
+  ubigeo_inei: string;
+  departamento_inei: string;
+  departamento: string;
+  provincia_inei: string;
+  provincia: string;
+  distrito: string;
+};
+
 export function ElectoralDashboard() {
   const [activeCategory, setActiveCategory] = useState(() => getActiveCategory());
   const [categoryData, setCategoryData] = useState(() => getAllCategoryData());
+  
+  // Ubigeo state
+  const [ubigeoData, setUbigeoData] = useState<UbigeoRecord[]>([]);
+  const [selectedDepartamento, setSelectedDepartamento] = useState<string>("");
+  const [selectedProvincia, setSelectedProvincia] = useState<string>("");
+  const [selectedDistrito, setSelectedDistrito] = useState<string>("");
+
+  // Load Ubigeo data from CSV
+  useEffect(() => {
+    const loadUbigeoData = async () => {
+      try {
+        const response = await fetch('/TB_UBIGEOS.csv');
+        const text = await response.text();
+        const lines = text.split('\n').slice(1); // Skip header
+        const records: UbigeoRecord[] = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const [ubigeo_reniec, ubigeo_inei, departamento_inei, departamento, provincia_inei, provincia, distrito] = line.split(';');
+            return {
+              ubigeo_reniec,
+              ubigeo_inei,
+              departamento_inei,
+              departamento,
+              provincia_inei,
+              provincia,
+              distrito
+            };
+          });
+        setUbigeoData(records);
+      } catch (error) {
+        console.error('Error loading ubigeo data:', error);
+      }
+    };
+    
+    loadUbigeoData();
+  }, []);
 
   // Save activeCategory to localStorage when it changes
   useEffect(() => {
@@ -81,6 +128,46 @@ export function ElectoralDashboard() {
     { key: "organizaciones", label: "Organizaciones Políticas", icon: Settings },
   ];
 
+  // Get unique departamentos
+  const getDepartamentos = () => {
+    const unique = Array.from(new Set(ubigeoData.map(record => record.departamento)));
+    return unique.sort();
+  };
+
+  // Get provincias for selected departamento
+  const getProvincias = (departamento: string) => {
+    if (!departamento) return [];
+    const filtered = ubigeoData.filter(record => record.departamento === departamento);
+    const unique = Array.from(new Set(filtered.map(record => record.provincia)));
+    return unique.sort();
+  };
+
+  // Get distritos for selected provincia
+  const getDistritos = (departamento: string, provincia: string) => {
+    if (!departamento || !provincia) return [];
+    const filtered = ubigeoData.filter(record => 
+      record.departamento === departamento && record.provincia === provincia
+    );
+    const unique = Array.from(new Set(filtered.map(record => record.distrito)));
+    return unique.sort();
+  };
+
+  // Handle departamento change
+  const handleDepartamentoChange = (value: string) => {
+    setSelectedDepartamento(value);
+    setSelectedProvincia("");
+    setSelectedDistrito("");
+  };
+
+  // Handle provincia change
+  const handleProvinciaChange = (value: string) => {
+    setSelectedProvincia(value);
+    setSelectedDistrito("");
+  };
+
+  // Check if location dropdowns should be visible
+  const showLocationDropdowns = activeSection === 'ingreso' || activeSection === 'recuento';
+
   const renderSection = () => {
     const data = mockElectoralData[activeCategory];
     const preferentialConfig = getPreferentialVoteConfig(activeCategory);
@@ -88,7 +175,15 @@ export function ElectoralDashboard() {
     
     switch (activeSection) {
       case "recuento":
-        return <ElectoralCountTable data={data} category={activeCategory} />;
+        return <ElectoralCountTable 
+          data={data} 
+          category={activeCategory} 
+          selectedLocation={{
+            departamento: selectedDepartamento,
+            provincia: selectedProvincia,
+            distrito: selectedDistrito
+          }}
+        />;
       case "ingreso":
         return <VoteEntryForm 
           category={activeCategory} 
@@ -161,6 +256,61 @@ export function ElectoralDashboard() {
                 })}
               </SelectContent>
             </Select>
+
+            {/* Location Dropdowns - Only visible for ingreso and recuento */}
+            {showLocationDropdowns && (
+              <>
+                {/* Departamento Dropdown */}
+                <Select value={selectedDepartamento} onValueChange={handleDepartamentoChange}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getDepartamentos().map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Provincia Dropdown */}
+                <Select 
+                  value={selectedProvincia} 
+                  onValueChange={handleProvinciaChange}
+                  disabled={!selectedDepartamento}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Provincia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getProvincias(selectedDepartamento).map((prov) => (
+                      <SelectItem key={prov} value={prov}>
+                        {prov}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Distrito Dropdown */}
+                <Select 
+                  value={selectedDistrito} 
+                  onValueChange={setSelectedDistrito}
+                  disabled={!selectedProvincia}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Distrito" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getDistritos(selectedDepartamento, selectedProvincia).map((dist) => (
+                      <SelectItem key={dist} value={dist}>
+                        {dist}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
             </div>
             <Badge 
               variant="secondary" 
