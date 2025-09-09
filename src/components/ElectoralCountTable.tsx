@@ -132,25 +132,21 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
           <Table>
             <TableHeader>
               <TableRow className="text-white h-6" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                <TableHead className="w-20 text-center font-semibold text-white py-1 h-6">CÓDIGO</TableHead>
-                <TableHead className="font-semibold text-white py-1 h-6">ORGANIZACIÓN POLÍTICA</TableHead>
-                <TableHead className="w-32 text-center font-semibold text-white py-1 h-6">TOTAL DE VOTOS</TableHead>
+                <TableHead className="w-16 text-center font-semibold text-white py-1 h-6" rowSpan={2}>CÓDIGO</TableHead>
+                <TableHead className="font-semibold text-white py-1 h-6" rowSpan={2}>ORGANIZACIÓN POLÍTICA</TableHead>
+                <TableHead className="text-center font-semibold text-white py-1" rowSpan={2} style={{ width: '80px', minWidth: '80px', maxWidth: '80px', whiteSpace: 'normal', lineHeight: '1.2', fontSize: '0.80rem' }}>TOTAL DE VOTOS</TableHead>
                 {showPreferentialColumns && (
                   <>
                     <TableHead className="text-center font-semibold text-white border-l-2 border-white py-1 h-6" colSpan={30}>VOTO PREFERENCIAL</TableHead>
-                    <TableHead className="w-20 text-center font-semibold text-white border-l-2 border-white py-1 h-6">TOTAL VP</TableHead>
+                    <TableHead className="w-20 text-center font-semibold text-white border-l-2 border-white py-1 h-6" rowSpan={2}>TOTAL VP</TableHead>
                   </>
                 )}
               </TableRow>
               {showPreferentialColumns && (
                 <TableRow className="text-white h-6" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
-                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
-                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
                   {Array.from({length: 30}, (_, i) => (
                     <TableHead key={i + 1} className="w-8 text-center font-semibold text-red-600 bg-gray-300 text-xs px-1 py-0 h-6">{i + 1}</TableHead>
                   ))}
-                  <TableHead className="text-transparent py-0 h-6">.</TableHead>
                 </TableRow>
               )}
             </TableHeader>
