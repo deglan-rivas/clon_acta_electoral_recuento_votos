@@ -296,7 +296,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
             <Table>
               <TableHeader>
                 <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
-                  <TableHead className="text-white text-center font-semibold">N° VOTANTES</TableHead>
+                  <TableHead className="text-white text-center font-semibold">N° CÉDULA</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
@@ -427,10 +427,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                       <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
                       <TableCell className="py-3">{entry.party}</TableCell>
                       {preferentialConfig.hasPreferential1 && (
-                        <TableCell className="text-center font-semibold">{entry.preferentialVote1}</TableCell>
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1}</TableCell>
                       )}
                       {preferentialConfig.hasPreferential2 && (
-                        <TableCell className="text-center font-semibold">{entry.preferentialVote2}</TableCell>
+                        <TableCell className="text-center font-semibold">{entry.preferentialVote2 === 0 ? "-" : entry.preferentialVote2}</TableCell>
                       )}
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
