@@ -107,6 +107,20 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
       return;
     }
 
+    // Validate that preferential votes are not allowed with BLANCO or NULO
+    if (isBlankOrNull(newEntry.party || "") && (pref1 > 0 || pref2 > 0)) {
+      toast.error("No se pueden ingresar votos preferenciales con BLANCO o NULO", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
     // Validate that preferential votes are different when both are enabled
     if (preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2) {
       if (pref1 > 0 && pref2 > 0 && pref1 === pref2) {
@@ -126,8 +140,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const entry: VoteEntry = {
       tableNumber: newEntry.tableNumber!,
       party: newEntry.party!,
-      preferentialVote1: pref1,
-      preferentialVote2: pref2,
+      preferentialVote1: isBlankOrNull(newEntry.party || "") ? 0 : pref1,
+      preferentialVote2: isBlankOrNull(newEntry.party || "") ? 0 : pref2,
     };
 
     const updatedEntries = [...entries, entry];
@@ -195,6 +209,20 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
       return;
     }
 
+    // Validate that preferential votes are not allowed with BLANCO or NULO
+    if (isBlankOrNull(newEntry.party || "") && (pref1 > 0 || pref2 > 0)) {
+      toast.error("No se pueden ingresar votos preferenciales con BLANCO o NULO", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
     // Validate that preferential votes are different when both are enabled
     if (preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2) {
       if (pref1 > 0 && pref2 > 0 && pref1 === pref2) {
@@ -214,8 +242,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const updatedEntry: VoteEntry = {
       tableNumber: newEntry.tableNumber!,
       party: newEntry.party!,
-      preferentialVote1: pref1,
-      preferentialVote2: pref2,
+      preferentialVote1: isBlankOrNull(newEntry.party || "") ? 0 : pref1,
+      preferentialVote2: isBlankOrNull(newEntry.party || "") ? 0 : pref2,
     };
 
     const updatedEntries = entries.map(entry => 
@@ -247,7 +275,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     });
   };
 
-
+  // Helper function to check if party is BLANCO or NULO
+  const isBlankOrNull = (party: string) => {
+    return party === "BLANCO" || party === "NULO" || party.includes("BLANCO") || party.includes("NULO");
+  };
 
   return (
     <div className="space-y-6">
@@ -291,7 +322,19 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                   <TableCell className="px-2">
                     <Combobox
                       value={newEntry.party}
-                      onValueChange={(value) => setNewEntry({ ...newEntry, party: value })}
+                      onValueChange={(value) => {
+                        // Reset preferential votes if BLANCO or NULO is selected
+                        if (isBlankOrNull(value)) {
+                          setNewEntry({ 
+                            ...newEntry, 
+                            party: value, 
+                            preferentialVote1: 0, 
+                            preferentialVote2: 0 
+                          });
+                        } else {
+                          setNewEntry({ ...newEntry, party: value });
+                        }
+                      }}
                       options={politicalOrganizations.map((org) => ({
                         value: org.order ? `${org.order} | ${org.name}` : org.name,
                         label: org.order ? `${org.order} | ${org.name}` : org.name,
@@ -316,7 +359,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                             setNewEntry({ ...newEntry, preferentialVote1: value });
                           }
                         }}
-                        className="h-12 text-center text-lg font-semibold"
+                        disabled={isBlankOrNull(newEntry.party || "")}
+                        className={`h-12 text-center text-lg font-semibold ${
+                          isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                       />
                     </TableCell>
                   )}
@@ -334,7 +380,10 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                             setNewEntry({ ...newEntry, preferentialVote2: value });
                           }
                         }}
-                        className="h-12 text-center text-lg font-semibold"
+                        disabled={isBlankOrNull(newEntry.party || "")}
+                        className={`h-12 text-center text-lg font-semibold ${
+                          isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                       />
                     </TableCell>
                   )}
