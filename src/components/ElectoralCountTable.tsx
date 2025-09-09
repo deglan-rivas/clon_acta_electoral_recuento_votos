@@ -60,8 +60,36 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
   
   const { voteCount, matrix: preferentialMatrix } = calculateVoteData();
   
-  // Calculate total votes emitted
-  const totalVotesEmitted = Object.values(voteCount).reduce((sum, count) => sum + count, 0) + data.statistics.blankVotes + data.statistics.nullVotes;
+  // Calculate statistics from actual vote counts
+  const calculateStatistics = () => {
+    const blancoVotes = voteCount['BLANCO'] || 0;
+    const nuloVotes = voteCount['NULO'] || 0;
+    const blankAndNullVotes = blancoVotes + nuloVotes;
+    
+    // Total votes emitted excludes BLANCO and NULO
+    const totalValidVotes = Object.entries(voteCount)
+      .filter(([party]) => party !== 'BLANCO' && party !== 'NULO')
+      .reduce((sum, [, count]) => sum + count, 0);
+    
+    const totalVotesEmitted = totalValidVotes;
+    const totalVotersWhoVoted = totalValidVotes + blankAndNullVotes;
+    
+    // Calculate participation and absenteeism percentages
+    const participationRate = data.totalEligibleVoters > 0 
+      ? (totalVotersWhoVoted / data.totalEligibleVoters * 100)
+      : 0;
+    const absenteeismRate = 100 - participationRate;
+    
+    return {
+      totalVotesEmitted,
+      totalVotersWhoVoted,
+      blankAndNullVotes,
+      participationRate,
+      absenteeismRate
+    };
+  };
+  
+  const stats = calculateStatistics();
 
   return (
     <div className="space-y-6">
@@ -92,7 +120,7 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
               <span className="text-sm font-medium text-green-700">Total de Ciudadanos que Votaron:</span>
-              <p className="text-xl font-semibold text-green-900">{data.totalVotersTurnout}</p>
+              <p className="text-xl font-semibold text-green-900">{stats.totalVotersWhoVoted}</p>
             </div>
           </div>
         </CardHeader>
@@ -185,19 +213,19 @@ export function ElectoralCountTable({ data, category }: ElectoralCountTableProps
         <CardContent className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-lg font-semibold text-blue-900">{totalVotesEmitted}</div>
+              <div className="text-lg font-semibold text-blue-900">{stats.totalVotesEmitted}</div>
               <div className="text-sm text-blue-700">TOTAL DE VOTOS EMITIDOS</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-lg font-semibold text-green-900">{data.statistics.participationRate}%</div>
+              <div className="text-lg font-semibold text-green-900">{stats.participationRate.toFixed(2)}%</div>
               <div className="text-sm text-green-700">% DE PARTICIPACIÓN</div>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-lg font-semibold text-yellow-900">{data.statistics.absenteeismRate}%</div>
+              <div className="text-lg font-semibold text-yellow-900">{stats.absenteeismRate.toFixed(2)}%</div>
               <div className="text-sm text-yellow-700">% AUSENTISMO</div>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-lg font-semibold text-red-900">{data.statistics.blankVotes + data.statistics.nullVotes}</div>
+              <div className="text-lg font-semibold text-red-900">{stats.blankAndNullVotes}</div>
               <div className="text-sm text-red-700">VOTOS EN BLANCO + NULOS</div>
             </div>
           </div>
