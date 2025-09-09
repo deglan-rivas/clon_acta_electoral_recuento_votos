@@ -288,8 +288,8 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
-              Votos Registrados
-              <Badge variant="secondary">{entries.length} registros</Badge>
+              Cédulas Recontadas
+              <Badge variant="secondary" className="text-base font-normal">{entries.length} cédula(s)</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
