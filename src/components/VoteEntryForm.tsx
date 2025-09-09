@@ -71,7 +71,13 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
 
   const handleAddEntry = () => {
     if (!newEntry.party) {
-      toast.error("Por favor seleccione una organización política");
+      toast.error("Por favor seleccione una organización política", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
     }
 
@@ -80,13 +86,41 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const pref2 = newEntry.preferentialVote2 || 0;
 
     if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
-      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
     }
 
     if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
-      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
+    }
+
+    // Validate that preferential votes are different when both are enabled
+    if (preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2) {
+      if (pref1 > 0 && pref2 > 0 && pref1 === pref2) {
+        toast.error("Los votos preferenciales 1 y 2 deben tener valores diferentes", {
+          style: {
+            background: '#dc2626',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '16px'
+          },
+          duration: 4000
+        });
+        return;
+      }
     }
 
     const entry: VoteEntry = {
@@ -125,7 +159,13 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
 
   const handleConfirmEdit = () => {
     if (!newEntry.party) {
-      toast.error("Por favor seleccione una organización política");
+      toast.error("Por favor seleccione una organización política", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
     }
 
@@ -134,13 +174,41 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     const pref2 = newEntry.preferentialVote2 || 0;
 
     if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
-      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      toast.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
     }
 
     if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
-      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      toast.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
       return;
+    }
+
+    // Validate that preferential votes are different when both are enabled
+    if (preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2) {
+      if (pref1 > 0 && pref2 > 0 && pref1 === pref2) {
+        toast.error("Los votos preferenciales 1 y 2 deben tener valores diferentes", {
+          style: {
+            background: '#dc2626',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '16px'
+          },
+          duration: 4000
+        });
+        return;
+      }
     }
 
     const updatedEntry: VoteEntry = {
