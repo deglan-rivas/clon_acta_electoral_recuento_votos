@@ -37,6 +37,11 @@ export function ElectoralDashboard() {
   const [selectedProvincia, setSelectedProvincia] = useState<string>("");
   const [selectedDistrito, setSelectedDistrito] = useState<string>("");
 
+  // Mesa data entry state
+  const [mesaNumber, setMesaNumber] = useState<number>(0);
+  const [totalElectores, setTotalElectores] = useState<number>(0);
+  const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
+
   // Load Ubigeo data from CSV
   useEffect(() => {
     const loadUbigeoData = async () => {
@@ -185,6 +190,8 @@ export function ElectoralDashboard() {
             provincia: selectedProvincia,
             distrito: selectedDistrito
           }}
+          totalElectores={totalElectores}
+          totalCedulasRecibidas={totalCedulasRecibidas}
         />;
       case "ingreso":
         return <VoteEntryForm 
@@ -193,6 +200,14 @@ export function ElectoralDashboard() {
           voteLimits={voteLimits} 
           preferentialConfig={preferentialConfig}
           onEntriesChange={(entries) => updateCurrentCategoryData({ voteEntries: entries })}
+          mesaNumber={mesaNumber}
+          totalElectores={totalElectores}
+          totalCedulasRecibidas={totalCedulasRecibidas}
+          onMesaDataChange={(mesa, electores, cedulas) => {
+            setMesaNumber(mesa);
+            setTotalElectores(electores);
+            setTotalCedulasRecibidas(cedulas);
+          }}
         />;
       case "organizaciones":
         return <PoliticalOrganizations 
@@ -210,7 +225,7 @@ export function ElectoralDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Compact Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-3 gap-4">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
               <div className="flex items-center space-x-3">
@@ -311,6 +326,14 @@ export function ElectoralDashboard() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {/* Mesa Number Display */}
+                {mesaNumber > 0 && (
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                    <span className="text-xs font-medium text-orange-700">Mesa:</span>
+                    <span className="text-sm font-semibold text-orange-900 ml-1">{String(mesaNumber).padStart(3, '0')}</span>
+                  </div>
+                )}
               </>
             )}
             </div>

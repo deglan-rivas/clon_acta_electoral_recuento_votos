@@ -13,9 +13,11 @@ interface ElectoralCountTableProps {
     provincia: string;
     distrito: string;
   };
+  totalElectores?: number;
+  totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, selectedLocation }: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, selectedLocation, totalElectores = 0, totalCedulasRecibidas = 0 }: ElectoralCountTableProps) {
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
@@ -106,11 +108,11 @@ export function ElectoralCountTable({ data, category, selectedLocation }: Electo
             <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
               <span className="text-xs font-medium text-blue-700">Electores Hábiles</span>
               {/* <p className="text-lg font-semibold text-blue-900">{data.totalEligibleVoters}</p> */}
-              <p className="text-lg font-semibold text-blue-900">300</p>
+              <p className="text-lg font-semibold text-blue-900">{totalElectores || 0}</p>
             </div>
             <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
               <span className="text-xs font-medium text-green-700">Ciudadanos que Votaron</span>
-              <p className="text-lg font-semibold text-green-900">290</p>
+              <p className="text-lg font-semibold text-green-900">{totalCedulasRecibidas || 0}</p>
               {/* <p className="text-lg font-semibold text-green-900">{stats.totalVotersWhoVoted}</p> */}
             </div>
             <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
