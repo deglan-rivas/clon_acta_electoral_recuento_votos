@@ -20791,6 +20791,13 @@ const saveToLocalStorage = (key, value) => {
     console.warn(`Error saving to localStorage for key "${key}":`, error);
   }
 };
+const removeFromLocalStorage = (key) => {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn(`Error removing from localStorage for key "${key}":`, error);
+  }
+};
 const getActiveCategory = () => {
   return getFromLocalStorage(STORAGE_KEYS.ACTIVE_CATEGORY, "presidencial");
 };
@@ -20843,6 +20850,19 @@ const saveCategoryData = (category, data) => {
   const allData = getAllCategoryData();
   allData[category] = data;
   saveToLocalStorage(STORAGE_KEYS.CATEGORY_DATA, allData);
+};
+const clearElectoralData = () => {
+  Object.values(STORAGE_KEYS).forEach((key) => {
+    removeFromLocalStorage(key);
+  });
+  console.log("All electoral data cleared from localStorage");
+};
+const debugElectoralData = () => {
+  console.log("Electoral Dashboard localStorage data:");
+  Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+    const value = localStorage.getItem(key);
+    console.log(`${name}:`, value ? JSON.parse(value) : null);
+  });
 };
 function ElectoralCountTable({ data, category, selectedLocation }) {
   const showPreferentialColumns = ["senadoresNacional", "senadoresRegional", "diputados", "parlamentoAndino"].includes(category);
@@ -24052,6 +24072,10 @@ const Toaster2 = ({ ...props }) => {
   );
 };
 function App() {
+  reactExports.useEffect(() => {
+    window.clearElectoralData = clearElectoralData;
+    window.debugElectoralData = debugElectoralData;
+  }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(ElectoralDashboard, {}),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Toaster2, { position: "top-right" })

@@ -1,5 +1,9 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import log from 'electron-log/renderer'
+
+// Configure renderer logging
+log.transports.ipc.level = 'info'
 
 // Custom APIs for renderer
 const api = {
@@ -11,6 +15,13 @@ const api = {
   debugElectoralData: () => {
     // This will be implemented in the renderer
     return window.postMessage({ type: 'DEBUG_ELECTORAL_DATA' }, '*')
+  },
+  // Expose logging to renderer
+  log: {
+    info: (message: string, ...args: any[]) => log.info(message, ...args),
+    warn: (message: string, ...args: any[]) => log.warn(message, ...args),
+    error: (message: string, ...args: any[]) => log.error(message, ...args),
+    debug: (message: string, ...args: any[]) => log.debug(message, ...args)
   }
 }
 
@@ -23,6 +34,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
     console.error(error)
+    log.error('Failed to expose APIs to renderer:', error)
   }
 } else {
   // @ts-ignore (define in dts)

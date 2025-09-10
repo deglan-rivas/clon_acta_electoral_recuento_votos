@@ -1,7 +1,31 @@
 import { app, shell, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import log from 'electron-log'
 import icon from '../../resources/icon.ico?asset'
+
+// Configure electron-log
+log.transports.file.level = 'info'
+log.transports.console.level = 'info'
+
+// Set log file location and name
+log.transports.file.fileName = 'acta-electoral.log'
+log.transports.file.maxSize = 10 * 1024 * 1024 // 10MB
+
+// Add timestamp format
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+
+// Catch and log unhandled errors
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  log.error('Unhandled Rejection at:', promise, 'reason:', reason)
+})
+
+log.info('Application starting...')
 
 function createWindow(): void {
   // Create the browser window.
@@ -60,6 +84,13 @@ function createWindow(): void {
           click: () => {
             mainWindow.reload()
           }
+        },
+        {
+          label: 'Ver Ubicación de Logs',
+          click: () => {
+            const logPath = log.transports.file.getFile().path
+            shell.showItemInFolder(logPath)
+          }
         }
       ]
     }
@@ -99,6 +130,13 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()
     mainWindow.show()
+    log.info('Main window shown')
+  })
+
+  // Log renderer process console messages
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    const logLevel = level === 0 ? 'info' : level === 1 ? 'warn' : 'error'
+    log[logLevel](`Renderer [${sourceId}:${line}]: ${message}`)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
