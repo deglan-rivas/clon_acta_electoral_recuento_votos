@@ -72,6 +72,7 @@ export function ElectoralDashboard() {
     loadUbigeoData();
   }, []);
 
+
   // Save activeCategory to localStorage when it changes
   useEffect(() => {
     saveActiveCategory(activeCategory);
@@ -195,7 +196,9 @@ export function ElectoralDashboard() {
         />;
       case "ingreso":
         return <VoteEntryForm 
+          key={`${activeCategory}`}
           category={activeCategory} 
+          categoryLabel={categories.find(cat => cat.key === activeCategory)?.label}
           existingEntries={currentCategoryData?.voteEntries || []} 
           voteLimits={voteLimits} 
           preferentialConfig={preferentialConfig}

@@ -1,4 +1,4 @@
-import require$$0$5, { app, session, ipcMain, BrowserWindow, Menu, shell } from "electron";
+import require$$0$5, { app, session, ipcMain, BrowserWindow, Menu, shell, dialog } from "electron";
 import require$$2, { join } from "path";
 import require$$0$1 from "child_process";
 import require$$1 from "os";
@@ -2633,8 +2633,9 @@ process.on("unhandledRejection", (reason, promise) => {
   log.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 log.info("Application starting...");
+let mainWindow;
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  const newWindow = new BrowserWindow({
     width: 1920,
     height: 1080,
     show: false,
@@ -2666,20 +2667,37 @@ function createWindow() {
       submenu: [
         {
           label: "Reiniciar Datos de la Aplicación",
-          click: () => {
-            mainWindow.webContents.executeJavaScript(`
-              const confirmed = confirm('¿Está seguro de que desea eliminar todos los datos guardados?\\n\\nEsta acción eliminará:\\n- Todas las configuraciones\\n- Todos los votos ingresados\\n- Límites configurados\\n\\nEsta acción no se puede deshacer.');
-              
-              if (confirmed) {
-                if (window.clearElectoralData) {
-                  window.clearElectoralData();
-                } else {
-                  localStorage.clear();
-                }
-                alert('Datos eliminados exitosamente. La aplicación se reiniciará.');
-                location.reload();
+          click: async () => {
+            const response = await dialog.showMessageBox(mainWindow, {
+              type: "warning",
+              buttons: ["Cancelar", "Reiniciar Datos"],
+              defaultId: 0,
+              title: "Reiniciar Datos de la Aplicación",
+              message: "¿Está seguro de que desea eliminar todos los datos guardados?",
+              detail: "Esta acción eliminará:\n- Todas las configuraciones\n- Todos los votos ingresados\n- Límites configurados\n\nEsta acción no se puede deshacer."
+            });
+            if (response.response === 1) {
+              try {
+                await mainWindow.webContents.executeJavaScript(`
+                  localStorage.clear(); 
+                  sessionStorage.clear();
+                  
+                  // Dispatch a custom event to trigger app remount
+                  window.dispatchEvent(new CustomEvent('app-reset'));
+                `);
+                setTimeout(() => {
+                  mainWindow.blur();
+                  setTimeout(() => {
+                    mainWindow.focus();
+                    log.info("Window focus cycle completed");
+                  }, 100);
+                }, 500);
+                log.info("Application data cleared and reset event dispatched");
+              } catch (error) {
+                log.error("Error clearing data:", error);
+                dialog.showErrorBox("Error", "Error al eliminar datos. Intente cerrar y reabrir la aplicación.");
               }
-            `);
+            }
           }
         },
         {
@@ -2727,33 +2745,35 @@ function createWindow() {
   }
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.maximize();
-    mainWindow.show();
+  newWindow.on("ready-to-show", () => {
+    newWindow.maximize();
+    newWindow.show();
     log.info("Main window shown");
   });
-  mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
+  newWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
     const logLevel = level === 0 ? "info" : level === 1 ? "warn" : "error";
     log[logLevel](`Renderer [${sourceId}:${line}]: ${message}`);
   });
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  newWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: "deny" };
   });
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    newWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    newWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
+  mainWindow = newWindow;
+  return newWindow;
 }
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.electron");
   app.on("browser-window-created", (_, window2) => {
     optimizer.watchWindowShortcuts(window2);
   });
-  createWindow();
+  mainWindow = createWindow();
   app.on("activate", function() {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
   });
 });
 app.on("window-all-closed", () => {
