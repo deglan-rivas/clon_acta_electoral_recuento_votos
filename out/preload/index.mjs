@@ -1,5 +1,4 @@
 import { webUtils, webFrame, ipcRenderer, contextBridge } from "electron";
-import log from "electron-log/renderer";
 const electronAPI = {
   ipcRenderer: {
     send(channel, ...args) {
@@ -78,8 +77,6 @@ const electronAPI = {
     }
   }
 };
-<<<<<<< HEAD
-=======
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
 }
@@ -706,7 +703,6 @@ function requireRenderer() {
 }
 var rendererExports = requireRenderer();
 const log = /* @__PURE__ */ getDefaultExportFromCjs(rendererExports);
->>>>>>> b845552da6ee87e62af778c6d90046646abf8981
 log.transports.ipc.level = "info";
 const api = {
   // Expose localStorage utilities for developer menu

@@ -53,6 +53,18 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
   }, [mesaNumber, totalElectores, totalCedulasRecibidas]);
 
+  // Reset form state when category changes
+  useEffect(() => {
+    setNewEntry({
+      tableNumber: getNextTableNumber(),
+      party: "",
+      preferentialVote1: 0,
+      preferentialVote2: 0,
+    });
+    setEditingTableNumber(null);
+    setOriginalEntry(null);
+  }, [category]);
+
   // Report entries changes to parent component
   const updateEntries = (newEntries: VoteEntry[]) => {
     setEntries(newEntries);
@@ -420,7 +432,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
       <div className="grid grid-cols-12 gap-6 w-full">
         
         {/* Horizontal Progress Bars Summary - Left Side (5/12 width) */}
-        <Card className="w-full col-span-5">
+        <Card className="w-full col-span-4">
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2">
               RESUMEN ACTA - {categoryLabel?.toUpperCase() || category.toUpperCase().replace(/([A-Z])/g, ' $1').trim()}
@@ -480,7 +492,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         </Card>
 
         {/* Entries Table - Right Side (7/12 width) */}
-        <Card className="w-full col-span-7">
+        <Card className="w-full col-span-8">
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
               CÉDULAS RECONTADAS
