@@ -20864,7 +20864,7 @@ const debugElectoralData = () => {
     console.log(`${name}:`, value ? JSON.parse(value) : null);
   });
 };
-function ElectoralCountTable({ data, category, selectedLocation }) {
+function ElectoralCountTable({ data, category, selectedLocation, totalElectores = 0, totalCedulasRecibidas = 0 }) {
   const showPreferentialColumns = ["senadoresNacional", "senadoresRegional", "diputados", "parlamentoAndino"].includes(category);
   const categoryData = getCategoryData(category);
   const voteEntries = categoryData.voteEntries || [];
@@ -20919,11 +20919,11 @@ function ElectoralCountTable({ data, category, selectedLocation }) {
     /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-8 gap-3", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-blue-50 p-3 rounded-lg text-center border border-gray-200", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-blue-700", children: "Electores Hábiles" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-blue-900", children: "300" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-blue-900", children: totalElectores || 0 })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-green-50 p-3 rounded-lg text-center border border-gray-200", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-green-700", children: "Ciudadanos que Votaron" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-green-900", children: "290" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg font-semibold text-green-900", children: totalCedulasRecibidas || 0 })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-blue-50 p-3 rounded-lg text-center border border-gray-200", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-blue-700", children: "Recuento de Votos" }),
@@ -23338,11 +23338,19 @@ const Toaster$1 = /* @__PURE__ */ React.forwardRef(function Toaster(props, ref) 
     }))
   );
 });
-function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange }) {
+function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }) {
   const [entries, setEntries] = reactExports.useState(existingEntries);
+  const [localMesaNumber, setLocalMesaNumber] = reactExports.useState(mesaNumber);
+  const [localTotalElectores, setLocalTotalElectores] = reactExports.useState(totalElectores);
+  const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = reactExports.useState(totalCedulasRecibidas);
   reactExports.useEffect(() => {
     setEntries(existingEntries);
   }, [existingEntries]);
+  reactExports.useEffect(() => {
+    setLocalMesaNumber(mesaNumber);
+    setLocalTotalElectores(totalElectores);
+    setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
+  }, [mesaNumber, totalElectores, totalCedulasRecibidas]);
   const updateEntries = (newEntries) => {
     setEntries(newEntries);
     onEntriesChange(newEntries);
@@ -23544,153 +23552,244 @@ function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentia
   const isBlankOrNull = (party) => {
     return party === "BLANCO" || party === "NULO" || party.includes("BLANCO") || party.includes("NULO");
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-6", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CardHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "text-base flex items-center justify-between", children: [
-      "Cédulas Recontadas",
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(Badge, { variant: "secondary", className: "text-base font-normal", children: [
-        entries.length,
-        " cédula(s)"
-      ] })
-    ] }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Table, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(TableHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: "text-white", style: { backgroundColor: "oklch(0.5200 0.2100 15)" }, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white text-center font-semibold", children: "N° CÉDULA" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white font-semibold", children: "INGRESAR VOTOS" }),
-        preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "VOTO PREF. 1" }),
-        preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "VOTO PREF. 2" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "ACCIÓN" })
-      ] }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(TableBody, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: "border-2", style: { backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+  const handleSaveMesaData = () => {
+    if (localMesaNumber <= 0 || localTotalElectores <= 0 || localTotalCedulasRecibidas <= 0) {
+      toast.error("Todos los valores deben ser mayores a 0", {
+        style: {
+          background: "#dc2626",
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "16px"
+        },
+        duration: 4e3
+      });
+      return;
+    }
+    if (localTotalCedulasRecibidas > localTotalElectores) {
+      toast.error("Las cédulas recibidas no pueden ser mayores que el total de electores", {
+        style: {
+          background: "#dc2626",
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "16px"
+        },
+        duration: 4e3
+      });
+      return;
+    }
+    onMesaDataChange(localMesaNumber, localTotalElectores, localTotalCedulasRecibidas);
+    toast.success("Datos de mesa guardados exitosamente", {
+      style: {
+        background: "#16a34a",
+        color: "white",
+        fontWeight: "bold"
+      },
+      duration: 2e3
+    });
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Card, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-6", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-gray-50 p-2 rounded border border-gray-300 flex flex-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-700 flex items-center pr-2", children: "N° Mesa" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
             Input,
             {
               type: "number",
-              placeholder: "Número automático",
-              value: newEntry.tableNumber || "",
-              disabled: true,
-              className: "h-12 text-center text-lg font-semibold bg-gray-50 cursor-not-allowed"
+              min: 1,
+              value: localMesaNumber || "",
+              onChange: (e) => setLocalMesaNumber(parseInt(e.target.value) || 0),
+              className: "max-w-16 text-center font-semibold",
+              placeholder: "0"
             }
-          ) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Combobox,
-            {
-              value: newEntry.party,
-              onValueChange: (value) => {
-                if (isBlankOrNull(value)) {
-                  setNewEntry({
-                    ...newEntry,
-                    party: value,
-                    preferentialVote1: 0,
-                    preferentialVote2: 0
-                  });
-                } else {
-                  setNewEntry({ ...newEntry, party: value });
-                }
-              },
-              options: politicalOrganizations.map((org) => ({
-                value: org.order ? `${org.order} | ${org.name}` : org.name,
-                label: org.order ? `${org.order} | ${org.name}` : org.name
-              })),
-              placeholder: "Seleccionar partido...",
-              searchPlaceholder: "Buscar partido...",
-              emptyText: "No se encontraron partidos",
-              className: "h-12 text-base"
-            }
-          ) }),
-          preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Input,
-            {
-              type: "number",
-              min: 0,
-              max: voteLimits.preferential1,
-              placeholder: "0",
-              value: newEntry.preferentialVote1 || "",
-              onChange: (e) => {
-                const value = parseInt(e.target.value) || 0;
-                if (value <= voteLimits.preferential1) {
-                  setNewEntry({ ...newEntry, preferentialVote1: value });
-                }
-              },
-              disabled: isBlankOrNull(newEntry.party || ""),
-              className: `h-12 text-center text-lg font-semibold ${isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""}`
-            }
-          ) }),
-          preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Input,
-            {
-              type: "number",
-              min: 0,
-              max: voteLimits.preferential2,
-              placeholder: "0",
-              value: newEntry.preferentialVote2 || "",
-              onChange: (e) => {
-                const value = parseInt(e.target.value) || 0;
-                if (value <= voteLimits.preferential2) {
-                  setNewEntry({ ...newEntry, preferentialVote2: value });
-                }
-              },
-              disabled: isBlankOrNull(newEntry.party || ""),
-              className: `h-12 text-center text-lg font-semibold ${isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""}`
-            }
-          ) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: editingTableNumber ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-1", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                onClick: handleConfirmEdit,
-                className: "p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200",
-                title: "Confirmar",
-                "aria-label": "Confirmar",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-6 w-6" })
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                onClick: handleCancelEdit,
-                className: "p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200",
-                title: "Cancelar",
-                "aria-label": "Cancelar",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { className: "h-6 w-6" })
-              }
-            )
-          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            Button,
-            {
-              onClick: handleAddEntry,
-              className: "h-12 px-6 text-base font-semibold text-white hover:opacity-90",
-              style: { backgroundColor: "oklch(0.5200 0.2100 15)" },
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(Plus, { className: "h-5 w-5 mr-2" }),
-                "AGREGAR"
-              ]
-            }
-          ) })
+          )
         ] }),
-        [...entries].reverse().map((entry, index2) => {
-          const isLastEntry = index2 === 0;
-          return /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: index2 % 2 === 0 ? "bg-white" : "bg-gray-50", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-medium", children: entry.tableNumber }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "py-3", children: entry.party }),
-            preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-semibold", children: entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1 }),
-            preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-semibold", children: entry.preferentialVote2 === 0 ? "-" : entry.preferentialVote2 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-center gap-1", children: isLastEntry && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-gray-50 p-2 rounded border border-gray-300 flex flex-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-700 flex items-center pr-2", children: "Total Electores" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              type: "number",
+              min: 1,
+              value: localTotalElectores || "",
+              onChange: (e) => setLocalTotalElectores(parseInt(e.target.value) || 0),
+              className: "max-w-16 text-center font-semibold",
+              placeholder: "0"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-gray-50 p-2 rounded border border-gray-300 flex flex-row", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-700 flex items-center pr-2", children: "Cédulas Recibidas" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              type: "number",
+              min: 1,
+              value: localTotalCedulasRecibidas || "",
+              onChange: (e) => setLocalTotalCedulasRecibidas(parseInt(e.target.value) || 0),
+              className: "max-w-16 text-center font-semibold",
+              placeholder: "0"
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Button,
+        {
+          onClick: handleSaveMesaData,
+          className: "bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded font-medium",
+          children: "Guardar"
+        }
+      )
+    ] }) }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(CardHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "text-base flex items-center justify-between", children: [
+        "Cédulas Recontadas",
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(Badge, { variant: "secondary", className: "text-base font-normal", children: [
+          entries.length,
+          " cédula(s)"
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(CardContent, { className: "p-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Table, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(TableHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: "text-white", style: { backgroundColor: "oklch(0.5200 0.2100 15)" }, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white text-center font-semibold", children: "N° CÉDULA" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white font-semibold", children: "INGRESAR VOTOS" }),
+          preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "VOTO PREF. 1" }),
+          preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "VOTO PREF. 2" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { className: "text-white w-32 text-center font-semibold", children: "ACCIÓN" })
+        ] }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(TableBody, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: "border-2", style: { backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)" }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Input,
               {
-                onClick: () => handleEditEntry(entry),
-                className: "p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200",
-                title: "Editar",
-                "aria-label": "Editar",
-                disabled: editingTableNumber !== null,
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(SquarePen, { className: "h-5 w-5" })
+                type: "number",
+                placeholder: "Número automático",
+                value: newEntry.tableNumber || "",
+                disabled: true,
+                className: "h-12 text-center text-lg font-semibold bg-gray-50 cursor-not-allowed"
               }
-            ) }) })
-          ] }, entries.length - 1 - index2);
-        })
-      ] })
-    ] }) })
-  ] }) });
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Combobox,
+              {
+                value: newEntry.party,
+                onValueChange: (value) => {
+                  if (isBlankOrNull(value)) {
+                    setNewEntry({
+                      ...newEntry,
+                      party: value,
+                      preferentialVote1: 0,
+                      preferentialVote2: 0
+                    });
+                  } else {
+                    setNewEntry({ ...newEntry, party: value });
+                  }
+                },
+                options: politicalOrganizations.map((org) => ({
+                  value: org.order ? `${org.order} | ${org.name}` : org.name,
+                  label: org.order ? `${org.order} | ${org.name}` : org.name
+                })),
+                placeholder: "Seleccionar partido...",
+                searchPlaceholder: "Buscar partido...",
+                emptyText: "No se encontraron partidos",
+                className: "h-12 text-base"
+              }
+            ) }),
+            preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Input,
+              {
+                type: "number",
+                min: 0,
+                max: voteLimits.preferential1,
+                placeholder: "0",
+                value: newEntry.preferentialVote1 || "",
+                onChange: (e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  if (value <= voteLimits.preferential1) {
+                    setNewEntry({ ...newEntry, preferentialVote1: value });
+                  }
+                },
+                disabled: isBlankOrNull(newEntry.party || ""),
+                className: `h-12 text-center text-lg font-semibold ${isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""}`
+              }
+            ) }),
+            preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Input,
+              {
+                type: "number",
+                min: 0,
+                max: voteLimits.preferential2,
+                placeholder: "0",
+                value: newEntry.preferentialVote2 || "",
+                onChange: (e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  if (value <= voteLimits.preferential2) {
+                    setNewEntry({ ...newEntry, preferentialVote2: value });
+                  }
+                },
+                disabled: isBlankOrNull(newEntry.party || ""),
+                className: `h-12 text-center text-lg font-semibold ${isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""}`
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "px-2", children: editingTableNumber ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: handleConfirmEdit,
+                  className: "p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200",
+                  title: "Confirmar",
+                  "aria-label": "Confirmar",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-6 w-6" })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: handleCancelEdit,
+                  className: "p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200",
+                  title: "Cancelar",
+                  "aria-label": "Cancelar",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { className: "h-6 w-6" })
+                }
+              )
+            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              Button,
+              {
+                onClick: handleAddEntry,
+                className: "h-12 px-6 text-base font-semibold text-white hover:opacity-90",
+                style: { backgroundColor: "oklch(0.5200 0.2100 15)" },
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Plus, { className: "h-5 w-5 mr-2" }),
+                  "AGREGAR"
+                ]
+              }
+            ) })
+          ] }),
+          [...entries].reverse().map((entry, index2) => {
+            const isLastEntry = index2 === 0;
+            return /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { className: index2 % 2 === 0 ? "bg-white" : "bg-gray-50", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-medium", children: entry.tableNumber }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "py-3", children: entry.party }),
+              preferentialConfig.hasPreferential1 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-semibold", children: entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1 }),
+              preferentialConfig.hasPreferential2 && /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center font-semibold", children: entry.preferentialVote2 === 0 ? "-" : entry.preferentialVote2 }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-center gap-1", children: isLastEntry && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: () => handleEditEntry(entry),
+                  className: "p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200",
+                  title: "Editar",
+                  "aria-label": "Editar",
+                  disabled: editingTableNumber !== null,
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(SquarePen, { className: "h-5 w-5" })
+                }
+              ) }) })
+            ] }, entries.length - 1 - index2);
+          })
+        ] })
+      ] }) })
+    ] })
+  ] });
 }
 function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-6", children: [
@@ -23808,6 +23907,9 @@ function ElectoralDashboard() {
   const [selectedDepartamento, setSelectedDepartamento] = reactExports.useState("");
   const [selectedProvincia, setSelectedProvincia] = reactExports.useState("");
   const [selectedDistrito, setSelectedDistrito] = reactExports.useState("");
+  const [mesaNumber, setMesaNumber] = reactExports.useState(0);
+  const [totalElectores, setTotalElectores] = reactExports.useState(0);
+  const [totalCedulasRecibidas, setTotalCedulasRecibidas] = reactExports.useState(0);
   reactExports.useEffect(() => {
     const loadUbigeoData = async () => {
       try {
@@ -23926,7 +24028,9 @@ function ElectoralDashboard() {
               departamento: selectedDepartamento,
               provincia: selectedProvincia,
               distrito: selectedDistrito
-            }
+            },
+            totalElectores,
+            totalCedulasRecibidas
           }
         );
       case "ingreso":
@@ -23937,7 +24041,15 @@ function ElectoralDashboard() {
             existingEntries: currentCategoryData?.voteEntries || [],
             voteLimits,
             preferentialConfig,
-            onEntriesChange: (entries) => updateCurrentCategoryData({ voteEntries: entries })
+            onEntriesChange: (entries) => updateCurrentCategoryData({ voteEntries: entries }),
+            mesaNumber,
+            totalElectores,
+            totalCedulasRecibidas,
+            onMesaDataChange: (mesa, electores, cedulas) => {
+              setMesaNumber(mesa);
+              setTotalElectores(electores);
+              setTotalCedulasRecibidas(cedulas);
+            }
           }
         );
       case "organizaciones":
@@ -23955,7 +24067,7 @@ function ElectoralDashboard() {
     }
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-h-screen bg-gray-50", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("header", { className: "bg-white border-b border-gray-200 shadow-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between py-3 gap-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("header", { className: "bg-white border-b border-gray-200 shadow-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-4 sm:px-6 lg:px-8", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between py-3 gap-4", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center space-x-3 flex-1 min-w-0", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center space-x-3", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: logoJne, className: "w-8 h-8" }),
@@ -24009,7 +24121,11 @@ function ElectoralDashboard() {
                 /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContent, { children: getDistritos(selectedDepartamento, selectedProvincia).map((dist) => /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: dist, children: dist }, dist)) })
               ]
             }
-          )
+          ),
+          mesaNumber > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-orange-50 px-3 py-2 rounded-lg border border-orange-200", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-orange-700", children: "Mesa:" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-orange-900 ml-1", children: String(mesaNumber).padStart(3, "0") })
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(

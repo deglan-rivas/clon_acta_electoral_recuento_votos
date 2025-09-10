@@ -5,10 +5,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin({
+      exclude: ['electron-log']
+    })]
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin({
+      exclude: ['electron-log']
+    })]
   },
   renderer: {
     resolve: {
