@@ -21,6 +21,7 @@ interface PreferentialConfig {
 
 interface VoteEntryFormProps {
   category: string;
+  categoryLabel?: string;
   existingEntries?: VoteEntry[];
   voteLimits: VoteLimits;
   preferentialConfig: PreferentialConfig;
@@ -31,7 +32,7 @@ interface VoteEntryFormProps {
   onMesaDataChange: (mesa: number, electores: number, cedulas: number) => void;
 }
 
-export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -338,6 +339,18 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     });
   };
 
+  // Calculate vote counts for horizontal bars
+  const calculateVoteData = () => {
+    const voteCount: { [party: string]: number } = {};
+    
+    // Count votes by party
+    entries.forEach(entry => {
+      voteCount[entry.party] = (voteCount[entry.party] || 0) + 1;
+    });
+    
+    return voteCount;
+  };
+
   return (
     <div className="space-y-6">
       {/* Mesa Data Entry Section */}
@@ -397,19 +410,81 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
         </CardContent>
       </Card>
 
-
-      {/* Entries Table */}
-        <Card>
+      {/* Side-by-side layout: Progress bars on left (5/12), Table on right (7/12) */}
+      <div className="grid grid-cols-12 gap-6 w-full">
+        
+        {/* Horizontal Progress Bars Summary - Left Side (5/12 width) */}
+        <Card className="w-full col-span-5">
           <CardHeader>
-            <CardTitle className="text-base flex items-center justify-between">
-              Cédulas Recontadas
+            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2">
+              RESUMEN ACTA - {categoryLabel?.toUpperCase() || category.toUpperCase().replace(/([A-Z])/g, ' $1').trim()}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(() => {
+              const voteCount = calculateVoteData();
+              const maxVotes = Math.max(...Object.values(voteCount), 1);
+              const totalVotes = entries.length;
+              
+              const votesWithData = Object.entries(voteCount).filter(([, count]) => count > 0);
+              
+              if (votesWithData.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">Sin votos registrados aún</p>
+                    <p className="text-xs mt-1">Los resultados aparecerán aquí cuando agregue votos</p>
+                  </div>
+                );
+              }
+              
+              return votesWithData
+                .sort(([,a], [,b]) => b - a)
+                .map(([party, count]) => {
+                  const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
+                  const barWidth = maxVotes > 0 ? (count / maxVotes) * 100 : 0;
+                  
+                  return (
+                    <div key={party} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-1">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <strong className="text-sm font-semibold">{party}:</strong>
+                          <span className="text-sm font-semibold text-red-800">{count} votos</span>
+                        </div>
+                        <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden relative">
+                          <div 
+                            className="h-full bg-red-800 transition-all duration-700 ease-out flex items-center justify-end pr-2 text-white text-xs font-semibold"
+                            style={{ width: `${barWidth}%` }}
+                          >
+                            {count}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {percentage.toFixed(1)}% del total
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+            })()}
+            
+            <div className="bg-red-800 text-white p-4 rounded-lg text-center font-semibold mt-4">
+              Total Procesado: {entries.length}/{totalCedulasRecibidas} cédulas ({totalCedulasRecibidas > 0 ? ((entries.length / totalCedulasRecibidas) * 100).toFixed(1) : '0.0'}%)
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Entries Table - Right Side (7/12 width) */}
+        <Card className="w-full col-span-7">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
+              CÉDULAS RECONTADAS
               <Badge variant="secondary" className="text-base font-normal">{entries.length} cédula(s)</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="px-6 py-0">
             <Table>
               <TableHeader>
-                <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
+                <TableRow className="text-white bg-red-800">
                   <TableHead className="text-white text-center font-semibold">N° CÉDULA</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
@@ -423,7 +498,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
               </TableHeader>
               <TableBody>
                 {/* Form row */}
-                <TableRow className="border-2" style={{backgroundColor: "oklch(0.9200 0.0120 15)", borderColor: "oklch(0.5200 0.2100 15)"}}>
+                <TableRow className="border-2 bg-red-50 border-red-800">
                   <TableCell className="px-2">
                     <Input
                       type="number"
@@ -524,8 +599,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
                     ) : (
                       <Button 
                         onClick={handleAddEntry} 
-                        className="h-12 px-6 text-base font-semibold text-white hover:opacity-90" 
-                        style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+                        className="h-12 px-6 text-base font-semibold text-white bg-red-800 hover:bg-red-700"
                       >
                         <Plus className="h-5 w-5 mr-2" />
                         AGREGAR
@@ -568,6 +642,7 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
             </Table>
           </CardContent>
         </Card>
+      </div> {/* End grid container */}
     </div>
   );
 }

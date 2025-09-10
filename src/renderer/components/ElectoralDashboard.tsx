@@ -196,6 +196,7 @@ export function ElectoralDashboard() {
       case "ingreso":
         return <VoteEntryForm 
           category={activeCategory} 
+          categoryLabel={categories.find(cat => cat.key === activeCategory)?.label}
           existingEntries={currentCategoryData?.voteEntries || []} 
           voteLimits={voteLimits} 
           preferentialConfig={preferentialConfig}

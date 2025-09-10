@@ -1,4 +1,5 @@
 import { webUtils, webFrame, ipcRenderer, contextBridge } from "electron";
+import log from "electron-log/renderer";
 const electronAPI = {
   ipcRenderer: {
     send(channel, ...args) {
@@ -77,6 +78,7 @@ const electronAPI = {
     }
   }
 };
+log.transports.ipc.level = "info";
 const api = {
   // Expose localStorage utilities for developer menu
   clearElectoralData: () => {
@@ -84,6 +86,13 @@ const api = {
   },
   debugElectoralData: () => {
     return window.postMessage({ type: "DEBUG_ELECTORAL_DATA" }, "*");
+  },
+  // Expose logging to renderer
+  log: {
+    info: (message, ...args) => log.info(message, ...args),
+    warn: (message, ...args) => log.warn(message, ...args),
+    error: (message, ...args) => log.error(message, ...args),
+    debug: (message, ...args) => log.debug(message, ...args)
   }
 };
 if (process.contextIsolated) {
@@ -92,6 +101,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld("api", api);
   } catch (error) {
     console.error(error);
+    log.error("Failed to expose APIs to renderer:", error);
   }
 } else {
   window.electron = electronAPI;
