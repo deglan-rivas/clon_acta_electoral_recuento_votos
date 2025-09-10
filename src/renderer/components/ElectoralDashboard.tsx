@@ -343,7 +343,7 @@ export function ElectoralDashboard() {
               className="text-white font-semibold text-base px-4 py-2 shrink-0"
               style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
             >
-              Elecciones Generales 2026
+              EG2026
             </Badge>
           </div>
           

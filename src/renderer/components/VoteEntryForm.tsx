@@ -355,10 +355,10 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     <div className="space-y-6">
       {/* Mesa Data Entry Section */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-6">
+        <CardContent className="p-4 [&:last-child]:pb-4">
+          <div className="flex justify-between items-center gap-6">
             {/* Input Fields Container */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-center">
               {/* Mesa Number Input */}
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
@@ -367,7 +367,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localMesaNumber || ""}
                   onChange={(e) => setLocalMesaNumber(parseInt(e.target.value) || 0)}
-                  className="max-w-16 text-center font-semibold"
+                  className="max-w-20 text-center font-semibold"
                   placeholder="0"
                 />
               </div>
@@ -380,32 +380,38 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localTotalElectores || ""}
                   onChange={(e) => setLocalTotalElectores(parseInt(e.target.value) || 0)}
-                  className="max-w-16 text-center font-semibold"
+                  className="max-w-20 text-center font-semibold"
                   placeholder="0"
                 />
               </div>
               
               {/* Total Cédulas Recibidas Input */}
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Recibidas</label>
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total de Votantes</label>
                 <Input
                   type="number"
                   min={1}
                   value={localTotalCedulasRecibidas || ""}
                   onChange={(e) => setLocalTotalCedulasRecibidas(parseInt(e.target.value) || 0)}
-                  className="max-w-16 text-center font-semibold"
+                  className="max-w-20 text-center font-semibold"
                   placeholder="0"
                 />
               </div>
+
+              {/* Save Button */}
+              <Button
+                onClick={handleSaveMesaData}
+                className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded font-medium"
+              >
+                Guardar
+              </Button>
             </div>
 
-            {/* Save Button */}
-            <Button
-              onClick={handleSaveMesaData}
-              className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded font-medium"
-            >
-              Guardar
-            </Button>
+            {/* Cédulas Recontadas Badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-base font-medium text-gray-700">Cédulas Recontadas:</span>
+              <Badge variant="secondary" className="text-lg font-normal">{entries.length} cédula(s)</Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
