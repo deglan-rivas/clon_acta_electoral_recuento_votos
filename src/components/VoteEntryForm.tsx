@@ -25,16 +25,32 @@ interface VoteEntryFormProps {
   voteLimits: VoteLimits;
   preferentialConfig: PreferentialConfig;
   onEntriesChange: (entries: VoteEntry[]) => void;
+  mesaNumber: number;
+  totalElectores: number;
+  totalCedulasRecibidas: number;
+  onMesaDataChange: (mesa: number, electores: number, cedulas: number) => void;
 }
 
-export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
+
+  // Local state for form inputs before saving
+  const [localMesaNumber, setLocalMesaNumber] = useState<number>(mesaNumber);
+  const [localTotalElectores, setLocalTotalElectores] = useState<number>(totalElectores);
+  const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
     setEntries(existingEntries);
   }, [existingEntries]);
+
+  // Update local state when parent values change
+  useEffect(() => {
+    setLocalMesaNumber(mesaNumber);
+    setLocalTotalElectores(totalElectores);
+    setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
+  }, [mesaNumber, totalElectores, totalCedulasRecibidas]);
 
   // Report entries changes to parent component
   const updateEntries = (newEntries: VoteEntry[]) => {
@@ -280,9 +296,106 @@ export function VoteEntryForm({ category, existingEntries = [], voteLimits, pref
     return party === "BLANCO" || party === "NULO" || party.includes("BLANCO") || party.includes("NULO");
   };
 
+  // Handle save mesa data with validations
+  const handleSaveMesaData = () => {
+    // Validation 1: All values must be greater than 0
+    if (localMesaNumber <= 0 || localTotalElectores <= 0 || localTotalCedulasRecibidas <= 0) {
+      toast.error("Todos los valores deben ser mayores a 0", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    // Validation 2: Cédulas Recibidas must be less than or equal to Total Electores
+    if (localTotalCedulasRecibidas > localTotalElectores) {
+      toast.error("Las cédulas recibidas no pueden ser mayores que el total de electores", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    // If validations pass, update the parent state
+    onMesaDataChange(localMesaNumber, localTotalElectores, localTotalCedulasRecibidas);
+    toast.success("Datos de mesa guardados exitosamente", {
+      style: {
+        background: '#16a34a',
+        color: 'white',
+        fontWeight: 'bold'
+      },
+      duration: 2000
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Mesa Data Entry Section */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-6">
+            {/* Input Fields Container */}
+            <div className="flex gap-4">
+              {/* Mesa Number Input */}
+              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={localMesaNumber || ""}
+                  onChange={(e) => setLocalMesaNumber(parseInt(e.target.value) || 0)}
+                  className="max-w-16 text-center font-semibold"
+                  placeholder="0"
+                />
+              </div>
+              
+              {/* Total Electores Input */}
+              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total Electores</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={localTotalElectores || ""}
+                  onChange={(e) => setLocalTotalElectores(parseInt(e.target.value) || 0)}
+                  className="max-w-16 text-center font-semibold"
+                  placeholder="0"
+                />
+              </div>
+              
+              {/* Total Cédulas Recibidas Input */}
+              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Recibidas</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={localTotalCedulasRecibidas || ""}
+                  onChange={(e) => setLocalTotalCedulasRecibidas(parseInt(e.target.value) || 0)}
+                  className="max-w-16 text-center font-semibold"
+                  placeholder="0"
+                />
+              </div>
+            </div>
 
+            {/* Save Button */}
+            <Button
+              onClick={handleSaveMesaData}
+              className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded font-medium"
+            >
+              Guardar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Entries Table */}
         <Card>
