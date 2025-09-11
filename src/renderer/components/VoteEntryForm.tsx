@@ -379,7 +379,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localMesaNumber || ""}
                   onChange={(e) => setLocalMesaNumber(parseInt(e.target.value) || 0)}
-                  className="max-w-20 text-center font-semibold"
+                  className="max-w-24 px-0.5 text-center font-semibold"
                   placeholder="0"
                 />
               </div>
@@ -503,7 +503,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
             <Table>
               <TableHeader>
                 <TableRow className="text-white bg-red-800">
-                  <TableHead className="text-white text-center font-semibold">N° CÉDULA</TableHead>
+                  <TableHead className="text-white text-center font-semibold w-28">N° CÉDULA</TableHead>
                   <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
                     <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
@@ -516,7 +516,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               </TableHeader>
               <TableBody>
                 {/* Form row */}
-                <TableRow className="border-2 bg-red-50 border-red-800">
+                <TableRow className="border-2 bg-red-50 border-red-800 w-28">
                   <TableCell className="px-2">
                     <Input
                       type="number"
@@ -630,7 +630,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   const isLastEntry = index === 0; // First item in reversed array is the last added entry
                   return (
                     <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <TableCell className="text-center font-medium">{entry.tableNumber}</TableCell>
+                      <TableCell className="text-center font-medium w-28">{entry.tableNumber}</TableCell>
                       <TableCell className="py-3">{entry.party}</TableCell>
                       {preferentialConfig.hasPreferential1 && (
                         <TableCell className="text-center font-semibold">{entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1}</TableCell>

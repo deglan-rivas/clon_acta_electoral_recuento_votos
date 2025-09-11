@@ -232,7 +232,7 @@ export function ElectoralDashboard() {
           <div className="flex items-center justify-between py-3 gap-4">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
               <div className="flex items-center space-x-3">
-                <img src={logoJne} className="w-8 h-8" />
+                <img src={logoJne} className="w-14" />
                 <h1 className="text-xl font-semibold text-gray-900">
                   Recuento de Votos
                 </h1>
