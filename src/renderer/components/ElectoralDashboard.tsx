@@ -41,7 +41,7 @@ export function ElectoralDashboard() {
   const [mesaNumber, setMesaNumber] = useState<number>(0);
   const [actaNumber, setActaNumber] = useState<number>(0);
   const [totalElectores, setTotalElectores] = useState<number>(0);
-  const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
+  // const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
 
   // Load Ubigeo data from CSV
   useEffect(() => {
@@ -193,7 +193,7 @@ export function ElectoralDashboard() {
             distrito: selectedDistrito
           }}
           totalElectores={totalElectores}
-          totalCedulasRecibidas={totalCedulasRecibidas}
+          // totalCedulasRecibidas={totalCedulasRecibidas}
         />;
       case "ingreso":
         return <VoteEntryForm 
@@ -207,12 +207,12 @@ export function ElectoralDashboard() {
           mesaNumber={mesaNumber}
           actaNumber={actaNumber}
           totalElectores={totalElectores}
-          totalCedulasRecibidas={totalCedulasRecibidas}
-          onMesaDataChange={(mesa, acta, electores, cedulas) => {
+          // totalCedulasRecibidas={totalCedulasRecibidas}
+          onMesaDataChange={(mesa, acta, electores) => {
             setMesaNumber(mesa);
             setActaNumber(acta);
             setTotalElectores(electores);
-            setTotalCedulasRecibidas(cedulas);
+            // setTotalCedulasRecibidas(cedulas);
           }}
         />;
       case "organizaciones":

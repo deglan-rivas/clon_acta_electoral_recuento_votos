@@ -29,11 +29,11 @@ interface VoteEntryFormProps {
   mesaNumber: number;
   actaNumber: number;
   totalElectores: number;
-  totalCedulasRecibidas: number;
-  onMesaDataChange: (mesa: number, acta:number, electores: number, cedulas: number) => void;
+  // totalCedulasRecibidas: number;
+  onMesaDataChange: (mesa: number, acta:number, electores: number) => void;
 }
 
-export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -41,7 +41,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   const [localMesaNumber, setLocalMesaNumber] = useState<number>(mesaNumber);
   const [localActaNumber, setLocalActaNumber] = useState<number>(actaNumber);
   const [localTotalElectores, setLocalTotalElectores] = useState<number>(totalElectores);
-  const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
+  // const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -51,9 +51,10 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   // Update local state when parent values change
   useEffect(() => {
     setLocalMesaNumber(mesaNumber);
+    setLocalActaNumber(actaNumber);
     setLocalTotalElectores(totalElectores);
-    setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
-  }, [mesaNumber, totalElectores, totalCedulasRecibidas]);
+    // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
+  }, [mesaNumber, actaNumber, totalElectores]);
 
   // Reset form state when category changes
   useEffect(() => {
@@ -314,7 +315,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
     // Validation 1: All values must be greater than 0
-    if (localMesaNumber <= 0 || localActaNumber <= 0 || localTotalElectores <= 0 || localTotalCedulasRecibidas <= 0) {
+    if (localMesaNumber <= 0 || localActaNumber <= 0 || localTotalElectores <= 0) {
       toast.error("Todos los valores deben ser mayores a 0", {
         style: {
           background: '#dc2626',
@@ -328,21 +329,21 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     }
 
     // Validation 2: Cédulas Recibidas must be less than or equal to Total Electores
-    if (localTotalCedulasRecibidas > localTotalElectores) {
-      toast.error("Las cédulas recibidas no pueden ser mayores que el total de electores", {
-        style: {
-          background: '#dc2626',
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '16px'
-        },
-        duration: 4000
-      });
-      return;
-    }
+    // if (localTotalCedulasRecibidas > localTotalElectores) {
+    //   toast.error("Las cédulas recibidas no pueden ser mayores que el total de electores", {
+    //     style: {
+    //       background: '#dc2626',
+    //       color: 'white',
+    //       fontWeight: 'bold',
+    //       fontSize: '16px'
+    //     },
+    //     duration: 4000
+    //   });
+    //   return;
+    // }
 
     // If validations pass, update the parent state
-    onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores, localTotalCedulasRecibidas);
+    onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores);
     toast.success("Datos de mesa guardados exitosamente", {
       style: {
         background: '#16a34a',
@@ -413,7 +414,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               </div>
               
               {/* Total Cédulas Recibidas Input */}
-              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+              {/* <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total de Votantes</label>
                 <Input
                   type="number"
@@ -423,7 +424,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   className="max-w-20 text-center font-semibold"
                   placeholder="0"
                 />
-              </div>
+              </div> */}
 
               {/* Save Button */}
               <Button
@@ -500,9 +501,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                 });
             })()}
             
-            <div className="bg-red-800 text-white p-4 rounded-lg text-center font-semibold mt-4">
-              Total Procesado: {entries.length}/{totalCedulasRecibidas} cédulas ({totalCedulasRecibidas > 0 ? ((entries.length / totalCedulasRecibidas) * 100).toFixed(1) : '0.0'}%)
-            </div>
+            {/* <div className="bg-red-800 text-white p-4 rounded-lg text-center font-semibold mt-4">
+              Total Procesado: {entries.length}/{totalElectores} cédulas ({totalElectores > 0 ? ((entries.length / totalElectores) * 100).toFixed(1) : '0.0'}%)
+            </div> */}
           </CardContent>
         </Card>
 
@@ -511,7 +512,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
               CÉDULAS RECONTADAS
-              <Badge variant="secondary" className="text-base font-normal">{entries.length} cédula(s)</Badge>
+              <Badge variant="default" className="bg-emerald-700 text-xl font-semibold">{entries.length} cédulas</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">

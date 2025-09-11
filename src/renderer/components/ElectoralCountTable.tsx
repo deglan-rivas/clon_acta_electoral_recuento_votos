@@ -1,6 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Card, CardContent} from "./ui/card";
 import { type ElectoralData } from "../data/mockData";
 import { getCategoryData } from "../lib/localStorage";
 import { politicalOrganizations } from "../data/mockData";
@@ -14,10 +13,10 @@ interface ElectoralCountTableProps {
     distrito: string;
   };
   totalElectores?: number;
-  totalCedulasRecibidas?: number;
+  // totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, selectedLocation, totalElectores = 0, totalCedulasRecibidas = 0 }: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, totalElectores = 0}: ElectoralCountTableProps) {
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
@@ -103,18 +102,17 @@ export function ElectoralCountTable({ data, category, selectedLocation, totalEle
       {/* Combined Statistics Header */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-8 gap-3">
+          <div className="grid grid-cols-7 gap-3">
             {/* Group 1: Electores y Votantes */}
             <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
               <span className="text-xs font-medium text-blue-700">Electores Hábiles</span>
               {/* <p className="text-lg font-semibold text-blue-900">{data.totalEligibleVoters}</p> */}
               <p className="text-lg font-semibold text-blue-900">{totalElectores || 0}</p>
             </div>
-            <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
+            {/* <div className="bg-green-50 p-3 rounded-lg text-center border border-gray-200">
               <span className="text-xs font-medium text-green-700">Ciudadanos que Votaron</span>
               <p className="text-lg font-semibold text-green-900">{totalCedulasRecibidas || 0}</p>
-              {/* <p className="text-lg font-semibold text-green-900">{stats.totalVotersWhoVoted}</p> */}
-            </div>
+            </div> */}
             <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
               <span className="text-xs font-medium text-blue-700">Recuento de Votos</span>
               {/* <p className="text-lg font-semibold text-blue-900">{stats.totalVotesEmitted}</p> */}
