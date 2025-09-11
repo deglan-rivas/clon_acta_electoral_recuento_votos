@@ -45,7 +45,7 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
             </TableHeader>
             <TableBody>
               {politicalOrganizations.map((org, index) => (
-                <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                   <TableCell className="text-center font-medium">{org.order}</TableCell>
                   <TableCell className="py-3">{org.name}</TableCell>
                 </TableRow>

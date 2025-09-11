@@ -180,7 +180,7 @@ export function ElectoralCountTable({ data, category, selectedLocation, totalEle
                 const isBlancoOrNulo = org.name === 'BLANCO' || org.name === 'NULO';
                 
                 return (
-                  <TableRow key={org.key || `${org.order}-${index}`} className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} h-6`}>
+                  <TableRow key={org.key || `${org.order}-${index}`} className={`${index % 2 === 0 ? "bg-white" : "bg-gray-200"} h-6`}>
                     <TableCell className="text-center font-medium py-1">{org.order || "-"}</TableCell>
                     <TableCell className="py-1" style={{ width: '150px', minWidth: '150px', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={org.name}>{org.name}</TableCell>
                     <TableCell className="text-center font-semibold py-1">{totalVotes}</TableCell>
