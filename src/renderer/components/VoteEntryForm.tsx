@@ -27,17 +27,19 @@ interface VoteEntryFormProps {
   preferentialConfig: PreferentialConfig;
   onEntriesChange: (entries: VoteEntry[]) => void;
   mesaNumber: number;
+  actaNumber: number;
   totalElectores: number;
   totalCedulasRecibidas: number;
-  onMesaDataChange: (mesa: number, electores: number, cedulas: number) => void;
+  onMesaDataChange: (mesa: number, acta:number, electores: number, cedulas: number) => void;
 }
 
-export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, totalCedulasRecibidas, onMesaDataChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
   // Local state for form inputs before saving
   const [localMesaNumber, setLocalMesaNumber] = useState<number>(mesaNumber);
+  const [localActaNumber, setLocalActaNumber] = useState<number>(actaNumber);
   const [localTotalElectores, setLocalTotalElectores] = useState<number>(totalElectores);
   const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
 
@@ -312,7 +314,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
     // Validation 1: All values must be greater than 0
-    if (localMesaNumber <= 0 || localTotalElectores <= 0 || localTotalCedulasRecibidas <= 0) {
+    if (localMesaNumber <= 0 || localActaNumber <= 0 || localTotalElectores <= 0 || localTotalCedulasRecibidas <= 0) {
       toast.error("Todos los valores deben ser mayores a 0", {
         style: {
           background: '#dc2626',
@@ -340,7 +342,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     }
 
     // If validations pass, update the parent state
-    onMesaDataChange(localMesaNumber, localTotalElectores, localTotalCedulasRecibidas);
+    onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores, localTotalCedulasRecibidas);
     toast.success("Datos de mesa guardados exitosamente", {
       style: {
         background: '#16a34a',
@@ -383,7 +385,20 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   placeholder="0"
                 />
               </div>
-              
+
+              {/* Acta Number Input */}
+              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={localActaNumber || ""}
+                  onChange={(e) => setLocalActaNumber(parseInt(e.target.value) || 0)}
+                  className="max-w-28 px-0.5 text-center font-semibold"
+                  placeholder="0"
+                />
+              </div>
+
               {/* Total Electores Input */}
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total Electores</label>

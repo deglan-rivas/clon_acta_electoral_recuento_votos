@@ -39,6 +39,7 @@ export function ElectoralDashboard() {
 
   // Mesa data entry state
   const [mesaNumber, setMesaNumber] = useState<number>(0);
+  const [actaNumber, setActaNumber] = useState<number>(0);
   const [totalElectores, setTotalElectores] = useState<number>(0);
   const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
 
@@ -204,10 +205,12 @@ export function ElectoralDashboard() {
           preferentialConfig={preferentialConfig}
           onEntriesChange={(entries) => updateCurrentCategoryData({ voteEntries: entries })}
           mesaNumber={mesaNumber}
+          actaNumber={actaNumber}
           totalElectores={totalElectores}
           totalCedulasRecibidas={totalCedulasRecibidas}
-          onMesaDataChange={(mesa, electores, cedulas) => {
+          onMesaDataChange={(mesa, acta, electores, cedulas) => {
             setMesaNumber(mesa);
+            setActaNumber(acta);
             setTotalElectores(electores);
             setTotalCedulasRecibidas(cedulas);
           }}
