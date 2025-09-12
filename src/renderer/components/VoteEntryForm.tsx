@@ -58,6 +58,11 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized; // Enabled only before session starts
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;  // Enabled only after session starts and before finalization
+  
+  // Time tracking state
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -71,6 +76,15 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     setLocalTotalElectores(totalElectores);
     // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
   }, [mesaNumber, actaNumber, totalElectores]);
+
+  // Timer effect for elapsed time calculation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Reset form state when category changes
   useEffect(() => {
@@ -362,6 +376,38 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     return party === "BLANCO" || party === "NULO" || party.includes("BLANCO") || party.includes("NULO");
   };
 
+  // Time formatting functions
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('es-PE', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false 
+    });
+  };
+
+  // const formatDate = (date: Date) => {
+  //   return date.toLocaleDateString('es-PE', {
+  //     day: '2-digit',
+  //     month: '2-digit', 
+  //     year: 'numeric'
+  //   });
+  // };
+
+  const formatElapsedTime = (start: Date, current: Date) => {
+    // console.log('start: ', start)
+    // console.log('current: ', current)
+    const diffMs = current.getTime() - start.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes} min`;
+  };
+
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
     // Validation 1: All values must be greater than 0
@@ -395,6 +441,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
 
     // If validations pass, update the parent state
     onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores);
+    const now = new Date();
+    setStartTime(now); // Capture start time
+    setCurrentTime(now); // Initialize currentTime to same value as startTime
     if (onMesaDataSavedChange) {
       onMesaDataSavedChange(true);
     } else {
@@ -414,6 +463,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
 
   // Handle finalize form - disable all inputs permanently
   const handleFinalizeForm = () => {
+    setEndTime(new Date()); // Capture end time
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
     } else {
@@ -557,10 +607,41 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               )}
             </div>
 
-            {/* Cédulas Recontadas Badge */}
-            <div className="flex items-center gap-2">
-              <span className="text-base font-medium text-gray-700">Cédulas Recontadas:</span>
-              <Badge variant="secondary" className="text-lg font-normal">{entries.length} cédula(s)</Badge>
+            {/* Time Tracking Badges */}
+            <div className="flex items-center gap-3">
+              {/* Start Time */}
+              {startTime && (
+                <div className="bg-blue-600 text-white px-3 py-2 rounded-lg font-medium text-sm text-center">
+                  <div className="font-semibold">Hora Inicio</div>
+                  <div className="font-semibold">{formatTime(startTime)}</div>
+                  {/* <div className="text-xs opacity-90">{formatDate(startTime)}</div> */}
+                </div>
+              )}
+              
+              {/* End Time */}
+              {endTime && (
+                <div className="bg-red-600 text-white px-3 py-2 rounded-lg font-medium text-sm text-center">
+                  <div className="font-semibold">Hora Fin</div>
+                  <div className="font-semibold">{formatTime(endTime)}</div>
+                  {/* <div className="text-xs opacity-90">{formatDate(endTime)}</div> */}
+                </div>
+              )}
+              
+              {/* Elapsed Time */}
+              {startTime && !endTime && (
+                <div className="bg-green-600 text-white px-3 py-2 rounded-lg font-medium text-sm text-center">
+                  <div className="font-semibold">En Progreso</div>
+                  <div className="font-semibold">{formatElapsedTime(startTime, currentTime)}</div>
+                </div>
+              )}
+              
+              {/* Total Time (when finished) */}
+              {startTime && endTime && (
+                <div className="bg-purple-600 text-white px-3 py-2 rounded-lg font-medium text-sm text-center">
+                  <div className="font-semibold">Tiempo Total</div>
+                  <div className="font-semibold">{formatElapsedTime(startTime, endTime)}</div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
