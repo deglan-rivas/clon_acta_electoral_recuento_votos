@@ -107,7 +107,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -122,7 +124,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -133,7 +137,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -146,7 +152,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
           background: '#dc2626',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: '16px'
+          fontSize: '16px',
+          width: '400px'
         },
         duration: 4000
       });
@@ -161,7 +168,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
             background: '#dc2626',
             color: 'white',
             fontWeight: 'bold',
-            fontSize: '16px'
+            fontSize: '16px',
+            width: '400px'
           },
           duration: 4000
         });
@@ -188,7 +196,16 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
       preferentialVote1: 0,
       preferentialVote2: 0,
     });
-    toast.success("Voto registrado exitosamente");
+    toast.success("Voto registrado exitosamente", {
+      style: {
+        background: '#16a34a',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
+      },
+      duration: 2000
+    });
   };
 
 
@@ -209,7 +226,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -224,7 +243,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -235,7 +256,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
         style: {
           background: '#dc2626',
           color: 'white',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
         }
       });
       return;
@@ -248,7 +271,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
           background: '#dc2626',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: '16px'
+          fontSize: '16px',
+          width: '400px'
         },
         duration: 4000
       });
@@ -263,7 +287,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
             background: '#dc2626',
             color: 'white',
             fontWeight: 'bold',
-            fontSize: '16px'
+            fontSize: '16px',
+            width: '400px'
           },
           duration: 4000
         });
@@ -293,7 +318,16 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
       preferentialVote2: 0,
     });
     
-    toast.success("Voto actualizado exitosamente");
+    toast.success("Voto actualizado exitosamente", {
+      style: {
+        background: '#16a34a',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
+      },
+      duration: 2000
+    });
   };
 
   const handleCancelEdit = () => {
@@ -321,7 +355,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
           background: '#dc2626',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: '16px'
+          fontSize: '16px',
+          width: '400px'
         },
         duration: 4000
       });
@@ -348,7 +383,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
       style: {
         background: '#16a34a',
         color: 'white',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
       },
       duration: 2000
     });
@@ -633,7 +670,12 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                     ) : (
                       <Button 
                         onClick={handleAddEntry} 
-                        className="h-12 px-6 text-base font-semibold text-white bg-red-800 hover:bg-red-700"
+                        // disabled={!newEntry.party || newEntry.party === ""}
+                        className={`h-12 px-6 text-base font-semibold ${
+                          !newEntry.party || newEntry.party === ""
+                            ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
+                            : "text-white bg-red-800 hover:bg-red-700 hover:cursor-pointer"
+                        }`}
                       >
                         <Plus className="h-5 w-5 mr-2" />
                         AGREGAR
