@@ -20,9 +20,12 @@ interface PoliticalOrganizationsProps {
   onVoteLimitsChange: (limits: VoteLimits) => void;
   preferentialConfig: PreferentialConfig;
   isFormFinalized: boolean;
+  isMesaDataSaved: boolean;
 }
 
-export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized }: PoliticalOrganizationsProps) {
+export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved }: PoliticalOrganizationsProps) {
+  // Block control logic - same as VoteEntryForm
+  const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,13 +82,19 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
                     max={199}
                     step={1}
                     value={voteLimits.preferential1}
-                    onChange={(e) => onVoteLimitsChange({ 
-                      ...voteLimits, 
-                      preferential1: parseInt(e.target.value) || 1 
-                    })}
-                    className="max-w-xs"
+                    onChange={(e) => {
+                      if (isBloque2Enabled) {
+                        onVoteLimitsChange({ 
+                          ...voteLimits, 
+                          preferential1: parseInt(e.target.value) || 1 
+                        });
+                      }
+                    }}
+                    className={`max-w-xs ${
+                      !isBloque2Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                    }`}
                     placeholder="Ingrese límite para Voto Pref. 1"
-                    disabled={isFormFinalized}
+                    disabled={!isBloque2Enabled}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Rango válido: 1 - 199
@@ -108,13 +117,19 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
                     max={199}
                     step={1}
                     value={voteLimits.preferential2}
-                    onChange={(e) => onVoteLimitsChange({ 
-                      ...voteLimits, 
-                      preferential2: parseInt(e.target.value) || 1 
-                    })}
-                    className="max-w-xs"
+                    onChange={(e) => {
+                      if (isBloque2Enabled) {
+                        onVoteLimitsChange({ 
+                          ...voteLimits, 
+                          preferential2: parseInt(e.target.value) || 1 
+                        });
+                      }
+                    }}
+                    className={`max-w-xs ${
+                      !isBloque2Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                    }`}
                     placeholder="Ingrese límite para Voto Pref. 2"
-                    disabled={isFormFinalized}
+                    disabled={!isBloque2Enabled}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Rango válido: 1 - 199

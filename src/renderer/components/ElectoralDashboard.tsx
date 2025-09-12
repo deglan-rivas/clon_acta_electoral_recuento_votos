@@ -45,6 +45,7 @@ export function ElectoralDashboard() {
   
   // Form finalization state
   const [isFormFinalized, setIsFormFinalized] = useState<boolean>(false);
+  const [isMesaDataSaved, setIsMesaDataSaved] = useState<boolean>(false);
 
   // Load Ubigeo data from CSV
   useEffect(() => {
@@ -219,6 +220,8 @@ export function ElectoralDashboard() {
           }}
           isFormFinalized={isFormFinalized}
           onFormFinalizedChange={setIsFormFinalized}
+          isMesaDataSaved={isMesaDataSaved}
+          onMesaDataSavedChange={setIsMesaDataSaved}
         />;
       case "organizaciones":
         return <PoliticalOrganizations 
@@ -227,6 +230,7 @@ export function ElectoralDashboard() {
           onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
           preferentialConfig={preferentialConfig}
           isFormFinalized={isFormFinalized}
+          isMesaDataSaved={isMesaDataSaved}
         />;
       default:
         return null;

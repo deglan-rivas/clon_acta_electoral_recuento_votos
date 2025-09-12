@@ -33,9 +33,11 @@ interface VoteEntryFormProps {
   onMesaDataChange: (mesa: number, acta:number, electores: number) => void;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
+  isMesaDataSaved?: boolean;
+  onMesaDataSavedChange?: (isSaved: boolean) => void;
 }
 
-export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange, isFormFinalized: externalIsFormFinalized, onFormFinalizedChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange, isFormFinalized: externalIsFormFinalized, onFormFinalizedChange, isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -46,11 +48,16 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   // const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
   
   // State to control if mesa data is saved and inputs should be disabled
-  const [isMesaDataSaved, setIsMesaDataSaved] = useState<boolean>(false);
+  const [localIsMesaDataSaved, setLocalIsMesaDataSaved] = useState<boolean>(false);
+  const isMesaDataSaved = externalIsMesaDataSaved !== undefined ? externalIsMesaDataSaved : localIsMesaDataSaved;
   
   // State to control if the form is finalized and all inputs should be disabled
   const [localIsFormFinalized, setLocalIsFormFinalized] = useState<boolean>(false);
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
+  
+  // Block control logic
+  const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized; // Enabled only before session starts
+  const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;  // Enabled only after session starts and before finalization
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -388,7 +395,11 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
 
     // If validations pass, update the parent state
     onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores);
-    setIsMesaDataSaved(true); // Lock the inputs after successful save
+    if (onMesaDataSavedChange) {
+      onMesaDataSavedChange(true);
+    } else {
+      setLocalIsMesaDataSaved(true);
+    }
     toast.success("Datos de mesa guardados exitosamente", {
       style: {
         background: '#16a34a',
@@ -448,9 +459,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localMesaNumber || ""}
                   onChange={(e) => setLocalMesaNumber(parseInt(e.target.value) || 0)}
-                  disabled={isMesaDataSaved}
+                  disabled={!isBloque1Enabled}
                   className={`max-w-24 px-0.5 text-center font-semibold ${
-                    isMesaDataSaved ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                   }`}
                   placeholder="0"
                 />
@@ -464,9 +475,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localActaNumber || ""}
                   onChange={(e) => setLocalActaNumber(parseInt(e.target.value) || 0)}
-                  disabled={isMesaDataSaved}
+                  disabled={!isBloque1Enabled}
                   className={`max-w-28 px-0.5 text-center font-semibold ${
-                    isMesaDataSaved ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                   }`}
                   placeholder="0"
                 />
@@ -480,9 +491,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                   min={1}
                   value={localTotalElectores || ""}
                   onChange={(e) => setLocalTotalElectores(parseInt(e.target.value) || 0)}
-                  disabled={isMesaDataSaved}
+                  disabled={!isBloque1Enabled}
                   className={`max-w-20 text-center font-semibold ${
-                    isMesaDataSaved ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                   }`}
                   placeholder="0"
                 />
@@ -505,9 +516,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               {!isMesaDataSaved ? (
                 <Button
                   onClick={handleSaveMesaData}
-                  disabled={isFormFinalized}
+                  disabled={!isBloque1Enabled}
                   className={`px-6 py-2 rounded font-medium ${
-                    isFormFinalized 
+                    !isBloque1Enabled 
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
                       : "bg-gray-800 hover:bg-gray-700 text-white"
                   }`}
@@ -657,7 +668,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                     <Combobox
                       value={newEntry.party}
                       onValueChange={(value) => {
-                        if (!isFormFinalized) {
+                        if (isBloque2Enabled) {
                           // Reset preferential votes if BLANCO or NULO is selected
                           if (isBlankOrNull(value)) {
                             setNewEntry({ 
@@ -678,9 +689,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                       placeholder="Seleccionar partido..."
                       searchPlaceholder="Buscar partido..."
                       emptyText="No se encontraron partidos"
-                      disabled={isFormFinalized}
+                      disabled={!isBloque2Enabled}
                       className={`h-12 text-base ${
-                        isFormFinalized ? "opacity-50 cursor-not-allowed" : ""
+                        !isBloque2Enabled ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     />
                   </TableCell>
@@ -693,16 +704,16 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         placeholder="0"
                         value={newEntry.preferentialVote1 || ""}
                         onChange={(e) => {
-                          if (!isFormFinalized) {
+                          if (isBloque2Enabled) {
                             const value = parseInt(e.target.value) || 0;
                             if (value <= voteLimits.preferential1) {
                               setNewEntry({ ...newEntry, preferentialVote1: value });
                             }
                           }
                         }}
-                        disabled={isBlankOrNull(newEntry.party || "") || isFormFinalized}
+                        disabled={isBlankOrNull(newEntry.party || "") || !isBloque2Enabled}
                         className={`h-12 text-center text-lg font-semibold ${
-                          isBlankOrNull(newEntry.party || "") || isFormFinalized 
+                          isBlankOrNull(newEntry.party || "") || !isBloque2Enabled 
                             ? "bg-gray-100 cursor-not-allowed" : ""
                         }`}
                       />
@@ -717,16 +728,16 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         placeholder="0"
                         value={newEntry.preferentialVote2 || ""}
                         onChange={(e) => {
-                          if (!isFormFinalized) {
+                          if (isBloque2Enabled) {
                             const value = parseInt(e.target.value) || 0;
                             if (value <= voteLimits.preferential2) {
                               setNewEntry({ ...newEntry, preferentialVote2: value });
                             }
                           }
                         }}
-                        disabled={isBlankOrNull(newEntry.party || "") || isFormFinalized}
+                        disabled={isBlankOrNull(newEntry.party || "") || !isBloque2Enabled}
                         className={`h-12 text-center text-lg font-semibold ${
-                          isBlankOrNull(newEntry.party || "") || isFormFinalized 
+                          isBlankOrNull(newEntry.party || "") || !isBloque2Enabled 
                             ? "bg-gray-100 cursor-not-allowed" : ""
                         }`}
                       />
@@ -737,9 +748,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                       <div className="flex gap-1">
                         <button
                           onClick={handleConfirmEdit}
-                          disabled={isFormFinalized}
+                          disabled={!isBloque2Enabled}
                           className={`p-3 rounded-full transition-colors duration-200 ${
-                            isFormFinalized 
+                            !isBloque2Enabled 
                               ? "text-gray-400 cursor-not-allowed"
                               : "text-green-600 hover:text-green-800 hover:bg-green-50"
                           }`}
@@ -750,9 +761,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          disabled={isFormFinalized}
+                          disabled={!isBloque2Enabled}
                           className={`p-3 rounded-full transition-colors duration-200 ${
-                            isFormFinalized
+                            !isBloque2Enabled
                               ? "text-gray-400 cursor-not-allowed"
                               : "text-red-500 hover:text-red-700 hover:bg-red-50"
                           }`}
@@ -765,9 +776,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                     ) : (
                       <Button 
                         onClick={handleAddEntry} 
-                        disabled={!newEntry.party || newEntry.party === "" || isFormFinalized}
+                        disabled={!newEntry.party || newEntry.party === "" || !isBloque2Enabled}
                         className={`h-12 px-6 text-base font-semibold ${
-                          !newEntry.party || newEntry.party === "" || isFormFinalized
+                          !newEntry.party || newEntry.party === "" || !isBloque2Enabled
                             ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
                             : "text-white bg-red-800 hover:bg-red-700 hover:cursor-pointer"
                         }`}
@@ -797,13 +808,13 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                             <button
                               onClick={() => handleEditEntry(entry)}
                               className={`p-2 rounded-full transition-colors duration-200 ${
-                                editingTableNumber !== null || isFormFinalized
+                                editingTableNumber !== null || !isBloque2Enabled
                                   ? "text-gray-400 cursor-not-allowed"
                                   : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                               }`}
                               title="Editar"
                               aria-label="Editar"
-                              disabled={editingTableNumber !== null || isFormFinalized}
+                              disabled={editingTableNumber !== null || !isBloque2Enabled}
                             >
                               <Edit className="h-5 w-5" />
                             </button>
