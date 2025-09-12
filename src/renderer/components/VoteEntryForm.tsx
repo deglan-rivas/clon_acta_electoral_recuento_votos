@@ -31,9 +31,11 @@ interface VoteEntryFormProps {
   totalElectores: number;
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:number, electores: number) => void;
+  isFormFinalized?: boolean;
+  onFormFinalizedChange?: (isFinalized: boolean) => void;
 }
 
-export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange, isFormFinalized: externalIsFormFinalized, onFormFinalizedChange }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -45,6 +47,10 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   
   // State to control if mesa data is saved and inputs should be disabled
   const [isMesaDataSaved, setIsMesaDataSaved] = useState<boolean>(false);
+  
+  // State to control if the form is finalized and all inputs should be disabled
+  const [localIsFormFinalized, setLocalIsFormFinalized] = useState<boolean>(false);
+  const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -395,6 +401,25 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     });
   };
 
+  // Handle finalize form - disable all inputs permanently
+  const handleFinalizeForm = () => {
+    if (onFormFinalizedChange) {
+      onFormFinalizedChange(true);
+    } else {
+      setLocalIsFormFinalized(true);
+    }
+    toast.success("Formulario finalizado exitosamente", {
+      style: {
+        background: '#16a34a',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
+      },
+      duration: 3000
+    });
+  };
+
   // Calculate vote counts for horizontal bars
   const calculateVoteData = () => {
     const voteCount: { [party: string]: number } = {};
@@ -480,16 +505,38 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               {!isMesaDataSaved ? (
                 <Button
                   onClick={handleSaveMesaData}
-                  className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded font-medium"
+                  disabled={isFormFinalized}
+                  className={`px-6 py-2 rounded font-medium ${
+                    isFormFinalized 
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                      : "bg-gray-800 hover:bg-gray-700 text-white"
+                  }`}
                 >
-                  Guardar
+                  Iniciar
                 </Button>
               ) : (
-                <div className="flex items-center gap-2 bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded font-medium text-center justify-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Datos Guardados
+                  Sesión Iniciada
+                </div>
+              )}
+              
+              {/* Finalize Button */}
+              {!isFormFinalized ? (
+                <Button
+                  onClick={handleFinalizeForm}
+                  className="bg-red-800 hover:bg-red-700 text-white px-6 py-2 rounded font-medium"
+                >
+                  Finalizar
+                </Button>
+              ) : (
+                <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-1 rounded font-medium text-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Sesión Finalizada
                 </div>
               )}
             </div>
@@ -571,7 +618,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
               CÉDULAS RECONTADAS
-              <Badge variant="default" className="bg-emerald-700 text-xl font-semibold">{entries.length} cédulas</Badge>
+              <Badge variant="default" className="bg-gray-800 text-xl font-semibold">{entries.length} cédulas</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">
@@ -605,16 +652,18 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                     <Combobox
                       value={newEntry.party}
                       onValueChange={(value) => {
-                        // Reset preferential votes if BLANCO or NULO is selected
-                        if (isBlankOrNull(value)) {
-                          setNewEntry({ 
-                            ...newEntry, 
-                            party: value, 
-                            preferentialVote1: 0, 
-                            preferentialVote2: 0 
-                          });
-                        } else {
-                          setNewEntry({ ...newEntry, party: value });
+                        if (!isFormFinalized) {
+                          // Reset preferential votes if BLANCO or NULO is selected
+                          if (isBlankOrNull(value)) {
+                            setNewEntry({ 
+                              ...newEntry, 
+                              party: value, 
+                              preferentialVote1: 0, 
+                              preferentialVote2: 0 
+                            });
+                          } else {
+                            setNewEntry({ ...newEntry, party: value });
+                          }
                         }
                       }}
                       options={politicalOrganizations.map((org) => ({
@@ -624,7 +673,10 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                       placeholder="Seleccionar partido..."
                       searchPlaceholder="Buscar partido..."
                       emptyText="No se encontraron partidos"
-                      className="h-12 text-base"
+                      disabled={isFormFinalized}
+                      className={`h-12 text-base ${
+                        isFormFinalized ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     />
                   </TableCell>
                   {preferentialConfig.hasPreferential1 && (
@@ -636,14 +688,17 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         placeholder="0"
                         value={newEntry.preferentialVote1 || ""}
                         onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          if (value <= voteLimits.preferential1) {
-                            setNewEntry({ ...newEntry, preferentialVote1: value });
+                          if (!isFormFinalized) {
+                            const value = parseInt(e.target.value) || 0;
+                            if (value <= voteLimits.preferential1) {
+                              setNewEntry({ ...newEntry, preferentialVote1: value });
+                            }
                           }
                         }}
-                        disabled={isBlankOrNull(newEntry.party || "")}
+                        disabled={isBlankOrNull(newEntry.party || "") || isFormFinalized}
                         className={`h-12 text-center text-lg font-semibold ${
-                          isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""
+                          isBlankOrNull(newEntry.party || "") || isFormFinalized 
+                            ? "bg-gray-100 cursor-not-allowed" : ""
                         }`}
                       />
                     </TableCell>
@@ -657,14 +712,17 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         placeholder="0"
                         value={newEntry.preferentialVote2 || ""}
                         onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          if (value <= voteLimits.preferential2) {
-                            setNewEntry({ ...newEntry, preferentialVote2: value });
+                          if (!isFormFinalized) {
+                            const value = parseInt(e.target.value) || 0;
+                            if (value <= voteLimits.preferential2) {
+                              setNewEntry({ ...newEntry, preferentialVote2: value });
+                            }
                           }
                         }}
-                        disabled={isBlankOrNull(newEntry.party || "")}
+                        disabled={isBlankOrNull(newEntry.party || "") || isFormFinalized}
                         className={`h-12 text-center text-lg font-semibold ${
-                          isBlankOrNull(newEntry.party || "") ? "bg-gray-100 cursor-not-allowed" : ""
+                          isBlankOrNull(newEntry.party || "") || isFormFinalized 
+                            ? "bg-gray-100 cursor-not-allowed" : ""
                         }`}
                       />
                     </TableCell>
@@ -674,7 +732,12 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                       <div className="flex gap-1">
                         <button
                           onClick={handleConfirmEdit}
-                          className="p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors duration-200"
+                          disabled={isFormFinalized}
+                          className={`p-3 rounded-full transition-colors duration-200 ${
+                            isFormFinalized 
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                          }`}
                           title="Confirmar"
                           aria-label="Confirmar"
                         >
@@ -682,7 +745,12 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                          disabled={isFormFinalized}
+                          className={`p-3 rounded-full transition-colors duration-200 ${
+                            isFormFinalized
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-red-500 hover:text-red-700 hover:bg-red-50"
+                          }`}
                           title="Cancelar"
                           aria-label="Cancelar"
                         >
@@ -692,9 +760,9 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                     ) : (
                       <Button 
                         onClick={handleAddEntry} 
-                        // disabled={!newEntry.party || newEntry.party === ""}
+                        disabled={!newEntry.party || newEntry.party === "" || isFormFinalized}
                         className={`h-12 px-6 text-base font-semibold ${
-                          !newEntry.party || newEntry.party === ""
+                          !newEntry.party || newEntry.party === "" || isFormFinalized
                             ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
                             : "text-white bg-red-800 hover:bg-red-700 hover:cursor-pointer"
                         }`}
@@ -723,10 +791,14 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
                           {isLastEntry && (
                             <button
                               onClick={() => handleEditEntry(entry)}
-                              className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                              className={`p-2 rounded-full transition-colors duration-200 ${
+                                editingTableNumber !== null || isFormFinalized
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                              }`}
                               title="Editar"
                               aria-label="Editar"
-                              disabled={editingTableNumber !== null}
+                              disabled={editingTableNumber !== null || isFormFinalized}
                             >
                               <Edit className="h-5 w-5" />
                             </button>

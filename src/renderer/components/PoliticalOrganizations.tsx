@@ -19,9 +19,10 @@ interface PoliticalOrganizationsProps {
   voteLimits: VoteLimits;
   onVoteLimitsChange: (limits: VoteLimits) => void;
   preferentialConfig: PreferentialConfig;
+  isFormFinalized: boolean;
 }
 
-export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig }: PoliticalOrganizationsProps) {
+export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized }: PoliticalOrganizationsProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -84,6 +85,7 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
                     })}
                     className="max-w-xs"
                     placeholder="Ingrese límite para Voto Pref. 1"
+                    disabled={isFormFinalized}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Rango válido: 1 - 199
@@ -112,6 +114,7 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
                     })}
                     className="max-w-xs"
                     placeholder="Ingrese límite para Voto Pref. 2"
+                    disabled={isFormFinalized}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Rango válido: 1 - 199

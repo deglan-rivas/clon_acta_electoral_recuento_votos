@@ -42,6 +42,9 @@ export function ElectoralDashboard() {
   const [actaNumber, setActaNumber] = useState<number>(0);
   const [totalElectores, setTotalElectores] = useState<number>(0);
   // const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
+  
+  // Form finalization state
+  const [isFormFinalized, setIsFormFinalized] = useState<boolean>(false);
 
   // Load Ubigeo data from CSV
   useEffect(() => {
@@ -214,6 +217,8 @@ export function ElectoralDashboard() {
             setTotalElectores(electores);
             // setTotalCedulasRecibidas(cedulas);
           }}
+          isFormFinalized={isFormFinalized}
+          onFormFinalizedChange={setIsFormFinalized}
         />;
       case "organizaciones":
         return <PoliticalOrganizations 
@@ -221,6 +226,7 @@ export function ElectoralDashboard() {
           voteLimits={voteLimits} 
           onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
           preferentialConfig={preferentialConfig}
+          isFormFinalized={isFormFinalized}
         />;
       default:
         return null;
