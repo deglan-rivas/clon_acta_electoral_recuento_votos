@@ -527,7 +527,12 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
               {!isFormFinalized ? (
                 <Button
                   onClick={handleFinalizeForm}
-                  className="bg-red-800 hover:bg-red-700 text-white px-6 py-2 rounded font-medium"
+                  disabled={!isMesaDataSaved}
+                  className={`px-6 py-2 rounded font-medium ${
+                    !isMesaDataSaved
+                      ? "bg-red-400 text-red-100 cursor-not-allowed hover:bg-red-400"
+                      : "bg-red-800 hover:bg-red-700 text-white"
+                  }`}
                 >
                   Finalizar
                 </Button>
