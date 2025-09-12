@@ -47,6 +47,11 @@ export function ElectoralDashboard() {
   const [isFormFinalized, setIsFormFinalized] = useState<boolean>(false);
   const [isMesaDataSaved, setIsMesaDataSaved] = useState<boolean>(false);
 
+  // Time tracking state - moved from VoteEntryForm for persistence across tabs
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
   // Load Ubigeo data from CSV
   useEffect(() => {
     const loadUbigeoData = async () => {
@@ -76,6 +81,17 @@ export function ElectoralDashboard() {
     
     loadUbigeoData();
   }, []);
+
+  // Time tracking interval - update currentTime every 3 seconds
+  useEffect(() => {
+    if (startTime && !endTime) {
+      const interval = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 3000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [startTime, endTime]);
 
 
   // Save activeCategory to localStorage when it changes
@@ -222,6 +238,12 @@ export function ElectoralDashboard() {
           onFormFinalizedChange={setIsFormFinalized}
           isMesaDataSaved={isMesaDataSaved}
           onMesaDataSavedChange={setIsMesaDataSaved}
+          startTime={startTime}
+          endTime={endTime}
+          currentTime={currentTime}
+          onStartTimeChange={setStartTime}
+          onEndTimeChange={setEndTime}
+          onCurrentTimeChange={setCurrentTime}
         />;
       case "organizaciones":
         return <PoliticalOrganizations 

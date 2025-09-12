@@ -35,9 +35,22 @@ interface VoteEntryFormProps {
   onFormFinalizedChange?: (isFinalized: boolean) => void;
   isMesaDataSaved?: boolean;
   onMesaDataSavedChange?: (isSaved: boolean) => void;
+  // Time tracking props
+  startTime: Date | null;
+  endTime: Date | null;
+  currentTime: Date;
+  onStartTimeChange: (time: Date | null) => void;
+  onEndTimeChange: (time: Date | null) => void;
+  onCurrentTimeChange: (time: Date) => void;
 }
 
-export function VoteEntryForm({ category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, mesaNumber, actaNumber, totalElectores, onMesaDataChange, isFormFinalized: externalIsFormFinalized, onFormFinalizedChange, isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange }: VoteEntryFormProps) {
+export function VoteEntryForm({ 
+  category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, 
+  mesaNumber, actaNumber, totalElectores, onMesaDataChange, 
+  isFormFinalized: externalIsFormFinalized, onFormFinalizedChange, 
+  isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
+  startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange 
+}: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -59,10 +72,6 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized; // Enabled only before session starts
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;  // Enabled only after session starts and before finalization
   
-  // Time tracking state
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -77,14 +86,6 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
   }, [mesaNumber, actaNumber, totalElectores]);
 
-  // Timer effect for elapsed time calculation
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Reset form state when category changes
   useEffect(() => {
@@ -442,8 +443,8 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
     // If validations pass, update the parent state
     onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores);
     const now = new Date();
-    setStartTime(now); // Capture start time
-    setCurrentTime(now); // Initialize currentTime to same value as startTime
+    onStartTimeChange(now); // Capture start time
+    onCurrentTimeChange(now); // Initialize currentTime to same value as startTime
     if (onMesaDataSavedChange) {
       onMesaDataSavedChange(true);
     } else {
@@ -463,7 +464,7 @@ export function VoteEntryForm({ category, categoryLabel, existingEntries = [], v
 
   // Handle finalize form - disable all inputs permanently
   const handleFinalizeForm = () => {
-    setEndTime(new Date()); // Capture end time
+    onEndTimeChange(new Date()); // Capture end time
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
     } else {
