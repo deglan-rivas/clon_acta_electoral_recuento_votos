@@ -87,7 +87,7 @@ export function ElectoralDashboard() {
     if (startTime && !endTime) {
       const interval = setInterval(() => {
         setCurrentTime(new Date());
-      }, 3000);
+      }, 2000);
       
       return () => clearInterval(interval);
     }
@@ -377,8 +377,7 @@ export function ElectoralDashboard() {
             </div>
             <Badge 
               variant="secondary" 
-              className="text-white font-semibold text-base px-4 py-2 shrink-0"
-              style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}
+              className="text-white font-semibold text-base px-4 py-2 shrink-0 bg-red-800"
             >
               EG2026
             </Badge>

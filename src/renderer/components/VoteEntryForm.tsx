@@ -567,7 +567,7 @@ export function VoteEntryForm({
                   className={`px-6 py-2 rounded font-medium ${
                     !isBloque1Enabled 
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
-                      : "bg-gray-800 hover:bg-gray-700 text-white"
+                      : "bg-green-800 hover:bg-green-700 text-white"
                   }`}
                 >
                   Iniciar
@@ -712,8 +712,8 @@ export function VoteEntryForm({
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
               
-              <Badge variant="secondary" className="text-white text-xl font-semibold" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>CÉDULAS RECONTADAS</Badge>
-              <Badge variant="default" className="bg-gray-800 text-xl font-semibold">{entries.length} cédulas</Badge>
+              CÉDULAS RECONTADAS
+              <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">
