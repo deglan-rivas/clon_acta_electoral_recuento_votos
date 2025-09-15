@@ -22,6 +22,15 @@ export default defineConfig({
       }
     },
     plugins: [react(), tailwindcss()],
-    publicDir: resolve('public')
+    publicDir: resolve('public'),
+    server: {
+      host: '0.0.0.0', // o host: true
+      port: 5174,
+      allowedHosts: [
+        'localhost',
+        '.trycloudflare.com', // permite todos los subdominios de trycloudflare.com
+        // 'segment-device-indie-carolina.trycloudflare.com/' // o específicamente tu dominio
+      ]
+    }
   }
 })
