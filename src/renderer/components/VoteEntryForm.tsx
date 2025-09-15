@@ -9,6 +9,9 @@ import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { toast } from "sonner";
 
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+
+
 interface VoteLimits {
   preferential1: number;
   preferential2: number;
@@ -462,8 +465,93 @@ export function VoteEntryForm({
     });
   };
 
+  const handleGeneratePdf = async () => {
+    try {
+      const { width, height } = await (async () => {
+        const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
+        const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        return firstPage.getSize();
+      })();
+
+      const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
+      let y_pos = height - 239;
+      politicalOrganizations.forEach(org => {
+        const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
+        if (org.name === "BLANCO") {
+          labels[partyName] = { votes: 0, x: 294.5, y: height - 1068.8 }; 
+        } else if (org.name === "NULO") {
+          labels[partyName] = { votes: 0, x: 294.5, y: height - 1080.8 };
+        } else {
+          labels[partyName] = { votes: 0, x: 444, y: y_pos };
+          y_pos -= 21.1;
+        }
+      });
+
+      const voteCount = calculateVoteData();
+      for (const party in voteCount) {
+        if (labels.hasOwnProperty(party)) {
+          labels[party].votes = voteCount[party];
+        }
+      }
+
+      console.log("Diccionario de etiquetas de votos con coordenadas:", labels);
+
+      const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
+      const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+
+      const data = [
+        { texto: "PERU", x: 45, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: "LIMA", x: 230, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: "JESUS MARIA", x: 410, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+      ];
+
+      for (const partyName in labels) {
+        if (labels.hasOwnProperty(partyName)) {
+          const label = labels[partyName];
+          data.push({ texto: `${label.votes}`, x: label.x, y: label.y, color: rgb(0, 0, 0), size: 15 });
+        }
+      }
+
+      data.forEach(item => {
+        firstPage.drawText(item.texto, {
+          x: item.x,
+          y: item.y,
+          font: helveticaBoldFont,
+          size: item.size,
+          color: item.color,
+        });
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'documento_relleno.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log("PDF generado y descarga iniciada.");
+
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+    }
+  };
+
+
   // Handle finalize form - disable all inputs permanently
-  const handleFinalizeForm = () => {
+  const handleFinalizeForm = async () => {
+    console.log("Finalizando formulario...")
+    // const conteoVotos = calculateVoteData();
+    // console.log("Conteo de votos por partido:", conteoVotos);
+    await handleGeneratePdf(); // Generar PDF al finalizar
     onEndTimeChange(new Date()); // Capture end time
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
