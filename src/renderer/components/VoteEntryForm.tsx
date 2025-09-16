@@ -530,13 +530,13 @@ export function VoteEntryForm({
       })();
 
       const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
-      let y_pos = height - 239;
+      let y_pos = height - 225.5;
       politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: 0, x: 294.6, y: height - 1068.8 }; 
+          labels[partyName] = { votes: 0, x: 294.6, y: height - 1056 }; 
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: 0, x: 294.6, y: height - 1080.8 };
+          labels[partyName] = { votes: 0, x: 294.6, y: height - 1068 };
         } else {
           labels[partyName] = { votes: 0, x: 444, y: y_pos };
           y_pos -= 21.1;
@@ -564,19 +564,19 @@ export function VoteEntryForm({
       const dateTimeString = `${horaFin} del ${fechaFin}`;
 
       const data = [
-        { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 187, color: rgb(0, 0, 0), size: 14 },
-        { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 187, color: rgb(0, 0, 0), size: 14 },
-        { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 187, color: rgb(0, 0, 0), size: 14 },
-        { texto: dateTimeString, x: 100, y: height - 1163, color: rgb(0, 0, 0), size: 10 },
-        { texto: `${entries.length}`, x: 763, y: height - 161, color: rgb(0, 0, 0), size: 15 },
-        { texto: `${entries.length}`, x: 294.6, y: height - 1092.8, color: rgb(0, 0, 0), size: 15 },
+        { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 175, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 175, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 175, color: rgb(0, 0, 0), size: 14 },
+        { texto: dateTimeString, x: 100, y: height - 1170, color: rgb(0, 0, 0), size: 10 },
+        { texto: `${entries.length}`, x: 763, y: height - 147, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 294.6, y: height - 1080, color: rgb(0, 0, 0), size: 15 },
       ];
 
       if (startTime) {
         const horaInicio = formatTime(startTime);
         const fechaInicio = formatDate(startTime);
         const startDateTimeString = `${horaInicio} del ${fechaInicio}`;
-        data.push({ texto: startDateTimeString, x: 100, y: height - 212, color: rgb(0, 0, 0), size: 10 });
+        data.push({ texto: startDateTimeString, x: 100, y: height - 1151, color: rgb(0, 0, 0), size: 10 });
       }
 
       for (const partyName in labels) {
