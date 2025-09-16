@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Input } from "./ui/input";
@@ -58,8 +58,8 @@ export function VoteEntryForm({
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
   // Local state for form inputs before saving
-  const [localMesaNumber, setLocalMesaNumber] = useState<number>(mesaNumber);
-  const [localActaNumber, setLocalActaNumber] = useState<number>(actaNumber);
+  const [localMesaNumber, setLocalMesaNumber] = useState<string>('');
+  const [localActaNumber, setLocalActaNumber] = useState<string>('');
   const [localTotalElectores, setLocalTotalElectores] = useState<number>(totalElectores);
   // const [localTotalCedulasRecibidas, setLocalTotalCedulasRecibidas] = useState<number>(totalCedulasRecibidas);
   
@@ -83,8 +83,12 @@ export function VoteEntryForm({
 
   // Update local state when parent values change
   useEffect(() => {
-    setLocalMesaNumber(mesaNumber);
-    setLocalActaNumber(actaNumber);
+    if (mesaNumber > 0) {
+      setLocalMesaNumber(mesaNumber.toString().padStart(6, '0'));
+    }
+    if (actaNumber > 0) {
+      setLocalActaNumber(`${actaNumber.toString().padStart(6, '0')}-00-A`);
+    }
     setLocalTotalElectores(totalElectores);
     // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
   }, [mesaNumber, actaNumber, totalElectores]);
@@ -133,6 +137,24 @@ export function VoteEntryForm({
   // Edit state management
   const [editingTableNumber, setEditingTableNumber] = useState<number | null>(null);
   const [originalEntry, setOriginalEntry] = useState<VoteEntry | null>(null);
+  
+  // Refs for auto-focus
+  const actaInputRef = useRef<HTMLInputElement>(null);
+  const cursorPositionRef = useRef<number>(0);
+  const shouldPreserveCursorRef = useRef<boolean>(false);
+
+  // Effect to restore cursor position
+  useEffect(() => {
+    if (shouldPreserveCursorRef.current && actaInputRef.current) {
+      // Use requestAnimationFrame to ensure the DOM has updated
+      requestAnimationFrame(() => {
+        if (actaInputRef.current) {
+          actaInputRef.current.setSelectionRange(cursorPositionRef.current, cursorPositionRef.current);
+        }
+      });
+      shouldPreserveCursorRef.current = false;
+    }
+  }, [localActaNumber]);
 
 
   const handleAddEntry = () => {
@@ -410,9 +432,39 @@ export function VoteEntryForm({
 
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
-    // Validation 1: All values must be greater than 0
-    if (localMesaNumber <= 0 || localActaNumber <= 0 || localTotalElectores <= 0) {
-      toast.error("Todos los valores deben ser mayores a 0", {
+    // Validation 1: Mesa number must be 6 digits, acta number must follow format, electores between 1-300
+    if (localMesaNumber.length !== 6 || parseInt(localMesaNumber) <= 0) {
+      toast.error("N° Mesa debe tener 6 dígitos y ser mayor a 0", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+    
+    // Validate acta format
+    const actaRegex = /^\d{6}-\d{2}-[A-Z]$/;
+    if (!actaRegex.test(localActaNumber)) {
+      toast.error("N° Acta debe tener formato 000000-00-A", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+    
+    if (localTotalElectores <= 0 || localTotalElectores > 300) {
+      toast.error("Total Electores debe estar entre 1 y 300", {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -440,7 +492,7 @@ export function VoteEntryForm({
     // }
 
     // If validations pass, update the parent state
-    onMesaDataChange(localMesaNumber, localActaNumber, localTotalElectores);
+    onMesaDataChange(parseInt(localMesaNumber), parseInt(localActaNumber.split('-')[0] || '0'), localTotalElectores);
     const now = new Date();
     onStartTimeChange(now); // Capture start time
     onCurrentTimeChange(now); // Initialize currentTime to same value as startTime
@@ -590,15 +642,50 @@ export function VoteEntryForm({
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
                 <Input
-                  type="number"
-                  min={1}
-                  value={localMesaNumber || ""}
-                  onChange={(e) => setLocalMesaNumber(parseInt(e.target.value) || 0)}
+                  type="text"
+                  maxLength={6}
+                  value={localMesaNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only digits
+                    if (value.length <= 6) {
+                      setLocalMesaNumber(value);
+                      // Update acta number when mesa number changes, preserving existing parts
+                      if (value.length === 6) {
+                        const currentActaParts = localActaNumber.split('-');
+                        const secondPart = currentActaParts[1] || '';
+                        const thirdPart = currentActaParts[2] || '';
+                        
+                        // Build new acta number preserving existing second and third parts
+                        let newActaNumber = value;
+                        if (secondPart || thirdPart) {
+                          newActaNumber += '-' + secondPart;
+                          if (thirdPart) {
+                            newActaNumber += '-' + thirdPart;
+                          }
+                        } else {
+                          newActaNumber += '-';
+                        }
+                        
+                        setLocalActaNumber(newActaNumber);
+                        
+                        // Auto-focus to acta field only if it's empty or just has the mesa number
+                        if (!secondPart && !thirdPart) {
+                          setTimeout(() => {
+                            actaInputRef.current?.focus();
+                            // Position cursor at the end
+                            const input = actaInputRef.current;
+                            if (input) {
+                              input.setSelectionRange(input.value.length, input.value.length);
+                            }
+                          }, 0);
+                        }
+                      }
+                    }
+                  }}
                   disabled={!isBloque1Enabled}
                   className={`max-w-24 px-0.5 text-center font-semibold ${
                     !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                   }`}
-                  placeholder="0"
                 />
               </div>
 
@@ -606,15 +693,134 @@ export function VoteEntryForm({
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
                 <Input
-                  type="number"
-                  min={1}
-                  value={localActaNumber || ""}
-                  onChange={(e) => setLocalActaNumber(parseInt(e.target.value) || 0)}
+                  ref={actaInputRef}
+                  type="text"
+                  maxLength={11}
+                  value={localActaNumber}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace') {
+                      const input = e.target as HTMLInputElement;
+                      const cursorPosition = input.selectionStart || 0;
+                      const currentValue = input.value;
+                      
+                      // If cursor is right after a dash and there's no selection
+                      if (cursorPosition > 0 && currentValue[cursorPosition - 1] === '-' && input.selectionStart === input.selectionEnd) {
+                        e.preventDefault();
+                        // Remove the dash and the character before it
+                        const newValue = currentValue.slice(0, cursorPosition - 2) + currentValue.slice(cursorPosition);
+                        setLocalActaNumber(newValue);
+                        
+                        // Update Mesa field if we're editing the first 6 digits
+                        const parts = newValue.split('-');
+                        if (parts[0] && parts[0].length <= 6) {
+                          setLocalMesaNumber(parts[0]);
+                        }
+                        
+                        // Set cursor position after the deletion
+                        setTimeout(() => {
+                          input.setSelectionRange(cursorPosition - 2, cursorPosition - 2);
+                        }, 0);
+                      }
+                    }
+                  }}
+                  onChange={(e) => {
+                    const input = e.target as HTMLInputElement;
+                    const newValue = e.target.value.toUpperCase();
+                    const oldValue = localActaNumber;
+                    const cursorPosition = input.selectionStart || 0;
+                    
+                    // Allow direct editing while maintaining format
+                    let formattedValue = newValue;
+                    
+                    // Remove invalid characters but preserve structure
+                    formattedValue = formattedValue.replace(/[^0-9A-Z\-]/g, '');
+                    
+                    // Detect if this is normal editing (backspace/delete/typing within first 6 digits)
+                    const isNormalEditing = Math.abs(newValue.length - oldValue.length) === 1 && cursorPosition <= 6;
+                    
+                    // Validate the format structure
+                    const parts = formattedValue.split('-');
+                    
+                    if (parts.length === 1) {
+                      // Only first part (up to 6 digits)
+                      const digits = parts[0].replace(/[^0-9]/g, '');
+                      if (digits.length <= 6) {
+                        formattedValue = digits;
+                        // Sync with Mesa field (including when digits are removed)
+                        setLocalMesaNumber(digits);
+                        
+                        // Preserve cursor position for normal editing
+                        if (isNormalEditing) {
+                          cursorPositionRef.current = cursorPosition;
+                          shouldPreserveCursorRef.current = true;
+                        }
+                        
+                        // Auto-add first dash when reaching 6 digits
+                        if (digits.length === 6 && !newValue.includes('-')) {
+                          formattedValue = digits + '-';
+                          cursorPositionRef.current = digits.length + 1;
+                          shouldPreserveCursorRef.current = true;
+                        }
+                      } else {
+                        return; // Don't update if too many digits
+                      }
+                    } else if (parts.length === 2) {
+                      // First part + second part
+                      const firstPart = parts[0].replace(/[^0-9]/g, '').slice(0, 6);
+                      const secondPart = parts[1].replace(/[^0-9]/g, '').slice(0, 2);
+                      
+                      if (firstPart.length >= 1 && firstPart.length <= 6) {
+                        formattedValue = firstPart + '-' + secondPart;
+                        // Sync with Mesa field
+                        setLocalMesaNumber(firstPart);
+                        
+                        // Preserve cursor position for editing within first part
+                        if (isNormalEditing && cursorPosition <= 6) {
+                          cursorPositionRef.current = cursorPosition;
+                          shouldPreserveCursorRef.current = true;
+                        }
+                        
+                        // Auto-add second dash when reaching 2 digits in second part
+                        if (secondPart.length === 2 && !newValue.endsWith('-') && newValue.split('-').length === 2) {
+                          formattedValue = firstPart + '-' + secondPart + '-';
+                          cursorPositionRef.current = formattedValue.length;
+                          shouldPreserveCursorRef.current = true;
+                        }
+                      } else {
+                        return; // Don't update if first part incomplete
+                      }
+                    } else if (parts.length === 3) {
+                      // Full format
+                      const firstPart = parts[0].replace(/[^0-9]/g, '').slice(0, 6);
+                      const secondPart = parts[1].replace(/[^0-9]/g, '').slice(0, 2);
+                      const thirdPart = parts[2].replace(/[^A-Z]/g, '').slice(0, 1);
+                      
+                      if (firstPart.length >= 1 && firstPart.length <= 6 && secondPart.length <= 2) {
+                        formattedValue = firstPart + '-' + secondPart + '-' + thirdPart;
+                        // Sync with Mesa field
+                        setLocalMesaNumber(firstPart);
+                        
+                        // Preserve cursor position for editing within first part
+                        if (isNormalEditing && cursorPosition <= 6) {
+                          cursorPositionRef.current = cursorPosition;
+                          shouldPreserveCursorRef.current = true;
+                        }
+                      } else {
+                        return; // Don't update if format invalid
+                      }
+                    } else {
+                      return; // Too many parts, don't update
+                    }
+                    
+                    // Only update if within expected length
+                    if (formattedValue.length <= 11) {
+                      setLocalActaNumber(formattedValue);
+                    }
+                  }}
                   disabled={!isBloque1Enabled}
-                  className={`max-w-28 px-0.5 text-center font-semibold ${
+                  className={`max-w-32 px-0.5 text-center font-semibold ${
                     !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                   }`}
-                  placeholder="0"
                 />
               </div>
 
@@ -624,8 +830,14 @@ export function VoteEntryForm({
                 <Input
                   type="number"
                   min={1}
+                  max={300}
                   value={localTotalElectores || ""}
-                  onChange={(e) => setLocalTotalElectores(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    if (value >= 1 && value <= 300) {
+                      setLocalTotalElectores(value);
+                    }
+                  }}
                   disabled={!isBloque1Enabled}
                   className={`max-w-20 text-center font-semibold ${
                     !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
