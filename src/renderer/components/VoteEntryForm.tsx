@@ -32,6 +32,11 @@ interface VoteEntryFormProps {
   mesaNumber: number;
   actaNumber: number;
   totalElectores: number;
+  selectedLocation: {
+    departamento: string;
+    provincia: string;
+    distrito: string;
+  };
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:number, electores: number) => void;
   isFormFinalized?: boolean;
@@ -49,7 +54,7 @@ interface VoteEntryFormProps {
 
 export function VoteEntryForm({ 
   category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, 
-  mesaNumber, actaNumber, totalElectores, onMesaDataChange, 
+  mesaNumber, actaNumber, totalElectores, selectedLocation, onMesaDataChange, 
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange, 
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
   startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange 
@@ -412,13 +417,13 @@ export function VoteEntryForm({
     });
   };
 
-  // const formatDate = (date: Date) => {
-  //   return date.toLocaleDateString('es-PE', {
-  //     day: '2-digit',
-  //     month: '2-digit', 
-  //     year: 'numeric'
-  //   });
-  // };
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  };
 
   const formatElapsedTime = (start: Date, current: Date) => {
     const diffMs = current.getTime() - start.getTime();
@@ -513,7 +518,7 @@ export function VoteEntryForm({
     });
   };
 
-  const handleGeneratePdf = async () => {
+  const handleGeneratePdf = async (finalizationTime: Date) => {
     try {
       const { width, height } = await (async () => {
         const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
@@ -529,9 +534,9 @@ export function VoteEntryForm({
       politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: 0, x: 294.5, y: height - 1068.8 }; 
+          labels[partyName] = { votes: 0, x: 294.6, y: height - 1068.8 }; 
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: 0, x: 294.5, y: height - 1080.8 };
+          labels[partyName] = { votes: 0, x: 294.6, y: height - 1080.8 };
         } else {
           labels[partyName] = { votes: 0, x: 444, y: y_pos };
           y_pos -= 21.1;
@@ -554,10 +559,17 @@ export function VoteEntryForm({
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
 
+      const horaFin = formatTime(finalizationTime);
+      const fechaFin = formatDate(finalizationTime);
+      const dateTimeString = `${horaFin} del ${fechaFin}`;
+
       const data = [
-        { texto: "PERU", x: 45, y: height - 187, color: rgb(0, 0, 0), size: 14 },
-        { texto: "LIMA", x: 230, y: height - 187, color: rgb(0, 0, 0), size: 14 },
-        { texto: "JESUS MARIA", x: 410, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 187, color: rgb(0, 0, 0), size: 14 },
+        { texto: dateTimeString, x: 100, y: height - 1163, color: rgb(0, 0, 0), size: 10 },
+        { texto: `${entries.length}`, x: 763, y: height - 161, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 294.6, y: height - 1092.8, color: rgb(0, 0, 0), size: 15 },
       ];
 
       for (const partyName in labels) {
@@ -581,7 +593,7 @@ export function VoteEntryForm({
       const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'documento_relleno.pdf';
+      link.download = `acta_presidencial_${localMesaNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -599,8 +611,9 @@ export function VoteEntryForm({
     console.log("Finalizando formulario...")
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
-    await handleGeneratePdf(); // Generar PDF al finalizar
-    onEndTimeChange(new Date()); // Capture end time
+    const now = new Date();
+    await handleGeneratePdf(now); // Generar PDF al finalizar
+    onEndTimeChange(now); // Capture end time
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
     } else {

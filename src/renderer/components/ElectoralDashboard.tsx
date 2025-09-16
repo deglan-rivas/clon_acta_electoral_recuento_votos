@@ -227,6 +227,11 @@ export function ElectoralDashboard() {
           mesaNumber={mesaNumber}
           actaNumber={actaNumber}
           totalElectores={totalElectores}
+          selectedLocation={{
+            departamento: selectedDepartamento,
+            provincia: selectedProvincia,
+            distrito: selectedDistrito
+          }}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
             setMesaNumber(mesa);
