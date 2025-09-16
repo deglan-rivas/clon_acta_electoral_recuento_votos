@@ -518,7 +518,7 @@ export function VoteEntryForm({
     });
   };
 
-  const handleGeneratePdf = async (finalizationTime: Date) => {
+  const handleGeneratePdfPresidencial = async (finalizationTime: Date, startTime: Date | null) => {
     try {
       const { width, height } = await (async () => {
         const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
@@ -572,6 +572,13 @@ export function VoteEntryForm({
         { texto: `${entries.length}`, x: 294.6, y: height - 1092.8, color: rgb(0, 0, 0), size: 15 },
       ];
 
+      if (startTime) {
+        const horaInicio = formatTime(startTime);
+        const fechaInicio = formatDate(startTime);
+        const startDateTimeString = `${horaInicio} del ${fechaInicio}`;
+        data.push({ texto: startDateTimeString, x: 100, y: height - 212, color: rgb(0, 0, 0), size: 10 });
+      }
+
       for (const partyName in labels) {
         if (labels.hasOwnProperty(partyName)) {
           const label = labels[partyName];
@@ -605,14 +612,190 @@ export function VoteEntryForm({
     }
   };
 
+  const handleGeneratePdfSenadoresNacional = async (finalizationTime: Date, startTime: Date | null) => {
+    const calculateVoteDataForPdf = () => {
+        const voteCount: { [partyKey: string]: number } = {};
+        const matrix: { [partyKey: string]: { [prefNumber: number]: number, total: number } } = {};
+        
+        politicalOrganizations.forEach(org => {
+            const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
+            voteCount[partyKey] = 0;
+            matrix[partyKey] = { total: 0 };
+            for (let i = 1; i <= 30; i++) {
+                matrix[partyKey][i] = 0;
+            }
+        });
+        
+        entries.forEach(entry => {
+            if (entry.party) {
+                voteCount[entry.party] = (voteCount[entry.party] || 0) + 1;
+                if (matrix[entry.party]) {
+                    if (entry.preferentialVote1 >= 1 && entry.preferentialVote1 <= 30) {
+                        matrix[entry.party][entry.preferentialVote1]++;
+                        matrix[entry.party].total++;
+                    }
+                    if (entry.preferentialVote2 >= 1 && entry.preferentialVote2 <= 30) {
+                        matrix[entry.party][entry.preferentialVote2]++;
+                        matrix[entry.party].total++;
+                    }
+                }
+            }
+        });
+        
+        return { voteCount, matrix };
+    };
+
+    try {
+      const { width, height } = await (async () => {
+        const existingPdfUrl = '/ACTA_SENADORES_NACIONAL.pdf';
+        const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        return firstPage.getSize();
+      })();
+ 
+      const { voteCount, matrix } = calculateVoteDataForPdf();
+
+      const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
+      let y_pos = height - 150;
+      politicalOrganizations.forEach(org => {
+        const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
+        if (org.name === "BLANCO") {
+          labels[partyName] = { votes: 0, x: 222.6, y: height - 760.8 }; 
+        } else if (org.name === "NULO") {
+          labels[partyName] = { votes: 0, x: 222.6, y: height - 790.4 };
+        } else {
+          labels[partyName] = { votes: 0, x: 230, y: y_pos };
+          y_pos -= 15.132;
+        }
+      });
+
+      for (const party in voteCount) {
+        if (labels.hasOwnProperty(party)) {
+          labels[party].votes = voteCount[party];
+        }
+      }
+
+      console.log("Diccionario de etiquetas de votos con coordenadas (Senadores Nacional):", labels);
+
+      const existingPdfUrl = '/ACTA_SENADORES_NACIONAL.pdf';
+      const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+
+      const horaFin = formatTime(finalizationTime);
+      const fechaFin = formatDate(finalizationTime);
+
+      const data = [
+        { texto: selectedLocation.departamento.toUpperCase(), x: 140, y: height - 103, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.provincia.toUpperCase(), x: 415, y: height - 103, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.distrito.toUpperCase(), x: 688, y: height - 103, color: rgb(0, 0, 0), size: 14 },
+        { texto: horaFin, x: 345, y: height - 743, color: rgb(0, 0, 0), size: 10 },
+        { texto: fechaFin, x: 460, y: height - 743, color: rgb(0, 0, 0), size: 10 },
+        { texto: `${entries.length}`, x: 1120, y: height - 114, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 222.6, y: height - 820, color: rgb(0, 0, 0), size: 15 },
+      ];
+
+      if (startTime) {
+        const horaInicio = formatTime(startTime);
+        const fechaInicio = formatDate(startTime);
+        data.push({ texto: horaInicio, x: 120, y: height - 115, color: rgb(0, 0, 0), size: 10 });
+        data.push({ texto: fechaInicio, x: 205, y: height - 115, color: rgb(0, 0, 0), size: 10 });
+      }
+
+      for (const partyName in labels) {
+        if (labels.hasOwnProperty(partyName)) {
+          const label = labels[partyName];
+          data.push({ texto: `${label.votes}`, x: label.x, y: label.y, color: rgb(0, 0, 0), size: 15 });
+        }
+      }
+
+      // START: Add preferential vote cross-table
+      let tableY = height - 150; // Starting Y position for the table.
+      const tableXStart = 269;
+      const cellWidth = 22.95;
+      let lineHeight = 15.132;
+      let fontSize = 13;
+
+
+      // Draw rows
+      politicalOrganizations.forEach(org => {
+          const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
+          const isBlancoOrNulo = org.name === 'BLANCO' || org.name === 'NULO';
+
+          if (!isBlancoOrNulo && matrix[partyKey]) {
+              if (tableY < 50) return; // Stop if we're at the bottom of the page
+
+              const partyMatrix = matrix[partyKey];
+              for (let i = 1; i <= 30; i++) {
+                  const count = partyMatrix[i] || 0;
+                  if (count > 0) {
+                      firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                  }
+              }
+              
+              tableY -= lineHeight;
+          }
+      });
+      // END: Add preferential vote cross-table
+
+
+      data.forEach(item => {
+        firstPage.drawText(item.texto, {
+          x: item.x,
+          y: item.y,
+          font: helveticaBoldFont,
+          size: item.size,
+          color: item.color,
+        });
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `acta_senadores_nacional_${localMesaNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log("PDF de Senadores Nacional generado y descarga iniciada.");
+
+    } catch (error) {
+      console.error("Error al generar el PDF de Senadores Nacional:", error);
+    }
+  };
+
 
   // Handle finalize form - disable all inputs permanently
   const handleFinalizeForm = async () => {
     console.log("Finalizando formulario...")
+    const now = new Date();
+    switch (category) {
+      case "presidencial":
+        await handleGeneratePdfPresidencial(now, startTime); // Generar PDF al finalizar
+        break;
+      case "senadoresNacional":
+        await handleGeneratePdfSenadoresNacional(now, startTime);
+        break;
+      case "senadoresRegional":
+        console.log("Categoría es Senadores Regional");
+        break;
+      case "diputados":
+        console.log("Categoría es Diputados");
+        break;
+      case "parlamentoAndino":
+        console.log("Categoría es Parlamento Andino");
+        break;
+      default:
+        console.log("Categoría desconocida:", category);
+        break;
+    }
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
-    const now = new Date();
-    await handleGeneratePdf(now); // Generar PDF al finalizar
     onEndTimeChange(now); // Capture end time
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
