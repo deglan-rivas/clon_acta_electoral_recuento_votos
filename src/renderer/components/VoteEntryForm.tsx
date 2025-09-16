@@ -395,13 +395,13 @@ export function VoteEntryForm({
     });
   };
 
-  // const formatDate = (date: Date) => {
-  //   return date.toLocaleDateString('es-PE', {
-  //     day: '2-digit',
-  //     month: '2-digit', 
-  //     year: 'numeric'
-  //   });
-  // };
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  };
 
   const formatElapsedTime = (start: Date, current: Date) => {
     const diffMs = current.getTime() - start.getTime();
@@ -508,14 +508,16 @@ export function VoteEntryForm({
       const firstPage = pages[0];
 
       const horaFin = formatTime(finalizationTime);
-      const dateTimeString = `${horaFin}`;
+      const fechaFin = formatDate(finalizationTime);
+      const dateTimeString = `${horaFin} del ${fechaFin}`;
 
       const data = [
         { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 187, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 187, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 187, color: rgb(0, 0, 0), size: 14 },
         { texto: dateTimeString, x: 100, y: height - 1163, color: rgb(0, 0, 0), size: 10 },
-        { texto: `${totalElectores}`, x: 763, y: height - 161, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 763, y: height - 161, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 294.6, y: height - 1092.8, color: rgb(0, 0, 0), size: 15 },
       ];
 
       for (const partyName in labels) {
@@ -539,7 +541,7 @@ export function VoteEntryForm({
       const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'acta_presidencial.pdf';
+      link.download = `acta_presidencial_${localMesaNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
