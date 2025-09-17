@@ -66,32 +66,51 @@ function createWindow(): BrowserWindow {
           label: 'Reiniciar Datos de la Aplicación',
           click: async () => {
             // First get the current active category
-            const getCurrentCategoryScript = `
-              const activeCategory = localStorage.getItem('electoral_active_category');
-              const categoryData = localStorage.getItem('electoral_category_data');
-              let parsedData = null;
-              let categoryLabel = 'actual';
+            let activeCategory, categoryData, categoryLabel;
+            
+            try {
+              const result = await mainWindow.webContents.executeJavaScript(`
+                (() => {
+                  const activeCategory = localStorage.getItem('electoral_active_category');
+                  const categoryData = localStorage.getItem('electoral_category_data');
+                  let parsedData = null;
+                  let categoryLabel = 'actual';
+                  
+                  try {
+                    parsedData = categoryData ? JSON.parse(categoryData) : {};
+                    // Clean the activeCategory of any quotes before using it
+                    const cleanActiveCategory = activeCategory ? activeCategory.replace(/^["']|["']$/g, '') : '';
+                    const categoryLabels = {
+                      'presidencial': 'Presidencial',
+                      'senadoresNacional': 'Senadores Nacional',
+                      'senadoresRegional': 'Senadores Regional',
+                      'diputados': 'Diputados',
+                      'parlamentoAndino': 'Parlamento Andino'
+                    };
+                    categoryLabel = categoryLabels[cleanActiveCategory] || cleanActiveCategory || 'actual';
+                  } catch (e) {
+                    console.error('Error parsing category data:', e);
+                    categoryLabel = 'actual';
+                  }
+                  
+                  return { activeCategory, categoryData: parsedData, categoryLabel };
+                })()
+              `);
               
-              try {
-                parsedData = categoryData ? JSON.parse(categoryData) : {};
-                // Map category keys to user-friendly labels
-                const categoryLabels = {
-                  'presidencial': 'Presidencial',
-                  'senadoresNacional': 'Senadores Nacional',
-                  'senadoresRegional': 'Senadores Regional',
-                  'diputados': 'Diputados',
-                  'parlamentoAndino': 'Parlamento Andino'
-                };
-                categoryLabel = categoryLabels[activeCategory] || activeCategory || 'actual';
-              } catch (e) {
-                console.error('Error parsing category data:', e);
+              activeCategory = result.activeCategory;
+              categoryData = result.categoryData;
+              categoryLabel = result.categoryLabel;
+              
+              // Remove any quotes from the category name
+              if (activeCategory && typeof activeCategory === 'string') {
+                activeCategory = activeCategory.replace(/^["']|["']$/g, '');
               }
               
-              JSON.stringify({ activeCategory, categoryData: parsedData, categoryLabel });
-            `;
-
-            const result = await mainWindow.webContents.executeJavaScript(getCurrentCategoryScript);
-            const { activeCategory, categoryData, categoryLabel } = JSON.parse(result);
+            } catch (error) {
+              log.error('Error getting category info:', error);
+              dialog.showErrorBox('Error', 'Error al obtener información de la categoría.');
+              return;
+            }
 
             if (!activeCategory) {
               dialog.showErrorBox('Error', 'No se pudo determinar la categoría actual.');
@@ -103,54 +122,64 @@ function createWindow(): BrowserWindow {
               buttons: ['Cancelar', 'Reiniciar Datos'],
               defaultId: 0,
               title: `Reiniciar Datos - ${categoryLabel}`,
-              message: `¿Está seguro de que desea eliminar los datos de "${categoryLabel}"?`,
+              message: `¿Está seguro de que desea eliminar los datos del tipo de elección ${categoryLabel}?`,
               detail: 'Esta acción eliminará:\n- Todos los votos ingresados en esta categoría\n- Configuraciones específicas de esta categoría\n- Límites configurados para esta categoría\n\nEsta acción no se puede deshacer.'
             });
 
             if (response.response === 1) {
               try {
                 // Clear only the current category data
-                await mainWindow.webContents.executeJavaScript(`
-                  const activeCategory = localStorage.getItem('electoral_active_category');
-                  const categoryDataString = localStorage.getItem('electoral_category_data');
-                  
-                  if (activeCategory && categoryDataString) {
+                const clearResult = await mainWindow.webContents.executeJavaScript(`
+                  ((categoryToDelete) => {
                     try {
-                      const categoryData = JSON.parse(categoryDataString);
+                      const categoryDataString = localStorage.getItem('electoral_category_data');
                       
-                      // Delete the current category data
-                      delete categoryData[activeCategory];
-                      
-                      // Save the updated data back to localStorage
-                      localStorage.setItem('electoral_category_data', JSON.stringify(categoryData));
-                      
-                      // Clear the active category since we deleted its data
-                      localStorage.removeItem('electoral_active_category');
-                      
-                      console.log('Deleted category data for:', activeCategory);
-                      console.log('Remaining categories:', Object.keys(categoryData));
+                      if (categoryDataString) {
+                        const categoryData = JSON.parse(categoryDataString);
+                        
+                        // Delete the current category data
+                        if (categoryData[categoryToDelete]) {
+                          delete categoryData[categoryToDelete];
+                        }
+                        
+                        // Save the updated data back to localStorage
+                        localStorage.setItem('electoral_category_data', JSON.stringify(categoryData));
+                        
+                        // Clear the active category since we deleted its data
+                        localStorage.removeItem('electoral_active_category');
+                        
+                        return { success: true, remainingCategories: Object.keys(categoryData) };
+                      } else {
+                        // If no data exists, just clear the active category
+                        localStorage.removeItem('electoral_active_category');
+                        return { success: true, remainingCategories: [] };
+                      }
                     } catch (e) {
-                      console.error('Error processing category data:', e);
-                      // Fallback: clear everything if parsing fails
-                      localStorage.removeItem('electoral_category_data');
-                      localStorage.removeItem('electoral_active_category');
+                      console.error('Error in clearing script:', e);
+                      return { success: false, error: e.message };
                     }
-                  }
-                  
-                  // Dispatch a custom event to trigger app remount
-                  window.dispatchEvent(new CustomEvent('app-reset'));
+                  })('${activeCategory}')
                 `);
                 
-                // After a delay, simulate minimize/restore to fix input events
-                setTimeout(() => {
-                  mainWindow.blur();
+                if (clearResult.success) {
+                  // Dispatch reset event
+                  await mainWindow.webContents.executeJavaScript(`
+                    window.dispatchEvent(new CustomEvent('app-reset'));
+                  `);
+                  
+                  // After a delay, simulate minimize/restore to fix input events
                   setTimeout(() => {
-                    mainWindow.focus();
-                    log.info('Window focus cycle completed');
-                  }, 100);
-                }, 500);
-                
-                log.info(`Category data cleared for: ${activeCategory}`);
+                    mainWindow.blur();
+                    setTimeout(() => {
+                      mainWindow.focus();
+                      log.info('Window focus cycle completed');
+                    }, 100);
+                  }, 500);
+                  
+                  log.info(`Category data cleared for: ${activeCategory}, remaining: ${clearResult.remainingCategories}`);
+                } else {
+                  throw new Error(`Clear operation failed: ${clearResult.error}`);
+                }
               } catch (error) {
                 log.error('Error clearing category data:', error);
                 dialog.showErrorBox('Error', 'Error al eliminar datos de la categoría. Intente cerrar y reabrir la aplicación.');

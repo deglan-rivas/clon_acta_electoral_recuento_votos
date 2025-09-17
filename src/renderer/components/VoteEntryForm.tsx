@@ -521,7 +521,7 @@ export function VoteEntryForm({
   const handleGeneratePdfPresidencial = async (finalizationTime: Date, startTime: Date | null) => {
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
+        const existingPdfUrl = './ACTA_RECUENTO_PRESIDENCIAL.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -552,7 +552,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas:", labels);
 
-      const existingPdfUrl = '/ACTA_RECUENTO_PRESIDENCIAL.pdf';
+      const existingPdfUrl = './ACTA_RECUENTO_PRESIDENCIAL.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -647,7 +647,7 @@ export function VoteEntryForm({
 
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = '/ACTA_SENADORES_NACIONAL.pdf';
+        const existingPdfUrl = './ACTA_SENADORES_NACIONAL.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -679,7 +679,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas (Senadores Nacional):", labels);
 
-      const existingPdfUrl = '/ACTA_SENADORES_NACIONAL.pdf';
+      const existingPdfUrl = './ACTA_SENADORES_NACIONAL.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);

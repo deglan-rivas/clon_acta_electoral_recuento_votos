@@ -87,7 +87,7 @@ export function ElectoralDashboard() {
     if (startTime && !endTime) {
       const interval = setInterval(() => {
         setCurrentTime(new Date());
-      }, 2000);
+      }, 1000);
       
       return () => clearInterval(interval);
     }
@@ -379,12 +379,12 @@ export function ElectoralDashboard() {
                   
                 )}
                 {/* Acta code Display */}
-                {actaNumber && (
+                {actaNumber ? (
                   <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
                     <span className="text-xs font-medium text-orange-700">Acta:</span>
                     <span className="text-sm font-semibold text-orange-900 ml-1">{actaNumber}</span>
                   </div>                  
-                )}
+                ) : null}
               </>
             )}
             </div>
