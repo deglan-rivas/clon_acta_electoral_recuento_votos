@@ -39,7 +39,7 @@ export function ElectoralDashboard() {
 
   // Mesa data entry state
   const [mesaNumber, setMesaNumber] = useState<number>(0);
-  const [actaNumber, setActaNumber] = useState<number>(0);
+  const [actaNumber, setActaNumber] = useState<string>(0);
   const [totalElectores, setTotalElectores] = useState<number>(0);
   // const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
   
@@ -376,6 +376,14 @@ export function ElectoralDashboard() {
                     <span className="text-xs font-medium text-orange-700">Mesa:</span>
                     <span className="text-sm font-semibold text-orange-900 ml-1">{String(mesaNumber).padStart(3, '0')}</span>
                   </div>
+                  
+                )}
+                {/* Acta code Display */}
+                {actaNumber && (
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                    <span className="text-xs font-medium text-orange-700">Acta:</span>
+                    <span className="text-sm font-semibold text-orange-900 ml-1">{actaNumber}</span>
+                  </div>                  
                 )}
               </>
             )}

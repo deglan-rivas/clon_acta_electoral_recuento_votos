@@ -30,7 +30,7 @@ interface VoteEntryFormProps {
   preferentialConfig: PreferentialConfig;
   onEntriesChange: (entries: VoteEntry[]) => void;
   mesaNumber: number;
-  actaNumber: number;
+  actaNumber: string;
   totalElectores: number;
   selectedLocation: {
     departamento: string;
@@ -38,7 +38,7 @@ interface VoteEntryFormProps {
     distrito: string;
   };
   // totalCedulasRecibidas: number;
-  onMesaDataChange: (mesa: number, acta:number, electores: number) => void;
+  onMesaDataChange: (mesa: number, acta:string, electores: number) => void;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
   isMesaDataSaved?: boolean;
@@ -497,7 +497,7 @@ export function VoteEntryForm({
     // }
 
     // If validations pass, update the parent state
-    onMesaDataChange(parseInt(localMesaNumber), parseInt(localActaNumber.split('-')[0] || '0'), localTotalElectores);
+    onMesaDataChange(parseInt(localMesaNumber), localActaNumber, localTotalElectores);
     const now = new Date();
     onStartTimeChange(now); // Capture start time
     onCurrentTimeChange(now); // Initialize currentTime to same value as startTime
@@ -1025,12 +1025,12 @@ export function VoteEntryForm({
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total Electores</label>
                 <Input
                   type="number"
-                  min={1}
+                  min={0}
                   max={300}
                   value={localTotalElectores || ""}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 0;
-                    if (value >= 1 && value <= 300) {
+                    if (value >= 0 && value <= 300) {
                       setLocalTotalElectores(value);
                     }
                   }}
@@ -1206,10 +1206,11 @@ export function VoteEntryForm({
         {/* Entries Table - Right Side (7/12 width) */}
         <Card className="w-full col-span-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-start gap-4">
               
               CÉDULAS RECONTADAS
               <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
+              {entries.length - localTotalElectores > 0 ? <Badge variant="default" className="bg-yellow-100 text-xl font-semibold text-yellow-800">{entries.length - localTotalElectores} {(entries.length - localTotalElectores) > 1 ? "cédulas" : "cédula"} en exceso</Badge> : null}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">
