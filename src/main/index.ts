@@ -65,21 +65,77 @@ function createWindow(): BrowserWindow {
         {
           label: 'Reiniciar Datos de la Aplicación',
           click: async () => {
+            // First get the current active category
+            const getCurrentCategoryScript = `
+              const activeCategory = localStorage.getItem('electoral_active_category');
+              const categoryData = localStorage.getItem('electoral_category_data');
+              let parsedData = null;
+              let categoryLabel = 'actual';
+              
+              try {
+                parsedData = categoryData ? JSON.parse(categoryData) : {};
+                // Map category keys to user-friendly labels
+                const categoryLabels = {
+                  'presidencial': 'Presidencial',
+                  'senadoresNacional': 'Senadores Nacional',
+                  'senadoresRegional': 'Senadores Regional',
+                  'diputados': 'Diputados',
+                  'parlamentoAndino': 'Parlamento Andino'
+                };
+                categoryLabel = categoryLabels[activeCategory] || activeCategory || 'actual';
+              } catch (e) {
+                console.error('Error parsing category data:', e);
+              }
+              
+              JSON.stringify({ activeCategory, categoryData: parsedData, categoryLabel });
+            `;
+
+            const result = await mainWindow.webContents.executeJavaScript(getCurrentCategoryScript);
+            const { activeCategory, categoryData, categoryLabel } = JSON.parse(result);
+
+            if (!activeCategory) {
+              dialog.showErrorBox('Error', 'No se pudo determinar la categoría actual.');
+              return;
+            }
+
             const response = await dialog.showMessageBox(mainWindow, {
               type: 'warning',
               buttons: ['Cancelar', 'Reiniciar Datos'],
               defaultId: 0,
-              title: 'Reiniciar Datos de la Aplicación',
-              message: '¿Está seguro de que desea eliminar todos los datos guardados?',
-              detail: 'Esta acción eliminará:\n- Todas las configuraciones\n- Todos los votos ingresados\n- Límites configurados\n\nEsta acción no se puede deshacer.'
+              title: `Reiniciar Datos - ${categoryLabel}`,
+              message: `¿Está seguro de que desea eliminar los datos de "${categoryLabel}"?`,
+              detail: 'Esta acción eliminará:\n- Todos los votos ingresados en esta categoría\n- Configuraciones específicas de esta categoría\n- Límites configurados para esta categoría\n\nEsta acción no se puede deshacer.'
             });
 
             if (response.response === 1) {
               try {
-                // Clear localStorage and sessionStorage, then trigger React remount
+                // Clear only the current category data
                 await mainWindow.webContents.executeJavaScript(`
-                  localStorage.clear(); 
-                  sessionStorage.clear();
+                  const activeCategory = localStorage.getItem('electoral_active_category');
+                  const categoryDataString = localStorage.getItem('electoral_category_data');
+                  
+                  if (activeCategory && categoryDataString) {
+                    try {
+                      const categoryData = JSON.parse(categoryDataString);
+                      
+                      // Delete the current category data
+                      delete categoryData[activeCategory];
+                      
+                      // Save the updated data back to localStorage
+                      localStorage.setItem('electoral_category_data', JSON.stringify(categoryData));
+                      
+                      // Clear the active category since we deleted its data
+                      localStorage.removeItem('electoral_active_category');
+                      
+                      console.log('Deleted category data for:', activeCategory);
+                      console.log('Remaining categories:', Object.keys(categoryData));
+                    } catch (e) {
+                      console.error('Error processing category data:', e);
+                      // Fallback: clear everything if parsing fails
+                      localStorage.removeItem('electoral_category_data');
+                      localStorage.removeItem('electoral_active_category');
+                    }
+                  }
                   
                   // Dispatch a custom event to trigger app remount
                   window.dispatchEvent(new CustomEvent('app-reset'));
@@ -94,10 +150,10 @@ function createWindow(): BrowserWindow {
                   }, 100);
                 }, 500);
                 
-                log.info('Application data cleared and reset event dispatched');
+                log.info(`Category data cleared for: ${activeCategory}`);
               } catch (error) {
-                log.error('Error clearing data:', error);
-                dialog.showErrorBox('Error', 'Error al eliminar datos. Intente cerrar y reabrir la aplicación.');
+                log.error('Error clearing category data:', error);
+                dialog.showErrorBox('Error', 'Error al eliminar datos de la categoría. Intente cerrar y reabrir la aplicación.');
               }
             }
           }
