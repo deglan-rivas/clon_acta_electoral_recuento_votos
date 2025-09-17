@@ -564,6 +564,8 @@ export function VoteEntryForm({
       const dateTimeString = `${horaFin} del ${fechaFin}`;
 
       const data = [
+        { texto: localMesaNumber, x: 45, y: height - 132, color: rgb(0, 0, 0), size: 14 },
+        { texto: localActaNumber, x: 137, y: height - 132, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 175, color: rgb(0, 0, 0), size: 14 },
@@ -714,11 +716,11 @@ export function VoteEntryForm({
       }
 
       // START: Add preferential vote cross-table
-      let tableY = height - 150; // Starting Y position for the table.
-      const tableXStart = 269;
+      let tableY = height - 149; // Starting Y position for the table.
+      const tableXStart = 268.8;
       const cellWidth = 22.95;
       let lineHeight = 15.132;
-      let fontSize = 13;
+      let fontSize = 11.5;
 
 
       // Draw rows
@@ -732,9 +734,7 @@ export function VoteEntryForm({
               const partyMatrix = matrix[partyKey];
               for (let i = 1; i <= 30; i++) {
                   const count = partyMatrix[i] || 0;
-                  if (count > 0) {
-                      firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
-                  }
+                  firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
               }
               
               tableY -= lineHeight;
