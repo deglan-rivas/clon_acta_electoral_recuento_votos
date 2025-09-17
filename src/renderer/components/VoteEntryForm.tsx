@@ -91,8 +91,8 @@ export function VoteEntryForm({
     if (mesaNumber > 0) {
       setLocalMesaNumber(mesaNumber.toString().padStart(6, '0'));
     }
-    if (actaNumber > 0) {
-      setLocalActaNumber(`${actaNumber.toString().padStart(6, '0')}-00-A`);
+    if (actaNumber) {
+      setLocalActaNumber(actaNumber);
     }
     setLocalTotalElectores(totalElectores);
     // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
