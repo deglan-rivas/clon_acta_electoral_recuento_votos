@@ -86,6 +86,20 @@ export function VoteEntryForm({
     setEntries(existingEntries);
   }, [existingEntries]);
 
+  // Debug: Check APIs on component mount
+  useEffect(() => {
+    console.log("VoteEntryForm mounted - checking APIs:");
+    console.log("window.api:", window.api);
+    console.log("window.electronAPI:", (window as any).electronAPI);
+
+    // Set a timeout to check again after a moment
+    setTimeout(() => {
+      console.log("VoteEntryForm after timeout - checking APIs:");
+      console.log("window.api:", window.api);
+      console.log("window.electronAPI:", (window as any).electronAPI);
+    }, 1000);
+  }, []);
+
   // Update local state when parent values change
   useEffect(() => {
     if (mesaNumber > 0) {
@@ -163,6 +177,21 @@ export function VoteEntryForm({
 
 
   const handleAddEntry = () => {
+    // Check if adding this entry would exceed total electores
+    if (entries.length >= localTotalElectores) {
+      toast.error(`No se pueden agregar más cédulas. Límite alcanzado: ${localTotalElectores} electores hábiles`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '450px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
     if (!newEntry.party) {
       toast.error("Por favor seleccione una organización política", {
         style: {
@@ -599,15 +628,44 @@ export function VoteEntryForm({
       });
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `acta_presidencial_${localMesaNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `acta_presidencial_${localMesaNumber}.pdf`;
 
-      console.log("PDF generado y descarga iniciada.");
+      // Debug: Check what APIs are available
+      console.log("window.api:", window.api);
+      console.log("window.api?.savePdf:", window.api?.savePdf);
+      console.log("typeof window.api?.savePdf:", typeof window.api?.savePdf);
+      console.log("Is Electron environment:", !!(window as any).electronAPI || !!(window as any).api);
+
+      // Use Electron API to save and open PDF directly
+      if (window.api && typeof window.api.savePdf === 'function') {
+        const saveResult = await window.api.savePdf(pdfBytes, filename);
+        if (saveResult.success && saveResult.filePath) {
+          console.log("PDF guardado exitosamente en:", saveResult.filePath);
+          toast.success(`PDF guardado en el escritorio: ${filename}`);
+
+          // Automatically open the PDF
+          const openResult = await window.api.openPdf(saveResult.filePath);
+          if (openResult.success) {
+            console.log("PDF abierto exitosamente");
+          } else {
+            console.error("Error al abrir PDF:", openResult.error);
+            toast.error("PDF guardado pero no se pudo abrir automáticamente");
+          }
+        } else {
+          console.error("Error al guardar PDF:", saveResult.error);
+          toast.error("Error al guardar el PDF");
+        }
+      } else {
+        // Fallback to browser download for web version
+        const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log("PDF generado y descarga iniciada (modo web).");
+      }
 
     } catch (error) {
       console.error("Error al generar el PDF:", error);
@@ -754,15 +812,38 @@ export function VoteEntryForm({
       });
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `acta_senadores_nacional_${localMesaNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `acta_senadores_nacional_${localMesaNumber}.pdf`;
 
-      console.log("PDF de Senadores Nacional generado y descarga iniciada.");
+      // Use Electron API to save and open PDF directly
+      if (window.api && typeof window.api.savePdf === 'function') {
+        const saveResult = await window.api.savePdf(pdfBytes, filename);
+        if (saveResult.success && saveResult.filePath) {
+          console.log("PDF de Senadores Nacional guardado exitosamente en:", saveResult.filePath);
+          toast.success(`PDF guardado en el escritorio: ${filename}`);
+
+          // Automatically open the PDF
+          const openResult = await window.api.openPdf(saveResult.filePath);
+          if (openResult.success) {
+            console.log("PDF abierto exitosamente");
+          } else {
+            console.error("Error al abrir PDF:", openResult.error);
+            toast.error("PDF guardado pero no se pudo abrir automáticamente");
+          }
+        } else {
+          console.error("Error al guardar PDF:", saveResult.error);
+          toast.error("Error al guardar el PDF");
+        }
+      } else {
+        // Fallback to browser download for web version
+        const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log("PDF de Senadores Nacional generado y descarga iniciada (modo web).");
+      }
 
     } catch (error) {
       console.error("Error al generar el PDF de Senadores Nacional:", error);
@@ -1210,7 +1291,6 @@ export function VoteEntryForm({
               
               CÉDULAS RECONTADAS
               <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
-              {entries.length - localTotalElectores > 0 ? <Badge variant="default" className="bg-yellow-100 text-xl font-semibold text-yellow-800">{entries.length - localTotalElectores} {(entries.length - localTotalElectores) > 1 ? "cédulas" : "cédula"} en exceso</Badge> : null}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">

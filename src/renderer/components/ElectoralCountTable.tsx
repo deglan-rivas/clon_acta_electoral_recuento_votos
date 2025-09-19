@@ -47,16 +47,12 @@ export function ElectoralCountTable({ data, category, totalElectores = 0}: Elect
         
         // Handle preferential votes
         if (matrix[entry.party]) {
-          // Handle preferentialVote1
-          if (entry.preferentialVote1 >= 1 && entry.preferentialVote1 <= 30) {
-            matrix[entry.party][entry.preferentialVote1]++;
-            matrix[entry.party].total++;
-          }
-          // Handle preferentialVote2
-          if (entry.preferentialVote2 >= 1 && entry.preferentialVote2 <= 30) {
-            matrix[entry.party][entry.preferentialVote2]++;
-            matrix[entry.party].total++;
-          }
+          [entry.preferentialVote1, entry.preferentialVote2].forEach(vote => {
+            if (vote >= 1 && vote <= 30) {
+              matrix[entry.party][vote]++;
+              matrix[entry.party].total++;
+            }
+          });
         }
       }
     });

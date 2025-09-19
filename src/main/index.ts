@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, Menu, dialog } from 'electron'
+import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from 'electron'
 import { join } from 'path'
+import { writeFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import log from 'electron-log'
 import icon from '../../resources/icon.ico?asset'
@@ -41,7 +42,9 @@ function createWindow(): BrowserWindow {
     icon: icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -264,6 +267,37 @@ function createWindow(): BrowserWindow {
   mainWindow = newWindow;
   return newWindow;
 }
+
+// IPC handlers for PDF operations
+ipcMain.handle('save-pdf', async (event, pdfBytes: Uint8Array, filename: string) => {
+  try {
+    // Get user's Desktop directory
+    const desktopPath = app.getPath('desktop')
+    const filePath = join(desktopPath, filename)
+
+    // Save the PDF file
+    await writeFile(filePath, Buffer.from(pdfBytes))
+
+    log.info(`PDF saved successfully: ${filePath}`)
+    return { success: true, filePath }
+  } catch (error) {
+    log.error('Error saving PDF:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('open-pdf', async (event, filePath: string) => {
+  try {
+    // Open the PDF file with the default PDF viewer
+    await shell.openPath(filePath)
+
+    log.info(`PDF opened successfully: ${filePath}`)
+    return { success: true }
+  } catch (error) {
+    log.error('Error opening PDF:', error)
+    return { success: false, error: error.message }
+  }
+})
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
