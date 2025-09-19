@@ -37,19 +37,7 @@ export function ElectoralDashboard() {
   const [selectedProvincia, setSelectedProvincia] = useState<string>("");
   const [selectedDistrito, setSelectedDistrito] = useState<string>("");
 
-  // Mesa data entry state
-  const [mesaNumber, setMesaNumber] = useState<number>(0);
-  const [actaNumber, setActaNumber] = useState<string>(0);
-  const [totalElectores, setTotalElectores] = useState<number>(0);
-  // const [totalCedulasRecibidas, setTotalCedulasRecibidas] = useState<number>(0);
-  
-  // Form finalization state
-  const [isFormFinalized, setIsFormFinalized] = useState<boolean>(false);
-  const [isMesaDataSaved, setIsMesaDataSaved] = useState<boolean>(false);
-
-  // Time tracking state - moved from VoteEntryForm for persistence across tabs
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
+  // Current time state (not persisted per category)
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Load Ubigeo data from CSV
@@ -82,16 +70,20 @@ export function ElectoralDashboard() {
     loadUbigeoData();
   }, []);
 
-  // Time tracking interval - update currentTime every 3 seconds
+  // Time tracking interval - update currentTime every second
   useEffect(() => {
+    const currentCategoryData = getCurrentCategoryData();
+    const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
+    const endTime = currentCategoryData?.endTime ? new Date(currentCategoryData.endTime) : null;
+
     if (startTime && !endTime) {
       const interval = setInterval(() => {
         setCurrentTime(new Date());
       }, 1000);
-      
+
       return () => clearInterval(interval);
     }
-  }, [startTime, endTime]);
+  }, [activeCategory, categoryData]);
 
 
   // Save activeCategory to localStorage when it changes
@@ -122,8 +114,16 @@ export function ElectoralDashboard() {
   };
 
   // Get current values from categoryData
-  const activeSection = getCurrentCategoryData()?.activeSection || 'recuento';
-  const voteLimits = getCurrentCategoryData()?.voteLimits || { preferential1: 30, preferential2: 30 };
+  const currentCategoryData = getCurrentCategoryData();
+  const activeSection = currentCategoryData?.activeSection || 'recuento';
+  const voteLimits = currentCategoryData?.voteLimits || { preferential1: 30, preferential2: 30 };
+  const mesaNumber = currentCategoryData?.mesaNumber || 0;
+  const actaNumber = currentCategoryData?.actaNumber || '';
+  const totalElectores = currentCategoryData?.totalElectores || 0;
+  const isFormFinalized = currentCategoryData?.isFormFinalized || false;
+  const isMesaDataSaved = currentCategoryData?.isMesaDataSaved || false;
+  const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
+  const endTime = currentCategoryData?.endTime ? new Date(currentCategoryData.endTime) : null;
 
   // Define preferential vote configuration by category
   const getPreferentialVoteConfig = (category: string) => {
@@ -234,20 +234,21 @@ export function ElectoralDashboard() {
           }}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
-            setMesaNumber(mesa);
-            setActaNumber(acta);
-            setTotalElectores(electores);
-            // setTotalCedulasRecibidas(cedulas);
+            updateCurrentCategoryData({
+              mesaNumber: mesa,
+              actaNumber: acta,
+              totalElectores: electores
+            });
           }}
           isFormFinalized={isFormFinalized}
-          onFormFinalizedChange={setIsFormFinalized}
+          onFormFinalizedChange={(finalized) => updateCurrentCategoryData({ isFormFinalized: finalized })}
           isMesaDataSaved={isMesaDataSaved}
-          onMesaDataSavedChange={setIsMesaDataSaved}
+          onMesaDataSavedChange={(saved) => updateCurrentCategoryData({ isMesaDataSaved: saved })}
           startTime={startTime}
           endTime={endTime}
           currentTime={currentTime}
-          onStartTimeChange={setStartTime}
-          onEndTimeChange={setEndTime}
+          onStartTimeChange={(time) => updateCurrentCategoryData({ startTime: time?.toISOString() || null })}
+          onEndTimeChange={(time) => updateCurrentCategoryData({ endTime: time?.toISOString() || null })}
           onCurrentTimeChange={setCurrentTime}
         />;
       case "organizaciones":

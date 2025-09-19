@@ -49,6 +49,13 @@ export interface CategoryData {
   };
   voteEntries: any[];
   activeSection: string;
+  mesaNumber: number;
+  actaNumber: string;
+  totalElectores: number;
+  isFormFinalized: boolean;
+  isMesaDataSaved: boolean;
+  startTime: string | null; // Store as ISO string
+  endTime: string | null; // Store as ISO string
 }
 
 // Get default data for a category
@@ -59,35 +66,22 @@ const getDefaultCategoryData = (): CategoryData => ({
   },
   voteEntries: [],
   activeSection: 'recuento',
+  mesaNumber: 0,
+  actaNumber: '',
+  totalElectores: 0,
+  isFormFinalized: false,
+  isMesaDataSaved: false,
+  startTime: null,
+  endTime: null,
 });
 
 // Initialize with default data for all categories
 const getInitialCategoryData = (): Record<string, CategoryData> => ({
-  "presidencial": {
-    voteLimits: { preferential1: 30, preferential2: 30 },
-    voteEntries: [],
-    activeSection: "recuento"
-  },
-  "senadoresNacional": {
-    voteLimits: { preferential1: 30, preferential2: 30 },
-    voteEntries: [],
-    activeSection: "recuento"
-  },
-  "senadoresRegional": {
-    voteLimits: { preferential1: 30, preferential2: 30 },
-    voteEntries: [],
-    activeSection: "recuento"
-  },
-  "diputados": {
-    voteLimits: { preferential1: 30, preferential2: 30 },
-    voteEntries: [],
-    activeSection: "recuento"
-  },
-  "parlamentoAndino": {
-    voteLimits: { preferential1: 30, preferential2: 30 },
-    voteEntries: [],
-    activeSection: "recuento"
-  }
+  "presidencial": getDefaultCategoryData(),
+  "senadoresNacional": getDefaultCategoryData(),
+  "senadoresRegional": getDefaultCategoryData(),
+  "diputados": getDefaultCategoryData(),
+  "parlamentoAndino": getDefaultCategoryData()
 });
 
 // Get all category data
