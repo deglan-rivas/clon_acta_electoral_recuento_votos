@@ -3,11 +3,12 @@ import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ElectoralCountTable } from "./ElectoralCountTable";
 import { VoteEntryForm } from "./VoteEntryForm";
-import { PoliticalOrganizations } from "./PoliticalOrganizations";
 import { mockElectoralData } from "../data/mockData";
 import { Vote, Users, Building2, Globe, Crown, FileText, BarChart3, Settings } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import csvFile from '/TB_UBIGEOS.csv?url';
+import { SettingsModal } from "./SettingsModal";
+import { Button } from "./ui/button";
 import {
   getActiveCategory,
   saveActiveCategory,
@@ -39,6 +40,9 @@ export function ElectoralDashboard() {
 
   // Current time state (not persisted per category)
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  // Settings modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Load Ubigeo data from CSV
   useEffect(() => {
@@ -154,7 +158,6 @@ export function ElectoralDashboard() {
   const sections = [
     { key: "ingreso", label: "Ingreso de Votos", icon: FileText },
     { key: "recuento", label: "Recuento", icon: BarChart3 },
-    { key: "organizaciones", label: "Organizaciones Políticas", icon: Settings },
   ];
 
   // Get unique departamentos
@@ -250,15 +253,6 @@ export function ElectoralDashboard() {
           onStartTimeChange={(time) => updateCurrentCategoryData({ startTime: time?.toISOString() || null })}
           onEndTimeChange={(time) => updateCurrentCategoryData({ endTime: time?.toISOString() || null })}
           onCurrentTimeChange={setCurrentTime}
-        />;
-      case "organizaciones":
-        return <PoliticalOrganizations 
-          category={activeCategory} 
-          voteLimits={voteLimits} 
-          onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
-          preferentialConfig={preferentialConfig}
-          isFormFinalized={isFormFinalized}
-          isMesaDataSaved={isMesaDataSaved}
         />;
       default:
         return null;
@@ -389,7 +383,16 @@ export function ElectoralDashboard() {
               </>
             )}
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSettingsOpen(true)}
+                className="flex items-center space-x-2"
+                title="Configurar"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
               <Badge
                 variant="secondary"
                 className="text-white font-semibold text-base px-4 py-2 shrink-0 bg-red-800"
@@ -408,6 +411,18 @@ export function ElectoralDashboard() {
           {renderSection()}
         </div>
       </main>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        category={activeCategory}
+        voteLimits={voteLimits}
+        onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
+        preferentialConfig={getPreferentialVoteConfig(activeCategory)}
+        isFormFinalized={isFormFinalized}
+        isMesaDataSaved={isMesaDataSaved}
+      />
     </div>
   );
 }
