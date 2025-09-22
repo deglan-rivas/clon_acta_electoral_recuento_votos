@@ -565,23 +565,25 @@ export function VoteEntryForm({
         return firstPage.getSize();
       })();
 
-      const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
+      const labels: { [key: string]: { votes: number | string; x: number; y: number } } = {};
       let y_pos = height - 225.5;
-      availableOrganizations.forEach(org => {
+      politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
+        const isSelected = selectedOrganizationKeys.includes(org.key);
+
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: 0, x: 294.6, y: height - 1056 }; 
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 294.6, y: height - 1056 };
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: 0, x: 294.6, y: height - 1068 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 294.6, y: height - 1068 };
         } else {
-          labels[partyName] = { votes: 0, x: 444, y: y_pos };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 444, y: y_pos };
           y_pos -= 21.1;
         }
       });
 
       const voteCount = calculateVoteData();
       for (const party in voteCount) {
-        if (labels.hasOwnProperty(party)) {
+        if (labels.hasOwnProperty(party) && labels[party].votes !== "-") {
           labels[party].votes = voteCount[party];
         }
       }
@@ -683,13 +685,17 @@ export function VoteEntryForm({
     const calculateVoteDataForPdf = () => {
         const voteCount: { [partyKey: string]: number } = {};
         const matrix: { [partyKey: string]: { [prefNumber: number]: number, total: number } } = {};
-        
-        availableOrganizations.forEach(org => {
+
+        politicalOrganizations.forEach(org => {
             const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
-            voteCount[partyKey] = 0;
-            matrix[partyKey] = { total: 0 };
-            for (let i = 1; i <= 30; i++) {
-                matrix[partyKey][i] = 0;
+            const isSelected = selectedOrganizationKeys.includes(org.key);
+
+            if (isSelected) {
+                voteCount[partyKey] = 0;
+                matrix[partyKey] = { total: 0 };
+                for (let i = 1; i <= 30; i++) {
+                    matrix[partyKey][i] = 0;
+                }
             }
         });
         
@@ -724,22 +730,24 @@ export function VoteEntryForm({
  
       const { voteCount, matrix } = calculateVoteDataForPdf();
 
-      const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
+      const labels: { [key: string]: { votes: number | string; x: number; y: number } } = {};
       let y_pos = height - 150;
-      availableOrganizations.forEach(org => {
+      politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
+        const isSelected = selectedOrganizationKeys.includes(org.key);
+
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: 0, x: 222.6, y: height - 760.8 }; 
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 222.6, y: height - 760.8 };
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: 0, x: 222.6, y: height - 790.4 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 222.6, y: height - 790.4 };
         } else {
-          labels[partyName] = { votes: 0, x: 230, y: y_pos };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 230, y: y_pos };
           y_pos -= 15.132;
         }
       });
 
       for (const party in voteCount) {
-        if (labels.hasOwnProperty(party)) {
+        if (labels.hasOwnProperty(party) && labels[party].votes !== "-") {
           labels[party].votes = voteCount[party];
         }
       }
@@ -789,19 +797,27 @@ export function VoteEntryForm({
 
 
       // Draw rows
-      availableOrganizations.forEach(org => {
+      politicalOrganizations.forEach(org => {
           const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
           const isBlancoOrNulo = org.name === 'BLANCO' || org.name === 'NULO';
+          const isSelected = selectedOrganizationKeys.includes(org.key);
 
-          if (!isBlancoOrNulo && matrix[partyKey]) {
+          if (!isBlancoOrNulo) {
               if (tableY < 50) return; // Stop if we're at the bottom of the page
 
-              const partyMatrix = matrix[partyKey];
-              for (let i = 1; i <= 30; i++) {
-                  const count = partyMatrix[i] || 0;
-                  firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+              if (isSelected && matrix[partyKey]) {
+                  const partyMatrix = matrix[partyKey];
+                  for (let i = 1; i <= 30; i++) {
+                      const count = partyMatrix[i] || 0;
+                      firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                  }
+              } else {
+                  // For unselected organizations, show dashes
+                  for (let i = 1; i <= 30; i++) {
+                      firstPage.drawText("-", { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                  }
               }
-              
+
               tableY -= lineHeight;
           }
       });
@@ -882,6 +898,8 @@ export function VoteEntryForm({
         console.log("Categoría desconocida:", category);
         break;
     }
+    // if (category ==='senadoresNacional')
+    //  return;
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
     onEndTimeChange(now); // Capture end time
@@ -1294,7 +1312,7 @@ export function VoteEntryForm({
         {/* Entries Table - Right Side (7/12 width) */}
         <Card className="w-full col-span-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-start gap-4">
+            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-end gap-4">
               
               CÉDULAS RECONTADAS
               <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
