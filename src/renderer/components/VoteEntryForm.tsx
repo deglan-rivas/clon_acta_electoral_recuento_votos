@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
+import { getSelectedOrganizations } from "../lib/localStorage";
 import { toast } from "sonner";
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -52,15 +53,21 @@ interface VoteEntryFormProps {
   onCurrentTimeChange: (time: Date) => void;
 }
 
-export function VoteEntryForm({ 
-  category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange, 
-  mesaNumber, actaNumber, totalElectores, selectedLocation, onMesaDataChange, 
-  isFormFinalized: externalIsFormFinalized, onFormFinalizedChange, 
+export function VoteEntryForm({
+  category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange,
+  mesaNumber, actaNumber, totalElectores, selectedLocation, onMesaDataChange,
+  isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
-  startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange 
+  startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange
 }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
+
+  // Get selected organizations from localStorage
+  const selectedOrganizationKeys = getSelectedOrganizations();
+  const availableOrganizations = politicalOrganizations.filter(org =>
+    selectedOrganizationKeys.includes(org.key)
+  );
 
   // Local state for form inputs before saving
   const [localMesaNumber, setLocalMesaNumber] = useState<string>('');
@@ -560,7 +567,7 @@ export function VoteEntryForm({
 
       const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
       let y_pos = height - 225.5;
-      politicalOrganizations.forEach(org => {
+      availableOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         if (org.name === "BLANCO") {
           labels[partyName] = { votes: 0, x: 294.6, y: height - 1056 }; 
@@ -677,7 +684,7 @@ export function VoteEntryForm({
         const voteCount: { [partyKey: string]: number } = {};
         const matrix: { [partyKey: string]: { [prefNumber: number]: number, total: number } } = {};
         
-        politicalOrganizations.forEach(org => {
+        availableOrganizations.forEach(org => {
             const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
             voteCount[partyKey] = 0;
             matrix[partyKey] = { total: 0 };
@@ -719,7 +726,7 @@ export function VoteEntryForm({
 
       const labels: { [key: string]: { votes: number; x: number; y: number } } = {};
       let y_pos = height - 150;
-      politicalOrganizations.forEach(org => {
+      availableOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         if (org.name === "BLANCO") {
           labels[partyName] = { votes: 0, x: 222.6, y: height - 760.8 }; 
@@ -782,7 +789,7 @@ export function VoteEntryForm({
 
 
       // Draw rows
-      politicalOrganizations.forEach(org => {
+      availableOrganizations.forEach(org => {
           const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
           const isBlancoOrNulo = org.name === 'BLANCO' || org.name === 'NULO';
 
@@ -1338,7 +1345,7 @@ export function VoteEntryForm({
                           }
                         }
                       }}
-                      options={politicalOrganizations.map((org) => ({
+                      options={availableOrganizations.map((org) => ({
                         value: org.order ? `${org.order} | ${org.name}` : org.name,
                         label: org.order ? `${org.order} | ${org.name}` : org.name,
                       }))}

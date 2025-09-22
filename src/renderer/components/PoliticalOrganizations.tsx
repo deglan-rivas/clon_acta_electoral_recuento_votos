@@ -1,8 +1,12 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
+import { Checkbox } from "./ui/checkbox";
+import { Button } from "./ui/button";
 import { politicalOrganizations } from "../data/mockData";
+import { getSelectedOrganizations, saveSelectedOrganizations } from "../lib/localStorage";
 
 interface VoteLimits {
   preferential1: number;
@@ -26,6 +30,34 @@ interface PoliticalOrganizationsProps {
 export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved }: PoliticalOrganizationsProps) {
   // Block control logic - same as VoteEntryForm
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
+
+  // State for selected organizations (global across all categories)
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>(() => getSelectedOrganizations());
+
+  // Save to localStorage whenever selection changes
+  useEffect(() => {
+    saveSelectedOrganizations(selectedOrganizations);
+  }, [selectedOrganizations]);
+
+  // Handle individual organization selection
+  const handleOrganizationToggle = (orgKey: string) => {
+    setSelectedOrganizations(prev => {
+      if (prev.includes(orgKey)) {
+        return prev.filter(key => key !== orgKey);
+      } else {
+        return [...prev, orgKey];
+      }
+    });
+  };
+
+  // Handle select all/none
+  const handleSelectAll = () => {
+    if (selectedOrganizations.length === politicalOrganizations.length) {
+      setSelectedOrganizations([]);
+    } else {
+      setSelectedOrganizations(politicalOrganizations.map(org => org.key));
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -37,12 +69,30 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
         </CardHeader>
       </Card> */}
 
-      {/* Organizations Table */}
+      {/* Organizations Selection */}
       <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Selección de Organizaciones Políticas</CardTitle>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="text-sm">
+                {selectedOrganizations.length} de {politicalOrganizations.length} seleccionadas
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+              >
+                {selectedOrganizations.length === politicalOrganizations.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
+                <TableHead className="text-white w-16 text-center font-semibold"></TableHead>
                 <TableHead className="text-white w-20 text-center font-semibold">ORDEN</TableHead>
                 <TableHead className="text-white font-semibold">ORGANIZACIÓN POLÍTICA</TableHead>
               </TableRow>
@@ -50,6 +100,12 @@ export function PoliticalOrganizations({ category, voteLimits, onVoteLimitsChang
             <TableBody>
               {politicalOrganizations.map((org, index) => (
                 <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
+                  <TableCell className="text-center">
+                    <Checkbox
+                      checked={selectedOrganizations.includes(org.key)}
+                      onCheckedChange={() => handleOrganizationToggle(org.key)}
+                    />
+                  </TableCell>
                   <TableCell className="text-center font-medium">{org.order}</TableCell>
                   <TableCell className="py-3">{org.name}</TableCell>
                 </TableRow>

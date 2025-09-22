@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Card, CardContent} from "./ui/card";
 import { type ElectoralData } from "../data/mockData";
-import { getCategoryData } from "../lib/localStorage";
+import { getCategoryData, getSelectedOrganizations } from "../lib/localStorage";
 import { politicalOrganizations } from "../data/mockData";
 
 interface ElectoralCountTableProps {
@@ -24,13 +24,19 @@ export function ElectoralCountTable({ data, category, totalElectores = 0}: Elect
   const categoryData = getCategoryData(category);
   const voteEntries = categoryData.voteEntries || [];
 
+  // Get selected organizations from localStorage
+  const selectedOrganizationKeys = getSelectedOrganizations();
+  const availableOrganizations = politicalOrganizations.filter(org =>
+    selectedOrganizationKeys.includes(org.key)
+  );
+
   // Calculate vote counts and preferential matrix for all political organizations
   const calculateVoteData = () => {
     const voteCount: { [partyKey: string]: number } = {};
     const matrix: { [partyKey: string]: { [prefNumber: number]: number, total: number } } = {};
     
-    // Initialize for all political organizations
-    politicalOrganizations.forEach(org => {
+    // Initialize for selected political organizations
+    availableOrganizations.forEach(org => {
       const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
       voteCount[partyKey] = 0;
       matrix[partyKey] = { total: 0 };
@@ -167,7 +173,7 @@ export function ElectoralCountTable({ data, category, totalElectores = 0}: Elect
               )}
             </TableHeader>
             <TableBody>
-              {politicalOrganizations.map((org, index) => {
+              {availableOrganizations.map((org, index) => {
                 const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
                 const totalVotes = voteCount[partyKey] || 0;
                 const partyMatrix = showPreferentialColumns ? preferentialMatrix[partyKey] : null;

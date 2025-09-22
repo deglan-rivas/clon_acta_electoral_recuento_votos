@@ -3,6 +3,7 @@
 export const STORAGE_KEYS = {
   ACTIVE_CATEGORY: 'electoral_active_category',
   CATEGORY_DATA: 'electoral_category_data',
+  SELECTED_ORGANIZATIONS: 'electoral_selected_organizations',
 } as const;
 
 // Generic localStorage functions
@@ -139,6 +140,15 @@ export const clearElectoralData = (): void => {
     removeFromLocalStorage(key);
   });
   console.log('All electoral data cleared from localStorage');
+};
+
+// Global selected organizations functions
+export const getSelectedOrganizations = (): string[] => {
+  return getFromLocalStorage(STORAGE_KEYS.SELECTED_ORGANIZATIONS, []);
+};
+
+export const saveSelectedOrganizations = (organizationKeys: string[]): void => {
+  saveToLocalStorage(STORAGE_KEYS.SELECTED_ORGANIZATIONS, organizationKeys);
 };
 
 // Debug function to view all localStorage data
