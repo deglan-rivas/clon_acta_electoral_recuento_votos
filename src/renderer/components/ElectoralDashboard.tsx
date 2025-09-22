@@ -381,20 +381,22 @@ export function ElectoralDashboard() {
                 )}
                 {/* Acta code Display */}
                 {actaNumber ? (
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
                     <span className="text-xs font-medium text-orange-700">Acta:</span>
                     <span className="text-sm font-semibold text-orange-900 ml-1">{actaNumber}</span>
-                  </div>                  
+                  </div>
                 ) : null}
               </>
             )}
             </div>
-            <Badge 
-              variant="secondary" 
-              className="text-white font-semibold text-base px-4 py-2 shrink-0 bg-red-800"
-            >
-              EG2026
-            </Badge>
+            <div className="ml-auto">
+              <Badge
+                variant="secondary"
+                className="text-white font-semibold text-base px-4 py-2 shrink-0 bg-red-800"
+              >
+                EG2026
+              </Badge>
+            </div>
           </div>
           
         </div>
