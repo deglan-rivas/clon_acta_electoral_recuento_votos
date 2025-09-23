@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
-import { getSelectedOrganizations } from "../lib/localStorage";
+import { getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 import { toast } from "sonner";
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -38,6 +38,7 @@ interface VoteEntryFormProps {
     provincia: string;
     distrito: string;
   };
+  circunscripcionElectoral: string;
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:string, electores: number) => void;
   isFormFinalized?: boolean;
@@ -55,7 +56,7 @@ interface VoteEntryFormProps {
 
 export function VoteEntryForm({
   category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange,
-  mesaNumber, actaNumber, totalElectores, selectedLocation, onMesaDataChange,
+  mesaNumber, actaNumber, totalElectores, selectedLocation, circunscripcionElectoral, onMesaDataChange,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
   startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange
@@ -63,11 +64,15 @@ export function VoteEntryForm({
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
-  // Get selected organizations from localStorage
-  const selectedOrganizationKeys = getSelectedOrganizations();
+  // Get selected organizations from localStorage (try circunscripción-specific first, fallback to global)
+  const selectedOrganizationKeys = circunscripcionElectoral
+    ? getCircunscripcionOrganizations(circunscripcionElectoral)
+    : getSelectedOrganizations();
+
   const availableOrganizations = politicalOrganizations.filter(org =>
     selectedOrganizationKeys.includes(org.key)
   );
+
 
   // Local state for form inputs before saving
   const [localMesaNumber, setLocalMesaNumber] = useState<string>('');
@@ -82,11 +87,13 @@ export function VoteEntryForm({
   // State to control if the form is finalized and all inputs should be disabled
   const [localIsFormFinalized, setLocalIsFormFinalized] = useState<boolean>(false);
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
+
   
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized; // Enabled only before session starts
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;  // Enabled only after session starts and before finalization
   
+
 
   // Update local entries when existingEntries change (category switch)
   useEffect(() => {
@@ -473,7 +480,98 @@ export function VoteEntryForm({
 
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
-    // Validation 1: Mesa number must be 6 digits, acta number must follow format, electores between 1-300
+    // Validation 1: Location must be fully selected
+    if (!selectedLocation.departamento) {
+      toast.error("Debe seleccionar un Departamento", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    if (!selectedLocation.provincia) {
+      toast.error("Debe seleccionar una Provincia", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    if (!selectedLocation.distrito) {
+      toast.error("Debe seleccionar un Distrito", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    if (!circunscripcionElectoral) {
+      toast.error("Circunscripción Electoral no puede estar vacía", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    // Validation 2: Political organizations must be enabled
+    if (selectedOrganizationKeys.length === 0) {
+      toast.error("Debe activar al menos una Organización Política en Configuración", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '450px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    // Validation 3: Check if only NULO and BLANCO are enabled
+    const nonBlankNullOrgs = availableOrganizations.filter(org =>
+      !org.name.includes("BLANCO") && !org.name.includes("NULO")
+    );
+
+    if (nonBlankNullOrgs.length === 0) {
+      toast.error(`No hay Organizaciones Políticas registradas para la Circunscripción electoral: ${circunscripcionElectoral}`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '500px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    // Validation 4: Mesa number must be 6 digits, acta number must follow format, electores between 1-300
     if (localMesaNumber.length !== 6 || parseInt(localMesaNumber) <= 0) {
       toast.error("N° Mesa debe tener 6 dígitos y ser mayor a 0", {
         style: {
@@ -487,7 +585,7 @@ export function VoteEntryForm({
       });
       return;
     }
-    
+
     // Validate acta format
     const actaRegex = /^\d{6}-\d{2}-[A-Z]$/;
     if (!actaRegex.test(localActaNumber)) {
@@ -503,7 +601,7 @@ export function VoteEntryForm({
       });
       return;
     }
-    
+
     if (localTotalElectores <= 0 || localTotalElectores > 300) {
       toast.error("Total Electores debe estar entre 1 y 300", {
         style: {
@@ -900,8 +998,8 @@ export function VoteEntryForm({
         console.log("Categoría desconocida:", category);
         break;
     }
-    if (category ==='senadoresNacional')
-      return;
+    //if (category ==='senadoresNacional')
+    //  return;
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
     onEndTimeChange(now); // Capture end time
@@ -942,6 +1040,20 @@ export function VoteEntryForm({
           <div className="flex justify-between items-center gap-6">
             {/* Input Fields Container */}
             <div className="flex gap-4 items-center">
+              {/* Circunscripción Electoral Display */}
+              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Circunscripción Electoral</label>
+                <Input
+                  type="text"
+                  value={circunscripcionElectoral || ""}
+                  readOnly
+                  disabled={!isBloque1Enabled}
+                  className={`min-w-40 text-center font-semibold ${
+                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                  }`}
+                />
+              </div>
+
               {/* Mesa Number Input */}
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
@@ -958,7 +1070,7 @@ export function VoteEntryForm({
                         const currentActaParts = localActaNumber.split('-');
                         const secondPart = currentActaParts[1] || '';
                         const thirdPart = currentActaParts[2] || '';
-                        
+
                         // Build new acta number preserving existing second and third parts
                         let newActaNumber = value;
                         if (secondPart || thirdPart) {
@@ -969,9 +1081,9 @@ export function VoteEntryForm({
                         } else {
                           newActaNumber += '-';
                         }
-                        
+
                         setLocalActaNumber(newActaNumber);
-                        
+
                         // Auto-focus to acta field only if it's empty or just has the mesa number
                         if (!secondPart && !thirdPart) {
                           setTimeout(() => {

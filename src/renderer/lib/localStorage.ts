@@ -57,6 +57,12 @@ export interface CategoryData {
   isMesaDataSaved: boolean;
   startTime: string | null; // Store as ISO string
   endTime: string | null; // Store as ISO string
+  selectedLocation: {
+    departamento: string;
+    provincia: string;
+    distrito: string;
+    circunscripcionElectoral: string;
+  };
 }
 
 // Get default data for a category
@@ -74,6 +80,12 @@ const getDefaultCategoryData = (): CategoryData => ({
   isMesaDataSaved: false,
   startTime: null,
   endTime: null,
+  selectedLocation: {
+    departamento: '',
+    provincia: '',
+    distrito: '',
+    circunscripcionElectoral: '',
+  },
 });
 
 // Initialize with default data for all categories
@@ -142,13 +154,31 @@ export const clearElectoralData = (): void => {
   console.log('All electoral data cleared from localStorage');
 };
 
-// Global selected organizations functions
+// Global selected organizations functions (legacy - will be deprecated)
 export const getSelectedOrganizations = (): string[] => {
   return getFromLocalStorage(STORAGE_KEYS.SELECTED_ORGANIZATIONS, []);
 };
 
 export const saveSelectedOrganizations = (organizationKeys: string[]): void => {
   saveToLocalStorage(STORAGE_KEYS.SELECTED_ORGANIZATIONS, organizationKeys);
+};
+
+// Per-circunscripción organization functions
+export const CIRCUNSCRIPCION_ORGANIZATIONS_KEY = 'electoral_circunscripcion_organizations';
+
+export const getCircunscripcionOrganizations = (circunscripcion: string): string[] => {
+  const allCircunscripciones = getFromLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, {});
+  return allCircunscripciones[circunscripcion] || [];
+};
+
+export const saveCircunscripcionOrganizations = (circunscripcion: string, organizationKeys: string[]): void => {
+  const allCircunscripciones = getFromLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, {});
+  allCircunscripciones[circunscripcion] = organizationKeys;
+  saveToLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, allCircunscripciones);
+};
+
+export const getAllCircunscripcionOrganizations = (): Record<string, string[]> => {
+  return getFromLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, {});
 };
 
 // Debug function to view all localStorage data

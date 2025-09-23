@@ -7,9 +7,22 @@ import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { X } from "lucide-react";
 import { politicalOrganizations } from "../data/mockData";
-import { getSelectedOrganizations, saveSelectedOrganizations } from "../lib/localStorage";
+import {
+  getSelectedOrganizations,
+  saveSelectedOrganizations,
+  getCircunscripcionOrganizations,
+  saveCircunscripcionOrganizations
+} from "../lib/localStorage";
+
+// Type for Circunscripción Electoral data
+type CircunscripcionRecord = {
+  departamento: string;
+  provincia: string;
+  circunscripcion_electoral: string;
+};
 
 interface VoteLimits {
   preferential1: number;
@@ -30,9 +43,52 @@ interface SettingsModalProps {
   preferentialConfig: PreferentialConfig;
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
+  currentCircunscripcionElectoral?: string;
 }
 
-export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved, currentCircunscripcionElectoral }: SettingsModalProps) {
+  // Load circunscripción electoral data from CSV
+  const [circunscripcionData, setCircunscripcionData] = useState<CircunscripcionRecord[]>([]);
+  const [selectedCircunscripcion, setSelectedCircunscripcion] = useState<string>(currentCircunscripcionElectoral || "");
+
+  // Load circunscripción data on mount
+  useEffect(() => {
+    const loadCircunscripcionData = async () => {
+      try {
+        const response = await fetch('/circunscripcion_electoral_por_departamento.csv');
+        const text = await response.text();
+        const lines = text.split('\n').slice(1); // Skip header
+        const records: CircunscripcionRecord[] = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const [departamento, provincia, circunscripcion_electoral] = line.split(';');
+            return {
+              departamento: departamento?.trim() || '',
+              provincia: provincia?.trim() || '',
+              circunscripcion_electoral: circunscripcion_electoral?.trim() || ''
+            };
+          });
+        setCircunscripcionData(records);
+      } catch (error) {
+        console.error('Error loading circunscripción electoral data:', error);
+      }
+    };
+
+    if (open) {
+      loadCircunscripcionData();
+    }
+  }, [open]);
+
+  // Get unique circunscripciones
+  const getUniqueCircunscripciones = () => {
+    const unique = Array.from(new Set(
+      circunscripcionData
+        .map(record => record.circunscripcion_electoral)
+        .filter(circunscripcion => circunscripcion !== '')
+    ));
+    return unique.sort();
+  };
+
   // Original saved values (loaded once when modal opens)
   const [originalSelectedOrganizations] = useState<string[]>(() => {
     const saved = getSelectedOrganizations();
@@ -49,11 +105,40 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
   const [originalVoteLimits] = useState<VoteLimits>({ ...voteLimits });
 
   // Temporary state for current edits (not persisted until save)
-  const [tempSelectedOrganizations, setTempSelectedOrganizations] = useState<string[]>(originalSelectedOrganizations);
+  const [tempSelectedOrganizations, setTempSelectedOrganizations] = useState<string[]>(() => {
+    // Load organizations for the selected circunscripción
+    if (selectedCircunscripcion) {
+      return getCircunscripcionOrganizations(selectedCircunscripcion);
+    }
+    return originalSelectedOrganizations;
+  });
   const [tempVoteLimits, setTempVoteLimits] = useState<VoteLimits>(originalVoteLimits);
 
   // Filter state
   const [organizationFilter, setOrganizationFilter] = useState("");
+
+  // Update selected circunscripción when current one changes
+  useEffect(() => {
+    if (currentCircunscripcionElectoral && currentCircunscripcionElectoral !== selectedCircunscripcion) {
+      setSelectedCircunscripcion(currentCircunscripcionElectoral);
+    }
+  }, [currentCircunscripcionElectoral]);
+
+  // Update organizations when circunscripción changes
+  useEffect(() => {
+    if (selectedCircunscripcion) {
+      const circunscripcionOrgs = getCircunscripcionOrganizations(selectedCircunscripcion);
+      if (circunscripcionOrgs.length === 0) {
+        // If no organizations saved for this circunscripción, default to BLANCO and NULO
+        const blancoNuloKeys = politicalOrganizations
+          .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
+          .map(org => org.key);
+        setTempSelectedOrganizations(blancoNuloKeys);
+      } else {
+        setTempSelectedOrganizations(circunscripcionOrgs);
+      }
+    }
+  }, [selectedCircunscripcion]);
 
   // Filtered organizations based on search
   const filteredOrganizations = politicalOrganizations.filter(org =>
@@ -128,7 +213,13 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
   // Save changes to localStorage and parent
   const handleSave = () => {
-    saveSelectedOrganizations(tempSelectedOrganizations);
+    if (selectedCircunscripcion) {
+      // Save per-circunscripción organizations
+      saveCircunscripcionOrganizations(selectedCircunscripcion, tempSelectedOrganizations);
+    } else {
+      // Fallback to global save if no circunscripción selected
+      saveSelectedOrganizations(tempSelectedOrganizations);
+    }
     onVoteLimitsChange(tempVoteLimits);
     onOpenChange(false);
   };
@@ -144,9 +235,9 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[60vw] !max-w-5xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+        {/* <DialogHeader>
           <DialogTitle className="text-xl">Configuración</DialogTitle>
-        </DialogHeader>
+        </DialogHeader> */}
 
         <Tabs defaultValue="organizations" className="w-full">
           <TabsList className={`grid w-full ${(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -158,8 +249,36 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
           <TabsContent value="organizations" className="space-y-3">
             <div className="text-sm text-gray-600">
-              Seleccione las organizaciones políticas que estarán disponibles en todos los tipos de elección.
+              Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas específicas.
             </div>
+
+            {/* Circunscripción Electoral Dropdown */}
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Circunscripción Electoral:
+              </label>
+              <Select value={selectedCircunscripcion} onValueChange={setSelectedCircunscripcion}>
+                <SelectTrigger className="w-80">
+                  <SelectValue placeholder="Seleccionar Circunscripción Electoral..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {getUniqueCircunscripciones().map((circunscripcion) => (
+                    <SelectItem key={circunscripcion} value={circunscripcion}>
+                      {circunscripcion}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {!selectedCircunscripcion && (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas</p>
+              </div>
+            )}
+
+            {selectedCircunscripcion && (
+              <div className="space-y-3">
 
             {/* Organizations Selection */}
             
@@ -233,7 +352,8 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                   </TableBody>
                 </Table>
               </div>
-            
+              </div>
+            )}
         </TabsContent>
 
         {(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) && (

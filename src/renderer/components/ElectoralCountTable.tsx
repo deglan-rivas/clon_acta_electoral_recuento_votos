@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Card, CardContent} from "./ui/card";
 import { type ElectoralData } from "../data/mockData";
-import { getCategoryData, getSelectedOrganizations } from "../lib/localStorage";
+import { getCategoryData, getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 import { politicalOrganizations } from "../data/mockData";
 
 interface ElectoralCountTableProps {
@@ -12,11 +12,12 @@ interface ElectoralCountTableProps {
     provincia: string;
     distrito: string;
   };
+  circunscripcionElectoral?: string;
   totalElectores?: number;
   // totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, totalElectores = 0}: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0}: ElectoralCountTableProps) {
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
@@ -24,8 +25,11 @@ export function ElectoralCountTable({ data, category, totalElectores = 0}: Elect
   const categoryData = getCategoryData(category);
   const voteEntries = categoryData.voteEntries || [];
 
-  // Get selected organizations from localStorage
-  const selectedOrganizationKeys = getSelectedOrganizations();
+  // Get selected organizations from localStorage (try circunscripción-specific first, fallback to global)
+  const selectedOrganizationKeys = circunscripcionElectoral
+    ? getCircunscripcionOrganizations(circunscripcionElectoral)
+    : getSelectedOrganizations();
+
   const availableOrganizations = politicalOrganizations.filter(org =>
     selectedOrganizationKeys.includes(org.key)
   );
