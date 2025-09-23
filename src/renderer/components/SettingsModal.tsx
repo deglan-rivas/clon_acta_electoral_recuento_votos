@@ -33,8 +33,8 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved }: SettingsModalProps) {
-  // State for selected organizations (global across all categories)
-  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>(() => {
+  // Original saved values (loaded once when modal opens)
+  const [originalSelectedOrganizations] = useState<string[]>(() => {
     const saved = getSelectedOrganizations();
     // If no saved selection, default to including BLANCO and NULO
     if (saved.length === 0) {
@@ -45,6 +45,12 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     }
     return saved;
   });
+
+  const [originalVoteLimits] = useState<VoteLimits>({ ...voteLimits });
+
+  // Temporary state for current edits (not persisted until save)
+  const [tempSelectedOrganizations, setTempSelectedOrganizations] = useState<string[]>(originalSelectedOrganizations);
+  const [tempVoteLimits, setTempVoteLimits] = useState<VoteLimits>(originalVoteLimits);
 
   // Filter state
   const [organizationFilter, setOrganizationFilter] = useState("");
@@ -58,14 +64,29 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
   // Block control logic - same as VoteEntryForm
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
 
-  // Save to localStorage whenever selection changes
+  // Ensure BLANCO and NULO are always selected in temp state
   useEffect(() => {
-    saveSelectedOrganizations(selectedOrganizations);
-  }, [selectedOrganizations]);
+    const blancoNuloKeys = politicalOrganizations
+      .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
+      .map(org => org.key);
 
-  // Handle individual organization selection
+    const missingBlancoNulo = blancoNuloKeys.filter(key => !tempSelectedOrganizations.includes(key));
+
+    if (missingBlancoNulo.length > 0) {
+      setTempSelectedOrganizations(prev => [...new Set([...prev, ...missingBlancoNulo])]);
+    }
+  }, [tempSelectedOrganizations]);
+
+  // Handle individual organization selection (temp state)
   const handleOrganizationToggle = (orgKey: string) => {
-    setSelectedOrganizations(prev => {
+    // Find the organization to check if it's BLANCO or NULO
+    const org = politicalOrganizations.find(o => o.key === orgKey);
+    if (org && (org.name === 'BLANCO' || org.name === 'NULO')) {
+      // Don't allow toggling BLANCO or NULO
+      return;
+    }
+
+    setTempSelectedOrganizations(prev => {
       if (prev.includes(orgKey)) {
         return prev.filter(key => key !== orgKey);
       } else {
@@ -74,19 +95,50 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     });
   };
 
-  // Handle select all/none (works with filtered results)
+  // Handle select all/none (works with filtered results, temp state)
   const handleSelectAll = () => {
-    const allSelected = filteredOrganizations.every(org => selectedOrganizations.includes(org.key));
-    if (allSelected) {
-      // Deselect all filtered organizations
-      setSelectedOrganizations(prev => prev.filter(key =>
-        !filteredOrganizations.some(org => org.key === key)
+    // Get BLANCO and NULO keys to always keep them selected
+    const blancoNuloKeys = politicalOrganizations
+      .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
+      .map(org => org.key);
+
+    // Filter out BLANCO and NULO from toggle operations
+    const toggleableOrgs = filteredOrganizations.filter(org =>
+      org.name !== 'BLANCO' && org.name !== 'NULO'
+    );
+
+    const allToggleableSelected = toggleableOrgs.every(org => tempSelectedOrganizations.includes(org.key));
+
+    if (allToggleableSelected) {
+      // Deselect all filtered organizations except BLANCO and NULO
+      setTempSelectedOrganizations(prev => prev.filter(key =>
+        blancoNuloKeys.includes(key) || !toggleableOrgs.some(org => org.key === key)
       ));
     } else {
-      // Select all filtered organizations
+      // Select all filtered organizations including BLANCO and NULO
       const newSelections = filteredOrganizations.map(org => org.key);
-      setSelectedOrganizations(prev => [...new Set([...prev, ...newSelections])]);
+      setTempSelectedOrganizations(prev => [...new Set([...prev, ...newSelections])]);
     }
+  };
+
+  // Handle vote limits change (temp state)
+  const handleVoteLimitsChange = (limits: VoteLimits) => {
+    setTempVoteLimits(limits);
+  };
+
+  // Save changes to localStorage and parent
+  const handleSave = () => {
+    saveSelectedOrganizations(tempSelectedOrganizations);
+    onVoteLimitsChange(tempVoteLimits);
+    onOpenChange(false);
+  };
+
+  // Cancel changes and revert to original state
+  const handleCancel = () => {
+    setTempSelectedOrganizations(originalSelectedOrganizations);
+    setTempVoteLimits(originalVoteLimits);
+    setOrganizationFilter("");
+    onOpenChange(false);
   };
 
   return (
@@ -104,20 +156,24 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
             )}
           </TabsList>
 
-          <TabsContent value="organizations" className="space-y-6">
+          <TabsContent value="organizations" className="space-y-3">
             <div className="text-sm text-gray-600">
               Seleccione las organizaciones políticas que estarán disponibles en todos los tipos de elección.
             </div>
 
             {/* Organizations Selection */}
-            <Card>
-            <CardContent className="p-0">
+            
               <Table>
                 <TableHeader>
                   <TableRow className="text-white" style={{backgroundColor: "oklch(0.5200 0.2100 15)"}}>
                     <TableHead className="text-white w-16 text-center font-semibold">
                       <Checkbox
-                        checked={filteredOrganizations.length > 0 && filteredOrganizations.every(org => selectedOrganizations.includes(org.key))}
+                        checked={
+                          filteredOrganizations.length > 0 &&
+                          filteredOrganizations
+                            .filter(org => org.name !== 'BLANCO' && org.name !== 'NULO')
+                            .every(org => tempSelectedOrganizations.includes(org.key))
+                        }
                         onCheckedChange={handleSelectAll}
                         className="border-white data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
                       />
@@ -151,16 +207,24 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                   </TableRow>
                 </TableHeader>
               </Table>
-              <div className="max-h-86 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto">
                 <Table>
                   <TableBody>
                     {filteredOrganizations.map((org, index) => (
                       <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                         <TableCell className="text-center w-16">
-                          <Checkbox
-                            checked={selectedOrganizations.includes(org.key)}
-                            onCheckedChange={() => handleOrganizationToggle(org.key)}
-                          />
+                          {org.name === 'BLANCO' || org.name === 'NULO' ? (
+                            <Checkbox
+                              checked={true}
+                              disabled={true}
+                              className="opacity-50"
+                            />
+                          ) : (
+                            <Checkbox
+                              checked={tempSelectedOrganizations.includes(org.key)}
+                              onCheckedChange={() => handleOrganizationToggle(org.key)}
+                            />
+                          )}
                         </TableCell>
                         <TableCell className="text-center font-medium w-20">{org.order}</TableCell>
                         <TableCell className="py-3">{org.name}</TableCell>
@@ -169,8 +233,7 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            
         </TabsContent>
 
         {(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) && (
@@ -193,11 +256,11 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                         min={1}
                         max={199}
                         step={1}
-                        value={voteLimits.preferential1}
+                        value={tempVoteLimits.preferential1}
                         onChange={(e) => {
                           if (isBloque2Enabled) {
-                            onVoteLimitsChange({
-                              ...voteLimits,
+                            handleVoteLimitsChange({
+                              ...tempVoteLimits,
                               preferential1: parseInt(e.target.value) || 1
                             });
                           }
@@ -228,11 +291,11 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                         min={1}
                         max={199}
                         step={1}
-                        value={voteLimits.preferential2}
+                        value={tempVoteLimits.preferential2}
                         onChange={(e) => {
                           if (isBloque2Enabled) {
-                            onVoteLimitsChange({
-                              ...voteLimits,
+                            handleVoteLimitsChange({
+                              ...tempVoteLimits,
                               preferential2: parseInt(e.target.value) || 1
                             });
                           }
@@ -259,7 +322,7 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                         <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
                           Voto Pref. 1
                         </Badge>
-                        <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential1}</span>
+                        <span className="text-sm font-semibold text-blue-900">{tempVoteLimits.preferential1}</span>
                       </div>
                     )}
                     {preferentialConfig.hasPreferential2 && (
@@ -267,7 +330,7 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
                         <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
                           Voto Pref. 2
                         </Badge>
-                        <span className="text-sm font-semibold text-blue-900">{voteLimits.preferential2}</span>
+                        <span className="text-sm font-semibold text-blue-900">{tempVoteLimits.preferential2}</span>
                       </div>
                     )}
                   </div>
@@ -277,6 +340,22 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Save/Cancel Buttons */}
+      <div className="flex justify-end space-x-3 pt-6 border-t">
+        <Button
+          variant="outline"
+          onClick={handleCancel}
+        >
+          CANCELAR
+        </Button>
+        <Button
+          onClick={handleSave}
+          className="bg-red-800 hover:bg-red-900 text-white"
+        >
+          GUARDAR
+        </Button>
+      </div>
       </DialogContent>
     </Dialog>
   );

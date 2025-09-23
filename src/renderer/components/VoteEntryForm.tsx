@@ -765,9 +765,11 @@ export function VoteEntryForm({
       const fechaFin = formatDate(finalizationTime);
 
       const data = [
-        { texto: selectedLocation.departamento.toUpperCase(), x: 140, y: height - 103, color: rgb(0, 0, 0), size: 14 },
-        { texto: selectedLocation.provincia.toUpperCase(), x: 415, y: height - 103, color: rgb(0, 0, 0), size: 14 },
-        { texto: selectedLocation.distrito.toUpperCase(), x: 688, y: height - 103, color: rgb(0, 0, 0), size: 14 },
+        { texto: localMesaNumber, x: 70, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: localActaNumber, x: 130, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.departamento.toUpperCase(), x: 505, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.provincia.toUpperCase(), x: 655, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.distrito.toUpperCase(), x: 808, y: height - 102, color: rgb(0, 0, 0), size: 9 },
         { texto: horaFin, x: 345, y: height - 743, color: rgb(0, 0, 0), size: 10 },
         { texto: fechaFin, x: 460, y: height - 743, color: rgb(0, 0, 0), size: 10 },
         { texto: `${entries.length}`, x: 1120, y: height - 114, color: rgb(0, 0, 0), size: 15 },
@@ -898,8 +900,8 @@ export function VoteEntryForm({
         console.log("Categoría desconocida:", category);
         break;
     }
-    // if (category ==='senadoresNacional')
-    //  return;
+    if (category ==='senadoresNacional')
+      return;
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
     onEndTimeChange(now); // Capture end time
