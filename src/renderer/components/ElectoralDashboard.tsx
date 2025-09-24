@@ -7,6 +7,7 @@ import { mockElectoralData } from "../data/mockData";
 import { Vote, Users, Building2, Globe, Crown, FileText, BarChart3, Settings } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import csvFile from '/TB_UBIGEOS.csv?url';
+import circunscripcionCsvFile from '/circunscripcion_electoral_por_departamento.csv?url';
 import { SettingsModal } from "./SettingsModal";
 
 // Type for Circunscripción Electoral data
@@ -88,7 +89,7 @@ export function ElectoralDashboard() {
 
     const loadCircunscripcionData = async () => {
       try {
-        const response = await fetch('/circunscripcion_electoral_por_departamento.csv');
+        const response = await fetch(circunscripcionCsvFile);
         const text = await response.text();
         const lines = text.split('\n').slice(1); // Skip header
         const records: CircunscripcionRecord[] = lines

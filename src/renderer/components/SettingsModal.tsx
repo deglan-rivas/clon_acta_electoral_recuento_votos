@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { X } from "lucide-react";
 import { politicalOrganizations } from "../data/mockData";
+import circunscripcionCsvFile from '/circunscripcion_electoral_por_departamento.csv?url';
 import {
   getSelectedOrganizations,
   saveSelectedOrganizations,
@@ -55,7 +56,7 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
   useEffect(() => {
     const loadCircunscripcionData = async () => {
       try {
-        const response = await fetch('/circunscripcion_electoral_por_departamento.csv');
+        const response = await fetch(circunscripcionCsvFile);
         const text = await response.text();
         const lines = text.split('\n').slice(1); // Skip header
         const records: CircunscripcionRecord[] = lines
