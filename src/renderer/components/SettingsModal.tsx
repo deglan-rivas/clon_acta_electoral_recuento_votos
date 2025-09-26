@@ -20,6 +20,7 @@ import {
 
 // Type for Circunscripción Electoral data
 type CircunscripcionRecord = {
+  category: string;
   departamento: string;
   provincia: string;
   circunscripcion_electoral: string;
@@ -62,8 +63,9 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
         const records: CircunscripcionRecord[] = lines
           .filter(line => line.trim())
           .map(line => {
-            const [departamento, provincia, circunscripcion_electoral] = line.split(';');
+            const [category, departamento, provincia, circunscripcion_electoral] = line.split(';');
             return {
+              category: category?.trim() || '',
               departamento: departamento?.trim() || '',
               provincia: provincia?.trim() || '',
               circunscripcion_electoral: circunscripcion_electoral?.trim() || ''
@@ -80,10 +82,22 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     }
   }, [open]);
 
-  // Get unique circunscripciones
+  // Get unique circunscripciones filtered by category
   const getUniqueCircunscripciones = () => {
+    // First check if current category exists in CSV
+    const categoryExists = circunscripcionData.some(record => record.category === category);
+
+    let filteredRecords;
+    if (categoryExists) {
+      // Category found - show only records for this category
+      filteredRecords = circunscripcionData.filter(record => record.category === category);
+    } else {
+      // Category not found - show all records with empty category (regional)
+      filteredRecords = circunscripcionData.filter(record => record.category === '');
+    }
+
     const unique = Array.from(new Set(
-      circunscripcionData
+      filteredRecords
         .map(record => record.circunscripcion_electoral)
         .filter(circunscripcion => circunscripcion !== '')
     ));

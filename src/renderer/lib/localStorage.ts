@@ -62,6 +62,7 @@ export interface CategoryData {
     provincia: string;
     distrito: string;
     circunscripcionElectoral: string;
+    jee: string;
   };
 }
 
@@ -85,6 +86,7 @@ const getDefaultCategoryData = (): CategoryData => ({
     provincia: '',
     distrito: '',
     circunscripcionElectoral: '',
+    jee: '',
   },
 });
 

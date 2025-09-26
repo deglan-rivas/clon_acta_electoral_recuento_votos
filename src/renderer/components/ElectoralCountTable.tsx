@@ -11,6 +11,7 @@ interface ElectoralCountTableProps {
     departamento: string;
     provincia: string;
     distrito: string;
+    jee: string;
   };
   circunscripcionElectoral?: string;
   totalElectores?: number;
@@ -120,7 +121,7 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
               <p className="text-lg font-semibold text-green-900">{totalCedulasRecibidas || 0}</p>
             </div> */}
             <div className="bg-blue-50 p-3 rounded-lg text-center border border-gray-200">
-              <span className="text-xs font-medium text-blue-700">Recuento de Votos</span>
+              <span className="text-xs font-medium text-blue-700">TCV</span>
               {/* <p className="text-lg font-semibold text-blue-900">{stats.totalVotesEmitted}</p> */}
               <p className="text-lg font-semibold text-green-900">{stats.totalVotersWhoVoted}</p>
             </div>

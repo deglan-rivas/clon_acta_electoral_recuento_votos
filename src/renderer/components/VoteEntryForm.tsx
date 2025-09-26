@@ -37,6 +37,7 @@ interface VoteEntryFormProps {
     departamento: string;
     provincia: string;
     distrito: string;
+    jee: string;
   };
   circunscripcionElectoral: string;
   // totalCedulasRecibidas: number;
@@ -603,7 +604,7 @@ export function VoteEntryForm({
     }
 
     if (localTotalElectores <= 0 || localTotalElectores > 300) {
-      toast.error("Total Electores debe estar entre 1 y 300", {
+      toast.error("TCV debe estar entre 1 y 300", {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -702,6 +703,7 @@ export function VoteEntryForm({
       const data = [
         { texto: localMesaNumber, x: 45, y: height - 132, color: rgb(0, 0, 0), size: 14 },
         { texto: localActaNumber, x: 137, y: height - 132, color: rgb(0, 0, 0), size: 14 },
+        { texto: selectedLocation.jee.toUpperCase(), x: 230, y: height - 132, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 175, color: rgb(0, 0, 0), size: 14 },
@@ -865,6 +867,7 @@ export function VoteEntryForm({
       const data = [
         { texto: localMesaNumber, x: 70, y: height - 102, color: rgb(0, 0, 0), size: 9 },
         { texto: localActaNumber, x: 130, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.jee.toUpperCase(), x: 195, y: height - 102, color: rgb(0, 0, 0), size: 9 },
         { texto: selectedLocation.departamento.toUpperCase(), x: 505, y: height - 102, color: rgb(0, 0, 0), size: 9 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 655, y: height - 102, color: rgb(0, 0, 0), size: 9 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 808, y: height - 102, color: rgb(0, 0, 0), size: 9 },
@@ -998,7 +1001,7 @@ export function VoteEntryForm({
         console.log("Categoría desconocida:", category);
         break;
     }
-    //if (category ==='senadoresNacional')
+    //if (category ==='presidencial')
     //  return;
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
@@ -1040,74 +1043,98 @@ export function VoteEntryForm({
           <div className="flex justify-between items-center gap-6">
             {/* Input Fields Container */}
             <div className="flex gap-4 items-center">
-              {/* Circunscripción Electoral Display */}
-              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Circunscripción Electoral</label>
-                <Input
-                  type="text"
-                  value={circunscripcionElectoral || ""}
-                  readOnly
-                  disabled={!isBloque1Enabled}
-                  className={`min-w-40 text-center font-semibold ${
-                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                  }`}
-                />
-              </div>
+              {!isBloque1Enabled ? (
+                // Display mode - show styled divs (when session started, after clicking Iniciar)
+                <>
+                  {/* Circunscripción Electoral Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                    <span className="text-sm font-medium text-orange-700">Circunscripción Electoral:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{circunscripcionElectoral || ""}</span>
+                  </div>
 
-              {/* Mesa Number Input */}
-              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
-                <Input
-                  type="text"
-                  maxLength={6}
-                  value={localMesaNumber}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, ''); // Only digits
-                    if (value.length <= 6) {
-                      setLocalMesaNumber(value);
-                      // Update acta number when mesa number changes, preserving existing parts
-                      if (value.length === 6) {
-                        const currentActaParts = localActaNumber.split('-');
-                        const secondPart = currentActaParts[1] || '';
-                        const thirdPart = currentActaParts[2] || '';
+                  {/* Mesa Number Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                    <span className="text-sm font-medium text-orange-700">Mesa:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{String(localMesaNumber || "").padStart(6, '0')}</span>
+                  </div>
 
-                        // Build new acta number preserving existing second and third parts
-                        let newActaNumber = value;
-                        if (secondPart || thirdPart) {
-                          newActaNumber += '-' + secondPart;
-                          if (thirdPart) {
-                            newActaNumber += '-' + thirdPart;
-                          }
-                        } else {
-                          newActaNumber += '-';
-                        }
+                  {/* Acta Number Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                    <span className="text-sm font-medium text-orange-700">Acta:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{localActaNumber}</span>
+                  </div>
 
-                        setLocalActaNumber(newActaNumber);
+                  {/* Total Electores Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                    <span className="text-sm font-medium text-orange-700">TCV:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{localTotalElectores}</span>
+                  </div>
+                </>
+              ) : (
+                // Edit mode - show input fields (before clicking Iniciar)
+                <>
+                  {/* Circunscripción Electoral Display */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Circunscripción Electoral</label>
+                    <Input
+                      type="text"
+                      value={circunscripcionElectoral || ""}
+                      readOnly
+                      className="min-w-40 text-center font-semibold"
+                    />
+                  </div>
 
-                        // Auto-focus to acta field only if it's empty or just has the mesa number
-                        if (!secondPart && !thirdPart) {
-                          setTimeout(() => {
-                            actaInputRef.current?.focus();
-                            // Position cursor at the end
-                            const input = actaInputRef.current;
-                            if (input) {
-                              input.setSelectionRange(input.value.length, input.value.length);
+                  {/* Mesa Number Input */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
+                    <Input
+                      type="text"
+                      maxLength={6}
+                      value={localMesaNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, ''); // Only digits
+                        if (value.length <= 6) {
+                          setLocalMesaNumber(value);
+                          // Update acta number when mesa number changes, preserving existing parts
+                          if (value.length === 6) {
+                            const currentActaParts = localActaNumber.split('-');
+                            const secondPart = currentActaParts[1] || '';
+                            const thirdPart = currentActaParts[2] || '';
+
+                            // Build new acta number preserving existing second and third parts
+                            let newActaNumber = value;
+                            if (secondPart || thirdPart) {
+                              newActaNumber += '-' + secondPart;
+                              if (thirdPart) {
+                                newActaNumber += '-' + thirdPart;
+                              }
+                            } else {
+                              newActaNumber += '-';
                             }
-                          }, 0);
-                        }
-                      }
-                    }
-                  }}
-                  disabled={!isBloque1Enabled}
-                  className={`max-w-24 px-0.5 text-center font-semibold ${
-                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                  }`}
-                />
-              </div>
 
-              {/* Acta Number Input */}
-              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
+                            setLocalActaNumber(newActaNumber);
+
+                            // Auto-focus to acta field only if it's empty or just has the mesa number
+                            if (!secondPart && !thirdPart) {
+                              setTimeout(() => {
+                                actaInputRef.current?.focus();
+                                // Position cursor at the end
+                                const input = actaInputRef.current;
+                                if (input) {
+                                  input.setSelectionRange(input.value.length, input.value.length);
+                                }
+                              }, 0);
+                            }
+                          }
+                        }
+                      }}
+                      className="max-w-24 px-0.5 text-center font-semibold"
+                    />
+                  </div>
+
+                  {/* Acta Number Input */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
                 <Input
                   ref={actaInputRef}
                   type="text"
@@ -1233,34 +1260,30 @@ export function VoteEntryForm({
                       setLocalActaNumber(formattedValue);
                     }
                   }}
-                  disabled={!isBloque1Enabled}
-                  className={`max-w-32 px-0.5 text-center font-semibold ${
-                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                  }`}
-                />
-              </div>
+                      className="max-w-32 px-0.5 text-center font-semibold"
+                    />
+                  </div>
 
-              {/* Total Electores Input */}
-              <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Total Electores</label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={300}
-                  value={localTotalElectores || ""}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    if (value >= 0 && value <= 300) {
-                      setLocalTotalElectores(value);
-                    }
-                  }}
-                  disabled={!isBloque1Enabled}
-                  className={`max-w-20 text-center font-semibold ${
-                    !isBloque1Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                  }`}
-                  placeholder="0"
-                />
-              </div>
+                  {/* Total Electores Input */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">TCV</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={300}
+                      value={localTotalElectores || ""}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        if (value >= 0 && value <= 300) {
+                          setLocalTotalElectores(value);
+                        }
+                      }}
+                      className="max-w-20 text-center font-semibold"
+                      placeholder="0"
+                    />
+                  </div>
+                </>
+              )}
               
               {/* Total Cédulas Recibidas Input */}
               {/* <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
@@ -1428,7 +1451,7 @@ export function VoteEntryForm({
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-end gap-4">
               
-              CÉDULAS RECONTADAS
+              VOTOS RECONTADOS
               <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
             </CardTitle>
           </CardHeader>
