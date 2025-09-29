@@ -1,5 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Card, CardContent} from "./ui/card";
+import { Button } from "./ui/button";
+import { ArrowLeft } from "lucide-react";
 import { type ElectoralData } from "../data/mockData";
 import { getCategoryData, getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 import { politicalOrganizations } from "../data/mockData";
@@ -15,10 +17,11 @@ interface ElectoralCountTableProps {
   };
   circunscripcionElectoral?: string;
   totalElectores?: number;
+  onBackToEntry: () => void;
   // totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0}: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0, onBackToEntry}: ElectoralCountTableProps) {
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
@@ -106,6 +109,15 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <Button
+        onClick={onBackToEntry}
+        className="bg-gray-600 hover:bg-gray-700 text-white"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Regresar
+      </Button>
+
       {/* Combined Statistics Header */}
       <Card>
         <CardContent className="p-4">

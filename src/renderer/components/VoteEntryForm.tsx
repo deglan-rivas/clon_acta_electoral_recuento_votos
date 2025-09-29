@@ -63,6 +63,7 @@ interface VoteEntryFormProps {
   onStartTimeChange: (time: Date | null) => void;
   onEndTimeChange: (time: Date | null) => void;
   onCurrentTimeChange: (time: Date) => void;
+  onViewSummary: () => void;
 }
 
 export function VoteEntryForm({
@@ -72,7 +73,8 @@ export function VoteEntryForm({
   mesaElectoralInfo,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
-  startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange
+  startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange,
+  onViewSummary
 }: VoteEntryFormProps) {
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
@@ -1380,6 +1382,16 @@ export function VoteEntryForm({
                   Sesión Finalizada
                 </div>
               )}
+
+              {/* Resumen Button - Only visible when form is finalized */}
+              {isFormFinalized && (
+                <Button
+                  onClick={onViewSummary}
+                  className="px-6 py-2 rounded font-medium bg-blue-800 hover:bg-blue-700 text-white"
+                >
+                  Resumen
+                </Button>
+              )}
             </div>
 
             {/* Time Tracking Badges */}
@@ -1429,7 +1441,7 @@ export function VoteEntryForm({
         <Card className="w-full col-span-4">
           <CardHeader>
             <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2">
-              RESUMEN ACTA - {categoryLabel?.toUpperCase() || category.toUpperCase().replace(/([A-Z])/g, ' $1').trim()}
+              RANKING ACTA - {categoryLabel?.toUpperCase() || category.toUpperCase().replace(/([A-Z])/g, ' $1').trim()}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
