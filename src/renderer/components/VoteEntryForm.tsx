@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
-
 interface VoteLimits {
   preferential1: number;
   preferential2: number;
@@ -42,6 +41,14 @@ interface VoteEntryFormProps {
   circunscripcionElectoral: string;
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:string, electores: number) => void;
+  mesaElectoralInfo?: {
+    mesa_number: string;
+    tipo_ubicacion: string;
+    circunscripcion_electoral: string;
+    departamento: string;
+    provincia: string;
+    distrito: string;
+  } | null;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
   isMesaDataSaved?: boolean;
@@ -58,6 +65,7 @@ interface VoteEntryFormProps {
 export function VoteEntryForm({
   category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange,
   mesaNumber, actaNumber, totalElectores, selectedLocation, circunscripcionElectoral, onMesaDataChange,
+  mesaElectoralInfo,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
   startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange
@@ -525,7 +533,21 @@ export function VoteEntryForm({
     }
 
     if (!circunscripcionElectoral) {
-      toast.error("Circunscripción Electoral no puede estar vacía", {
+      toast.error("Debe seleccionar una Circunscripción Electoral", {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 4000
+      });
+      return;
+    }
+
+    if (!selectedLocation.jee) {
+      toast.error("Debe seleccionar un JEE", {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -1046,12 +1068,6 @@ export function VoteEntryForm({
               {!isBloque1Enabled ? (
                 // Display mode - show styled divs (when session started, after clicking Iniciar)
                 <>
-                  {/* Circunscripción Electoral Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                    <span className="text-sm font-medium text-orange-700">Circunscripción Electoral:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{circunscripcionElectoral || ""}</span>
-                  </div>
-
                   {/* Mesa Number Display */}
                   <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
                     <span className="text-sm font-medium text-orange-700">Mesa:</span>
@@ -1065,7 +1081,7 @@ export function VoteEntryForm({
                   </div>
 
                   {/* Total Electores Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE CIUDADANOS QUE VOTARON">
                     <span className="text-sm font-medium text-orange-700">TCV:</span>
                     <span className="font-semibold text-orange-900 ml-1">{localTotalElectores}</span>
                   </div>
@@ -1073,17 +1089,6 @@ export function VoteEntryForm({
               ) : (
                 // Edit mode - show input fields (before clicking Iniciar)
                 <>
-                  {/* Circunscripción Electoral Display */}
-                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Circunscripción Electoral</label>
-                    <Input
-                      type="text"
-                      value={circunscripcionElectoral || ""}
-                      readOnly
-                      className="min-w-40 text-center font-semibold"
-                    />
-                  </div>
-
                   {/* Mesa Number Input */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                     <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Mesa</label>
@@ -1095,6 +1100,7 @@ export function VoteEntryForm({
                         const value = e.target.value.replace(/\D/g, ''); // Only digits
                         if (value.length <= 6) {
                           setLocalMesaNumber(value);
+
                           // Update acta number when mesa number changes, preserving existing parts
                           if (value.length === 6) {
                             const currentActaParts = localActaNumber.split('-');
@@ -1113,6 +1119,9 @@ export function VoteEntryForm({
                             }
 
                             setLocalActaNumber(newActaNumber);
+
+                            // Trigger location auto-population when mesa number is complete
+                            onMesaDataChange(parseInt(value), newActaNumber, localTotalElectores);
 
                             // Auto-focus to acta field only if it's empty or just has the mesa number
                             if (!secondPart && !thirdPart) {
@@ -1266,7 +1275,7 @@ export function VoteEntryForm({
 
                   {/* Total Electores Input */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">TCV</label>
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                     <Input
                       type="number"
                       min={0}

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { X } from "lucide-react";
 import { politicalOrganizations } from "../data/mockData";
-import circunscripcionCsvFile from '/circunscripcion_electoral_por_departamento.csv?url';
+import circunscripcionCsvFile from '/circunscripcion_electoral_por_categoria.csv?url';
 import {
   getSelectedOrganizations,
   saveSelectedOrganizations,

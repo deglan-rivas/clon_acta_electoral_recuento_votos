@@ -7,9 +7,11 @@ import { mockElectoralData } from "../data/mockData";
 import { Vote, Users, Building2, Globe, Crown, FileText, BarChart3, Settings } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import csvFile from '/TB_UBIGEOS.csv?url';
-import circunscripcionCsvFile from '/circunscripcion_electoral_por_departamento.csv?url';
+import circunscripcionCsvFile from '/circunscripcion_electoral_por_categoria.csv?url';
 import jeeCsvFile from '/jee.csv?url';
+import mesaElectoralCsvFile from '/mesa_electoral_data.csv?url';
 import { SettingsModal } from "./SettingsModal";
+import { toast } from "sonner";
 
 // Type for Circunscripción Electoral data
 type CircunscripcionRecord = {
@@ -38,6 +40,16 @@ type UbigeoRecord = {
   distrito: string;
 };
 
+// Type for Mesa Electoral data
+type MesaElectoralRecord = {
+  mesa_number: string;
+  tipo_ubicacion: string;
+  circunscripcion_electoral: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
+};
+
 export function ElectoralDashboard() {
   const [activeCategory, setActiveCategory] = useState(() => getActiveCategory());
   const [categoryData, setCategoryData] = useState(() => getAllCategoryData());
@@ -46,10 +58,20 @@ export function ElectoralDashboard() {
   const [ubigeoData, setUbigeoData] = useState<UbigeoRecord[]>([]);
   const [circunscripcionData, setCircunscripcionData] = useState<CircunscripcionRecord[]>([]);
   const [jeeData, setJeeData] = useState<string[]>([]);
+  const [mesaElectoralData, setMesaElectoralData] = useState<MesaElectoralRecord[]>([]);
 
   // Get location from current category data
   const getCurrentCategoryData = (): CategoryData => {
     return categoryData[activeCategory];
+  };
+
+  // Function to lookup mesa electoral data
+  const getMesaElectoralInfo = (mesaNumber: string): MesaElectoralRecord | null => {
+    if (!mesaNumber || mesaElectoralData.length === 0) return null;
+
+    const paddedMesaNumber = mesaNumber.padStart(6, '0');
+    const mesaRecord = mesaElectoralData.find(record => record.mesa_number === paddedMesaNumber);
+    return mesaRecord || null;
   };
 
   const currentLocationData = getCurrentCategoryData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
@@ -57,6 +79,7 @@ export function ElectoralDashboard() {
   const [selectedProvincia, setSelectedProvincia] = useState<string>(currentLocationData.provincia);
   const [selectedDistrito, setSelectedDistrito] = useState<string>(currentLocationData.distrito);
   const [selectedJee, setSelectedJee] = useState<string>(currentLocationData.jee);
+  const [selectedCircunscripcionElectoral, setSelectedCircunscripcionElectoral] = useState<string>(currentLocationData.circunscripcionElectoral);
 
   // Current time state (not persisted per category)
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -99,11 +122,11 @@ export function ElectoralDashboard() {
         const records: CircunscripcionRecord[] = lines
           .filter(line => line.trim())
           .map(line => {
-            const [category, departamento, provincia, circunscripcion_electoral] = line.split(';');
+            const [category, circunscripcion_electoral] = line.split(';');
             return {
               category: category?.trim() || '',
-              departamento: departamento?.trim() || '',
-              provincia: provincia?.trim() || '',
+              departamento: '', // Not used in this CSV
+              provincia: '', // Not used in this CSV
               circunscripcion_electoral: circunscripcion_electoral?.trim() || ''
             };
           });
@@ -127,9 +150,34 @@ export function ElectoralDashboard() {
       }
     };
 
+    const loadMesaElectoralData = async () => {
+      try {
+        const response = await fetch(mesaElectoralCsvFile);
+        const text = await response.text();
+        const lines = text.split('\n').slice(1); // Skip header
+        const records: MesaElectoralRecord[] = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const [mesa_number, tipo_ubicacion, circunscripcion_electoral, departamento, provincia, distrito] = line.split(';');
+            return {
+              mesa_number: mesa_number?.trim() || '',
+              tipo_ubicacion: tipo_ubicacion?.trim() || '',
+              circunscripcion_electoral: circunscripcion_electoral?.trim() || '',
+              departamento: departamento?.trim() || '',
+              provincia: provincia?.trim() || '',
+              distrito: distrito?.trim() || ''
+            };
+          });
+        setMesaElectoralData(records);
+      } catch (error) {
+        console.error('Error loading mesa electoral data:', error);
+      }
+    };
+
     loadUbigeoData();
     loadCircunscripcionData();
     loadJeeData();
+    loadMesaElectoralData();
   }, []);
 
   // Time tracking interval - update currentTime every second
@@ -160,14 +208,56 @@ export function ElectoralDashboard() {
     });
   }, [categoryData]);
 
-  // Sync location state when active category changes
+  // Sync location state when active category changes or when category data is updated
   useEffect(() => {
     const currentLocationData = getCurrentCategoryData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
     setSelectedDepartamento(currentLocationData.departamento);
     setSelectedProvincia(currentLocationData.provincia);
     setSelectedDistrito(currentLocationData.distrito);
     setSelectedJee(currentLocationData.jee);
-  }, [activeCategory]);
+    setSelectedCircunscripcionElectoral(currentLocationData.circunscripcionElectoral);
+  }, [activeCategory, categoryData]);
+
+  // Auto-set circunscripción electoral when category changes and data is available
+  useEffect(() => {
+    if (circunscripcionData.length > 0) {
+      const options = getCircunscripcionElectoralOptions();
+
+      // For specific categories with only one option, auto-select it
+      if (options.length === 1 && (activeCategory === 'presidencial' || activeCategory === 'parlamentoAndino' || activeCategory === 'senadoresNacional')) {
+        const autoSelectedCirc = options[0];
+        if (selectedCircunscripcionElectoral !== autoSelectedCirc) {
+          setSelectedCircunscripcionElectoral(autoSelectedCirc);
+
+          // Update localStorage with auto-selected circunscripción
+          updateCurrentCategoryData({
+            selectedLocation: {
+              departamento: selectedDepartamento,
+              provincia: selectedProvincia,
+              distrito: selectedDistrito,
+              circunscripcionElectoral: autoSelectedCirc,
+              jee: selectedJee
+            }
+          });
+        }
+      } else if (options.length > 0) {
+        // For other categories (senadoresRegional, diputados), clear the selection
+        // so user can manually select from available departmental options
+        setSelectedCircunscripcionElectoral('');
+
+        // Also update localStorage to clear the selection
+        updateCurrentCategoryData({
+          selectedLocation: {
+            departamento: selectedDepartamento,
+            provincia: selectedProvincia,
+            distrito: selectedDistrito,
+            circunscripcionElectoral: '',
+            jee: selectedJee
+          }
+        });
+      }
+    }
+  }, [activeCategory, circunscripcionData]);
 
   // Helper functions to get current category data
   const updateCurrentCategoryData = (updates: Partial<CategoryData>): void => {
@@ -281,7 +371,8 @@ export function ElectoralDashboard() {
 
   // Get unique departamentos
   const getDepartamentos = () => {
-    const unique = Array.from(new Set(ubigeoData.map(record => record.departamento)));
+    const unique = Array.from(new Set(ubigeoData.map(record => record.departamento?.trim() || '')))
+      .filter(dept => dept !== ''); // Remove any empty strings
     return unique.sort();
   };
 
@@ -289,18 +380,46 @@ export function ElectoralDashboard() {
   const getProvincias = (departamento: string) => {
     if (!departamento) return [];
     const filtered = ubigeoData.filter(record => record.departamento === departamento);
-    const unique = Array.from(new Set(filtered.map(record => record.provincia)));
+    const unique = Array.from(new Set(filtered.map(record => record.provincia?.trim() || '')))
+      .filter(prov => prov !== ''); // Remove any empty strings
     return unique.sort();
   };
 
   // Get distritos for selected provincia
   const getDistritos = (departamento: string, provincia: string) => {
     if (!departamento || !provincia) return [];
-    const filtered = ubigeoData.filter(record => 
+
+    const filtered = ubigeoData.filter(record =>
       record.departamento === departamento && record.provincia === provincia
     );
-    const unique = Array.from(new Set(filtered.map(record => record.distrito)));
+
+    const unique = Array.from(new Set(filtered.map(record => record.distrito?.trim() || '')))
+      .filter(distrito => distrito !== ''); // Remove any empty strings
+
     return unique.sort();
+  };
+
+  // Get available circunscripciones for current category
+  const getCircunscripcionElectoralOptions = () => {
+    // For specific categories (presidencial, parlamentoAndino, senadoresNacional),
+    // show only their specific circunscripción
+    if (activeCategory === 'presidencial' || activeCategory === 'parlamentoAndino' || activeCategory === 'senadoresNacional') {
+      const categorySpecific = circunscripcionData.find(record => record.category === activeCategory);
+      if (categorySpecific && categorySpecific.circunscripcion_electoral && categorySpecific.circunscripcion_electoral.trim() !== '') {
+        return [categorySpecific.circunscripcion_electoral];
+      }
+      // Fallback in case the specific category isn't found
+      return [];
+    }
+
+    // For all other categories (senadoresRegional, diputados, etc.),
+    // show all circunscripciones where category is empty (departmental ones)
+    const departmental = circunscripcionData
+      .filter(record => !record.category || record.category.trim() === "")
+      .map(record => record.circunscripcion_electoral)
+      .filter(circ => circ && circ.trim() !== ''); // Filter out empty strings
+
+    return [...new Set(departmental)].sort();
   };
 
   // Handle departamento change
@@ -311,13 +430,12 @@ export function ElectoralDashboard() {
     setSelectedJee("");
 
     // Update localStorage with new location data
-    const circunscripcionElectoral = getCircunscripcionElectoral(activeCategory, value, "");
     updateCurrentCategoryData({
       selectedLocation: {
         departamento: value,
         provincia: "",
         distrito: "",
-        circunscripcionElectoral,
+        circunscripcionElectoral: selectedCircunscripcionElectoral,
         jee: ""
       }
     });
@@ -330,13 +448,12 @@ export function ElectoralDashboard() {
     setSelectedJee("");
 
     // Update localStorage with new location data
-    const circunscripcionElectoral = getCircunscripcionElectoral(activeCategory, selectedDepartamento, value);
     updateCurrentCategoryData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: value,
         distrito: "",
-        circunscripcionElectoral,
+        circunscripcionElectoral: selectedCircunscripcionElectoral,
         jee: ""
       }
     });
@@ -347,13 +464,12 @@ export function ElectoralDashboard() {
     setSelectedDistrito(value);
 
     // Update localStorage with new location data
-    const circunscripcionElectoral = getCircunscripcionElectoral(activeCategory, selectedDepartamento, selectedProvincia);
     updateCurrentCategoryData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: selectedProvincia,
         distrito: value,
-        circunscripcionElectoral,
+        circunscripcionElectoral: selectedCircunscripcionElectoral,
         jee: selectedJee
       }
     });
@@ -364,19 +480,34 @@ export function ElectoralDashboard() {
     setSelectedJee(value);
 
     // Update localStorage with new location data
-    const circunscripcionElectoral = getCircunscripcionElectoral(activeCategory, selectedDepartamento, selectedProvincia);
     updateCurrentCategoryData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: selectedProvincia,
         distrito: selectedDistrito,
-        circunscripcionElectoral,
+        circunscripcionElectoral: selectedCircunscripcionElectoral,
         jee: value
       }
     });
   };
 
-  // Check if location dropdowns should be visible
+  // Handle Circunscripción Electoral change
+  const handleCircunscripcionElectoralChange = (value: string) => {
+    setSelectedCircunscripcionElectoral(value);
+
+    // Update localStorage with new location data
+    updateCurrentCategoryData({
+      selectedLocation: {
+        departamento: selectedDepartamento,
+        provincia: selectedProvincia,
+        distrito: selectedDistrito,
+        circunscripcionElectoral: value,
+        jee: selectedJee
+      }
+    });
+  };
+
+  // Show location dropdowns to display auto-populated values from mesa number
   const showLocationDropdowns = activeSection === 'ingreso' || activeSection === 'recuento';
 
   const renderSection = () => {
@@ -395,7 +526,7 @@ export function ElectoralDashboard() {
             distrito: selectedDistrito,
             jee: selectedJee
           }}
-          circunscripcionElectoral={getCircunscripcionElectoral(activeCategory, selectedDepartamento, selectedProvincia)}
+          circunscripcionElectoral={selectedCircunscripcionElectoral}
           totalElectores={totalElectores}
           // totalCedulasRecibidas={totalCedulasRecibidas}
         />;
@@ -417,14 +548,53 @@ export function ElectoralDashboard() {
             distrito: selectedDistrito,
             jee: selectedJee
           }}
-          circunscripcionElectoral={getCircunscripcionElectoral(activeCategory, selectedDepartamento, selectedProvincia)}
+          circunscripcionElectoral={selectedCircunscripcionElectoral}
+          mesaElectoralInfo={mesaNumber > 0 ? getMesaElectoralInfo(mesaNumber.toString()) : null}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
-            updateCurrentCategoryData({
-              mesaNumber: mesa,
-              actaNumber: acta,
-              totalElectores: electores
-            });
+            // Look up mesa electoral data to auto-populate location fields
+            const mesaInfo = getMesaElectoralInfo(mesa.toString());
+
+            if (mesaInfo) {
+              // Auto-populate location fields based on mesa data
+              setSelectedDepartamento(mesaInfo.departamento);
+              setSelectedProvincia(mesaInfo.provincia);
+              setSelectedDistrito(mesaInfo.distrito);
+              setSelectedCircunscripcionElectoral(mesaInfo.circunscripcion_electoral);
+
+              // Update category data with mesa info and auto-populated location
+              updateCurrentCategoryData({
+                mesaNumber: mesa,
+                actaNumber: acta,
+                totalElectores: electores,
+                selectedLocation: {
+                  departamento: mesaInfo.departamento,
+                  provincia: mesaInfo.provincia,
+                  distrito: mesaInfo.distrito,
+                  jee: selectedJee, // Keep current JEE selection
+                  circunscripcionElectoral: mesaInfo.circunscripcion_electoral
+                }
+              });
+            } else {
+              // Mesa number not found in data - show error message
+              toast.error(`Mesa N° ${mesa.toString().padStart(6, '0')} no encontrada en los datos electorales`, {
+                style: {
+                  background: '#dc2626',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  width: '450px'
+                },
+                duration: 4000
+              });
+
+              // Still update the mesa data but without auto-populating location
+              updateCurrentCategoryData({
+                mesaNumber: mesa,
+                actaNumber: acta,
+                totalElectores: electores
+              });
+            }
           }}
           isFormFinalized={isFormFinalized}
           onFormFinalizedChange={(finalized) => updateCurrentCategoryData({ isFormFinalized: finalized })}
@@ -495,17 +665,45 @@ export function ElectoralDashboard() {
               </SelectContent>
             </Select>
 
+            {/* Circunscripción Electoral Dropdown */}
+            {showLocationDropdowns && (
+              <Select
+                value={selectedCircunscripcionElectoral || ""}
+                onValueChange={handleCircunscripcionElectoralChange}
+                disabled={areLocationFieldsDisabled}
+              >
+                <SelectTrigger
+                  className={`w-48 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  title="Circunscripción Electoral"
+                >
+                  <SelectValue placeholder="Circunscripción Electoral" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getCircunscripcionElectoralOptions().map((circ) => (
+                    <SelectItem key={circ} value={circ}>
+                      {circ}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             {/* Location Dropdowns - Only visible for ingreso and recuento */}
             {showLocationDropdowns && (
               <>
-                {/* Departamento Dropdown */}
+                {/* Departamento/Continente Dropdown */}
                 <Select
                   value={selectedDepartamento}
                   onValueChange={handleDepartamentoChange}
                   disabled={areLocationFieldsDisabled}
                 >
-                  <SelectTrigger className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}>
-                    <SelectValue placeholder="Departamento" />
+                  <SelectTrigger
+                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ?
+                      "Continente" :
+                      "Departamento"}
+                  >
+                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Continente" : "Departamento"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getDepartamentos().map((dept) => (
@@ -516,14 +714,17 @@ export function ElectoralDashboard() {
                   </SelectContent>
                 </Select>
 
-                {/* Provincia Dropdown */}
+                {/* Provincia/País Dropdown */}
                 <Select
                   value={selectedProvincia}
                   onValueChange={handleProvinciaChange}
                   disabled={!selectedDepartamento || areLocationFieldsDisabled}
                 >
-                  <SelectTrigger className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}>
-                    <SelectValue placeholder="Provincia" />
+                  <SelectTrigger
+                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "País" : "Provincia"}
+                  >
+                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "País" : "Provincia"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getProvincias(selectedDepartamento).map((prov) => (
@@ -534,14 +735,17 @@ export function ElectoralDashboard() {
                   </SelectContent>
                 </Select>
 
-                {/* Distrito Dropdown */}
+                {/* Distrito/Ciudad Dropdown */}
                 <Select
                   value={selectedDistrito}
                   onValueChange={handleDistritoChange}
                   disabled={!selectedProvincia || areLocationFieldsDisabled}
                 >
-                  <SelectTrigger className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}>
-                    <SelectValue placeholder="Distrito" />
+                  <SelectTrigger
+                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Ciudad" : "Distrito"}
+                  >
+                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Ciudad" : "Distrito"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getDistritos(selectedDepartamento, selectedProvincia).map((dist) => (
@@ -558,7 +762,10 @@ export function ElectoralDashboard() {
                   onValueChange={handleJeeChange}
                   disabled={areLocationFieldsDisabled}
                 >
-                  <SelectTrigger className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  <SelectTrigger
+                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title="JEE"
+                  >
                     <SelectValue placeholder="JEE" />
                   </SelectTrigger>
                   <SelectContent>
@@ -612,7 +819,7 @@ export function ElectoralDashboard() {
         preferentialConfig={getPreferentialVoteConfig(activeCategory)}
         isFormFinalized={isFormFinalized}
         isMesaDataSaved={isMesaDataSaved}
-        currentCircunscripcionElectoral={getCircunscripcionElectoral(selectedDepartamento, selectedProvincia)}
+        currentCircunscripcionElectoral={selectedCircunscripcionElectoral}
       />
     </div>
   );
