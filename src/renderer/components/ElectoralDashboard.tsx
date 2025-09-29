@@ -369,34 +369,72 @@ export function ElectoralDashboard() {
     { key: "recuento", label: "Resumen Recuento", icon: BarChart3 },
   ];
 
-  // Get unique departamentos
+  // Check if current selection is international
+  const isInternationalLocation = selectedCircunscripcionElectoral === 'PERUANOS RESIDENTES EN EL EXTRANJERO';
+
+  // Get unique departamentos (or continentes for international)
   const getDepartamentos = () => {
-    const unique = Array.from(new Set(ubigeoData.map(record => record.departamento?.trim() || '')))
-      .filter(dept => dept !== ''); // Remove any empty strings
-    return unique.sort();
+    if (isInternationalLocation) {
+      // Get continentes from mesa electoral data
+      const continentes = mesaElectoralData
+        .filter(record => record.circunscripcion_electoral === 'PERUANOS RESIDENTES EN EL EXTRANJERO')
+        .map(record => record.departamento?.trim() || '');
+      const unique = Array.from(new Set(continentes))
+        .filter(cont => cont !== '');
+      return unique.sort();
+    } else {
+      // Get departamentos from ubigeo data (national)
+      const unique = Array.from(new Set(ubigeoData.map(record => record.departamento?.trim() || '')))
+        .filter(dept => dept !== '');
+      return unique.sort();
+    }
   };
 
-  // Get provincias for selected departamento
+  // Get provincias for selected departamento (or países for international)
   const getProvincias = (departamento: string) => {
     if (!departamento) return [];
-    const filtered = ubigeoData.filter(record => record.departamento === departamento);
-    const unique = Array.from(new Set(filtered.map(record => record.provincia?.trim() || '')))
-      .filter(prov => prov !== ''); // Remove any empty strings
-    return unique.sort();
+
+    if (isInternationalLocation) {
+      // Get países for the selected continente from mesa electoral data
+      const filtered = mesaElectoralData.filter(
+        record => record.circunscripcion_electoral === 'PERUANOS RESIDENTES EN EL EXTRANJERO' &&
+                 record.departamento === departamento
+      );
+      const unique = Array.from(new Set(filtered.map(record => record.provincia?.trim() || '')))
+        .filter(prov => prov !== '');
+      return unique.sort();
+    } else {
+      // Get provincias from ubigeo data (national)
+      const filtered = ubigeoData.filter(record => record.departamento === departamento);
+      const unique = Array.from(new Set(filtered.map(record => record.provincia?.trim() || '')))
+        .filter(prov => prov !== '');
+      return unique.sort();
+    }
   };
 
-  // Get distritos for selected provincia
+  // Get distritos for selected provincia (or ciudades for international)
   const getDistritos = (departamento: string, provincia: string) => {
     if (!departamento || !provincia) return [];
 
-    const filtered = ubigeoData.filter(record =>
-      record.departamento === departamento && record.provincia === provincia
-    );
-
-    const unique = Array.from(new Set(filtered.map(record => record.distrito?.trim() || '')))
-      .filter(distrito => distrito !== ''); // Remove any empty strings
-
-    return unique.sort();
+    if (isInternationalLocation) {
+      // Get ciudades for the selected país from mesa electoral data
+      const filtered = mesaElectoralData.filter(
+        record => record.circunscripcion_electoral === 'PERUANOS RESIDENTES EN EL EXTRANJERO' &&
+                 record.departamento === departamento &&
+                 record.provincia === provincia
+      );
+      const unique = Array.from(new Set(filtered.map(record => record.distrito?.trim() || '')))
+        .filter(distrito => distrito !== '');
+      return unique.sort();
+    } else {
+      // Get distritos from ubigeo data (national)
+      const filtered = ubigeoData.filter(record =>
+        record.departamento === departamento && record.provincia === provincia
+      );
+      const unique = Array.from(new Set(filtered.map(record => record.distrito?.trim() || '')))
+        .filter(distrito => distrito !== '');
+      return unique.sort();
+    }
   };
 
   // Get available circunscripciones for current category
@@ -493,18 +531,42 @@ export function ElectoralDashboard() {
 
   // Handle Circunscripción Electoral change
   const handleCircunscripcionElectoralChange = (value: string) => {
-    setSelectedCircunscripcionElectoral(value);
+    const wasInternational = selectedCircunscripcionElectoral === 'PERUANOS RESIDENTES EN EL EXTRANJERO';
+    const isNowInternational = value === 'PERUANOS RESIDENTES EN EL EXTRANJERO';
 
-    // Update localStorage with new location data
-    updateCurrentCategoryData({
-      selectedLocation: {
-        departamento: selectedDepartamento,
-        provincia: selectedProvincia,
-        distrito: selectedDistrito,
-        circunscripcionElectoral: value,
-        jee: selectedJee
-      }
-    });
+    // Clear location fields if switching between national and international
+    if (wasInternational !== isNowInternational) {
+      setSelectedDepartamento("");
+      setSelectedProvincia("");
+      setSelectedDistrito("");
+      setSelectedJee("");
+
+      setSelectedCircunscripcionElectoral(value);
+
+      // Update localStorage with cleared location data
+      updateCurrentCategoryData({
+        selectedLocation: {
+          departamento: "",
+          provincia: "",
+          distrito: "",
+          circunscripcionElectoral: value,
+          jee: ""
+        }
+      });
+    } else {
+      setSelectedCircunscripcionElectoral(value);
+
+      // Update localStorage with current location data
+      updateCurrentCategoryData({
+        selectedLocation: {
+          departamento: selectedDepartamento,
+          provincia: selectedProvincia,
+          distrito: selectedDistrito,
+          circunscripcionElectoral: value,
+          jee: selectedJee
+        }
+      });
+    }
   };
 
   // Show location dropdowns to display auto-populated values from mesa number
@@ -550,6 +612,8 @@ export function ElectoralDashboard() {
           }}
           circunscripcionElectoral={selectedCircunscripcionElectoral}
           mesaElectoralInfo={mesaNumber > 0 ? getMesaElectoralInfo(mesaNumber.toString()) : null}
+          onJeeChange={handleJeeChange}
+          jeeOptions={jeeData}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
             // Look up mesa electoral data to auto-populate location fields
@@ -699,11 +763,9 @@ export function ElectoralDashboard() {
                 >
                   <SelectTrigger
                     className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ?
-                      "Continente" :
-                      "Departamento"}
+                    title={isInternationalLocation ? "Continente" : "Departamento"}
                   >
-                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Continente" : "Departamento"} />
+                    <SelectValue placeholder={isInternationalLocation ? "Continente" : "Departamento"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getDepartamentos().map((dept) => (
@@ -722,9 +784,9 @@ export function ElectoralDashboard() {
                 >
                   <SelectTrigger
                     className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "País" : "Provincia"}
+                    title={isInternationalLocation ? "País" : "Provincia"}
                   >
-                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "País" : "Provincia"} />
+                    <SelectValue placeholder={isInternationalLocation ? "País" : "Provincia"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getProvincias(selectedDepartamento).map((prov) => (
@@ -743,35 +805,14 @@ export function ElectoralDashboard() {
                 >
                   <SelectTrigger
                     className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Ciudad" : "Distrito"}
+                    title={isInternationalLocation ? "Ciudad" : "Distrito"}
                   >
-                    <SelectValue placeholder={mesaNumber > 0 && getMesaElectoralInfo(mesaNumber.toString())?.tipo_ubicacion === "INTERNACIONAL" ? "Ciudad" : "Distrito"} />
+                    <SelectValue placeholder={isInternationalLocation ? "Ciudad" : "Distrito"} />
                   </SelectTrigger>
                   <SelectContent>
                     {getDistritos(selectedDepartamento, selectedProvincia).map((dist) => (
                       <SelectItem key={dist} value={dist}>
                         {dist}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* JEE Dropdown */}
-                <Select
-                  value={selectedJee}
-                  onValueChange={handleJeeChange}
-                  disabled={areLocationFieldsDisabled}
-                >
-                  <SelectTrigger
-                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title="JEE"
-                  >
-                    <SelectValue placeholder="JEE" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jeeData.map((jee) => (
-                      <SelectItem key={jee} value={jee}>
-                        {jee}
                       </SelectItem>
                     ))}
                   </SelectContent>

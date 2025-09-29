@@ -63,11 +63,11 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
         const records: CircunscripcionRecord[] = lines
           .filter(line => line.trim())
           .map(line => {
-            const [category, departamento, provincia, circunscripcion_electoral] = line.split(';');
+            const [category, circunscripcion_electoral] = line.split(';');
             return {
               category: category?.trim() || '',
-              departamento: departamento?.trim() || '',
-              provincia: provincia?.trim() || '',
+              departamento: '', // Not used in this CSV
+              provincia: '', // Not used in this CSV
               circunscripcion_electoral: circunscripcion_electoral?.trim() || ''
             };
           });

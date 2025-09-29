@@ -5,6 +5,7 @@ import { Input } from "./ui/input";
 import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Plus, X, Edit, Check } from "lucide-react";
 import { type VoteEntry, politicalOrganizations } from "../data/mockData";
 import { getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
@@ -41,6 +42,8 @@ interface VoteEntryFormProps {
   circunscripcionElectoral: string;
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:string, electores: number) => void;
+  onJeeChange: (jee: string) => void;
+  jeeOptions: string[];
   mesaElectoralInfo?: {
     mesa_number: string;
     tipo_ubicacion: string;
@@ -65,6 +68,7 @@ interface VoteEntryFormProps {
 export function VoteEntryForm({
   category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange,
   mesaNumber, actaNumber, totalElectores, selectedLocation, circunscripcionElectoral, onMesaDataChange,
+  onJeeChange, jeeOptions,
   mesaElectoralInfo,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
@@ -1080,6 +1084,12 @@ export function VoteEntryForm({
                     <span className="font-semibold text-orange-900 ml-1">{localActaNumber}</span>
                   </div>
 
+                  {/* JEE Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="JURADO ELECTORAL ESPECIAL">
+                    <span className="text-sm font-medium text-orange-700">JEE:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{selectedLocation.jee}</span>
+                  </div>
+
                   {/* Total Electores Display */}
                   <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE CIUDADANOS QUE VOTARON">
                     <span className="text-sm font-medium text-orange-700">TCV:</span>
@@ -1144,11 +1154,11 @@ export function VoteEntryForm({
                   {/* Acta Number Input */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                     <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
-                <Input
-                  ref={actaInputRef}
-                  type="text"
-                  maxLength={11}
-                  value={localActaNumber}
+                    <Input
+                      ref={actaInputRef}
+                      type="text"
+                      maxLength={11}
+                      value={localActaNumber}
                   onKeyDown={(e) => {
                     if (e.key === 'Backspace') {
                       const input = e.target as HTMLInputElement;
@@ -1271,6 +1281,26 @@ export function VoteEntryForm({
                   }}
                       className="max-w-32 px-0.5 text-center font-semibold"
                     />
+                  </div>
+
+                  {/* JEE Input */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="JURADO ELECTORAL ESPECIAL">JEE</label>
+                    <Select
+                      value={selectedLocation.jee || ""}
+                      onValueChange={onJeeChange}
+                    >
+                      <SelectTrigger className="w-48 h-8">
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jeeOptions.map((jee) => (
+                          <SelectItem key={jee} value={jee}>
+                            {jee}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Total Electores Input */}
