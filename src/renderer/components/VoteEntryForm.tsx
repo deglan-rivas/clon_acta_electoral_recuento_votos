@@ -34,6 +34,10 @@ interface VoteEntryFormProps {
   mesaNumber: number;
   actaNumber: string;
   totalElectores: number;
+  cedulasExcedentes: number;
+  tcv: number | null;
+  onCedulasExcedentesChange: (value: number) => void;
+  onTcvChange: (value: number | null) => void;
   selectedLocation: {
     departamento: string;
     provincia: string;
@@ -44,6 +48,13 @@ interface VoteEntryFormProps {
   // totalCedulasRecibidas: number;
   onMesaDataChange: (mesa: number, acta:string, electores: number) => void;
   onJeeChange: (jee: string) => void;
+  onDepartamentoChange: (value: string) => void;
+  onProvinciaChange: (value: string) => void;
+  onDistritoChange: (value: string) => void;
+  getDepartamentos: () => string[];
+  getProvincias: (departamento: string) => string[];
+  getDistritos: (departamento: string, provincia: string) => string[];
+  isInternationalLocation: boolean;
   jeeOptions: string[];
   mesaElectoralInfo?: {
     mesa_number: string;
@@ -74,8 +85,11 @@ interface VoteEntryFormProps {
 
 export function VoteEntryForm({
   category, categoryLabel, existingEntries = [], voteLimits, preferentialConfig, onEntriesChange,
-  mesaNumber, actaNumber, totalElectores, selectedLocation, circunscripcionElectoral, onMesaDataChange,
-  onJeeChange, jeeOptions,
+  mesaNumber, actaNumber, totalElectores, cedulasExcedentes, tcv, onCedulasExcedentesChange, onTcvChange,
+  selectedLocation, circunscripcionElectoral, onMesaDataChange,
+  onJeeChange, onDepartamentoChange, onProvinciaChange, onDistritoChange,
+  getDepartamentos, getProvincias, getDistritos, isInternationalLocation,
+  jeeOptions,
   mesaElectoralInfo,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
@@ -1065,6 +1079,12 @@ export function VoteEntryForm({
     // const conteoVotos = calculateVoteData();
     // console.log("Conteo de votos por partido:", conteoVotos);
     onEndTimeChange(now); // Capture end time
+
+    // If TCV is null (linked to entries.length), save the actual value for auto-loading
+    if (tcv === null) {
+      onTcvChange(entries.length);
+    }
+
     if (onFormFinalizedChange) {
       onFormFinalizedChange(true);
     } else {
@@ -1099,6 +1119,7 @@ export function VoteEntryForm({
       {/* Mesa Data Entry Section */}
       <Card>
         <CardContent className="p-4 [&:last-child]:pb-4">
+          <div className="space-y-4">
           <div className="flex justify-between items-center gap-6">
             {/* Input Fields Container */}
             <div className="flex gap-4 items-center">
@@ -1132,7 +1153,7 @@ export function VoteEntryForm({
                   {/* Total de Ciudadanos que Votaron Display */}
                   <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE CIUDADANOS QUE VOTARON">
                     <span className="text-sm font-medium text-orange-700">TCV:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{entries.length}</span>
+                    <span className="font-semibold text-orange-900 ml-1">{tcv !== null ? tcv : entries.length}</span>
                   </div>
                 </>
               ) : (
@@ -1424,15 +1445,24 @@ export function VoteEntryForm({
                     />
                   </div>
 
-                  {/* Total de Ciudadanos que Votaron Display (non-editable) */}
+                  {/* Total de Ciudadanos que Votaron Display (editable if tcv is not null, otherwise linked to entries) */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                     <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                     <Input
                       type="number"
-                      value={entries.length}
-                      readOnly
-                      disabled
-                      className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
+                      value={tcv !== null ? tcv : entries.length}
+                      onChange={(e) => {
+                        if (tcv !== null) {
+                          // TCV is independent, allow editing
+                          const value = parseInt(e.target.value) || 0;
+                          if (value >= 0) {
+                            onTcvChange(value);
+                          }
+                        }
+                      }}
+                      readOnly={tcv === null}
+                      disabled={tcv === null}
+                      className={`max-w-20 text-center font-semibold ${tcv === null ? 'bg-gray-200 text-gray-700 cursor-not-allowed' : ''}`}
                     />
                   </div>
                 </>
@@ -1457,21 +1487,21 @@ export function VoteEntryForm({
                   onClick={handleSaveMesaData}
                   disabled={!isBloque1Enabled}
                   className={`px-6 py-2 rounded font-medium ${
-                    !isBloque1Enabled 
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                    !isBloque1Enabled
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-green-800 hover:bg-green-700 text-white"
                   }`}
                 >
                   Iniciar
                 </Button>
-              ) : (
+              ) : !isFormFinalized ? (
                 <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded font-medium text-center justify-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Sesión Iniciada
                 </div>
-              )}
+              ) : null}
               
               {/* Finalize Button */}
               {!isFormFinalized ? (
@@ -1499,7 +1529,7 @@ export function VoteEntryForm({
               {isFormFinalized && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className="px-6 py-2 rounded font-medium bg-blue-800 hover:bg-blue-700 text-white">
+                    <Button className="px-6 py-2 rounded font-medium bg-red-800 hover:bg-red-700 text-white">
                       Opciones
                       <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
@@ -1559,6 +1589,153 @@ export function VoteEntryForm({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Location Dropdowns Row */}
+          <div className="flex gap-4 items-center">
+            {!isBloque1Enabled ? (
+              // Display mode - show styled divs (when session started, after clicking Iniciar)
+              <>
+                {/* Departamento/Continente Display */}
+                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                  <span className="text-sm font-medium text-orange-700">
+                    {isInternationalLocation ? "Continente:" : "Departamento:"}
+                  </span>
+                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.departamento || "-"}</span>
+                </div>
+
+                {/* Provincia/País Display */}
+                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                  <span className="text-sm font-medium text-orange-700">
+                    {isInternationalLocation ? "País:" : "Provincia:"}
+                  </span>
+                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.provincia || "-"}</span>
+                </div>
+
+                {/* Distrito/Ciudad Display */}
+                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                  <span className="text-sm font-medium text-orange-700">
+                    {isInternationalLocation ? "Ciudad:" : "Distrito:"}
+                  </span>
+                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.distrito || "-"}</span>
+                </div>
+
+                {/* Cédulas Excedentes - Editable after Iniciar, Display after Finalizar */}
+                {isFormFinalized ? (
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
+                    <span className="text-sm font-medium text-orange-700">Cédulas Excedentes:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{cedulasExcedentes}</span>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Excedentes</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={cedulasExcedentes || ""}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        if (value >= 0) {
+                          onCedulasExcedentesChange(value);
+                        }
+                      }}
+                      className="max-w-20 text-center font-semibold"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              // Edit mode - show select dropdowns (before clicking Iniciar)
+              <>
+                {/* Departamento/Continente Dropdown */}
+                <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                  <label className="text-sm font-medium text-gray-700 flex items-center pr-2">
+                    {isInternationalLocation ? "Continente" : "Departamento"}
+                  </label>
+                  <Select
+                    value={selectedLocation.departamento || undefined}
+                    onValueChange={onDepartamentoChange}
+                  >
+                    <SelectTrigger className="w-49 h-8">
+                      <SelectValue placeholder={isInternationalLocation ? "Seleccionar Continente" : "Seleccionar Departamento"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getDepartamentos().map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Provincia/País Dropdown */}
+                <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                  <label className="text-sm font-medium text-gray-700 flex items-center pr-2">
+                    {isInternationalLocation ? "País" : "Provincia"}
+                  </label>
+                  <Select
+                    value={selectedLocation.provincia || undefined}
+                    onValueChange={onProvinciaChange}
+                    disabled={!selectedLocation.departamento}
+                  >
+                    <SelectTrigger className={`w-56 h-8 ${!selectedLocation.departamento ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <SelectValue placeholder={isInternationalLocation ? "Seleccionar País" : "Seleccionar Provincia"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getProvincias(selectedLocation.departamento).map((prov) => (
+                        <SelectItem key={prov} value={prov}>
+                          {prov}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Distrito/Ciudad Dropdown */}
+                <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                  <label className="text-sm font-medium text-gray-700 flex items-center pr-2">
+                    {isInternationalLocation ? "Ciudad" : "Distrito"}
+                  </label>
+                  <Select
+                    value={selectedLocation.distrito || undefined}
+                    onValueChange={onDistritoChange}
+                    disabled={!selectedLocation.provincia}
+                  >
+                    <SelectTrigger className={`w-64 h-8 ${!selectedLocation.provincia ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <SelectValue placeholder={isInternationalLocation ? "Seleccionar Ciudad" : "Seleccionar Distrito"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getDistritos(selectedLocation.departamento, selectedLocation.provincia).map((dist) => (
+                        <SelectItem key={dist} value={dist}>
+                          {dist}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cédulas Excedentes Input */}
+                <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                  <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Excedentes</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={cedulasExcedentes || ""}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      if (value >= 0) {
+                        onCedulasExcedentesChange(value);
+                      }
+                    }}
+                    className="max-w-20 text-center font-semibold"
+                    placeholder="0"
+                  />
+                </div>
+              </>
+            )}
+          </div>
           </div>
         </CardContent>
       </Card>

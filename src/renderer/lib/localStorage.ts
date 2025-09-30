@@ -55,6 +55,8 @@ export interface ActaData {
   mesaNumber: number;
   actaNumber: string;
   totalElectores: number;
+  cedulasExcedentes: number;
+  tcv: number | null; // Total de Ciudadanos que Votaron (null means use entries.length)
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   startTime: string | null; // Store as ISO string
@@ -84,6 +86,8 @@ export const getDefaultActaData = (): ActaData => ({
   mesaNumber: 0,
   actaNumber: '',
   totalElectores: 0,
+  cedulasExcedentes: 0,
+  tcv: null, // null means TCV is linked to entries.length
   isFormFinalized: false,
   isMesaDataSaved: false,
   startTime: null,
@@ -293,6 +297,68 @@ export const saveCircunscripcionOrganizations = (circunscripcion: string, organi
 
 export const getAllCircunscripcionOrganizations = (): Record<string, string[]> => {
   return getFromLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, {});
+};
+
+// Find cédulas excedentes for a specific mesa number across all categories (excluding current acta)
+export const findCedulasExcedentesByMesa = (mesaNumber: number, excludeCategory?: string, excludeActaIndex?: number): number | null => {
+  if (!mesaNumber || mesaNumber <= 0) return null;
+
+  const allData = getAllCategoryData();
+  const categories = ['presidencial', 'senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'];
+
+  // Search through all categories and their actas
+  for (const category of categories) {
+    const categoryData = allData[category];
+    if (categoryData && categoryData.actas) {
+      for (let i = 0; i < categoryData.actas.length; i++) {
+        const acta = categoryData.actas[i];
+
+        // Skip the current acta if specified
+        if (excludeCategory && excludeActaIndex !== undefined && category === excludeCategory && i === excludeActaIndex) {
+          continue;
+        }
+
+        if (acta.mesaNumber === mesaNumber && acta.cedulasExcedentes !== undefined) {
+          console.log(`[localStorage] Found cédulas excedentes for mesa ${mesaNumber} in category ${category}:`, acta.cedulasExcedentes);
+          return acta.cedulasExcedentes;
+        }
+      }
+    }
+  }
+
+  console.log(`[localStorage] No cédulas excedentes found for mesa ${mesaNumber}`);
+  return null;
+};
+
+// Find TCV for a specific mesa number across all categories (excluding current acta)
+export const findTcvByMesa = (mesaNumber: number, excludeCategory?: string, excludeActaIndex?: number): number | null => {
+  if (!mesaNumber || mesaNumber <= 0) return null;
+
+  const allData = getAllCategoryData();
+  const categories = ['presidencial', 'senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'];
+
+  // Search through all categories and their actas
+  for (const category of categories) {
+    const categoryData = allData[category];
+    if (categoryData && categoryData.actas) {
+      for (let i = 0; i < categoryData.actas.length; i++) {
+        const acta = categoryData.actas[i];
+
+        // Skip the current acta if specified
+        if (excludeCategory && excludeActaIndex !== undefined && category === excludeCategory && i === excludeActaIndex) {
+          continue;
+        }
+
+        if (acta.mesaNumber === mesaNumber && acta.tcv !== null && acta.tcv !== undefined) {
+          console.log(`[localStorage] Found TCV for mesa ${mesaNumber} in category ${category}:`, acta.tcv);
+          return acta.tcv;
+        }
+      }
+    }
+  }
+
+  console.log(`[localStorage] No TCV found for mesa ${mesaNumber}`);
+  return null;
 };
 
 // Debug function to view all localStorage data

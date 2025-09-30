@@ -86,21 +86,21 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
     const blancoVotes = voteCount['BLANCO'] || 0;
     const nuloVotes = voteCount['NULO'] || 0;
     const blankAndNullVotes = blancoVotes + nuloVotes;
-    
+
     // Total votes emitted excludes BLANCO and NULO
     const totalValidVotes = Object.entries(voteCount)
       .filter(([party]) => party !== 'BLANCO' && party !== 'NULO')
       .reduce((sum, [, count]) => sum + count, 0);
-    
+
     const totalVotesEmitted = totalValidVotes;
     const totalVotersWhoVoted = totalValidVotes + blankAndNullVotes;
-    
-    // Calculate participation and absenteeism percentages
-    const participationRate = data.totalEligibleVoters > 0 
-      ? (totalVotersWhoVoted / data.totalEligibleVoters * 100)
+
+    // Calculate participation and absenteeism percentages using actual totalElectores
+    const participationRate = totalElectores > 0
+      ? (totalVotersWhoVoted / totalElectores * 100)
       : 0;
     const absenteeismRate = 100 - participationRate;
-    
+
     return {
       totalVotesEmitted,
       totalVotersWhoVoted,

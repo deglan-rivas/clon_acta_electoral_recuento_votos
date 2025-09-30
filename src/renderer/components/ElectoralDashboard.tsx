@@ -30,6 +30,8 @@ import {
   saveActiveActaIndex,
   createNewActa,
   getAllActas,
+  findCedulasExcedentesByMesa,
+  findTcvByMesa,
   type ActaData,
 } from "../lib/localStorage";
 import { type PoliticalOrganization } from "../data/mockData";
@@ -421,6 +423,8 @@ export function ElectoralDashboard() {
   const mesaNumber = currentCategoryData?.mesaNumber || 0;
   const actaNumber = currentCategoryData?.actaNumber || '';
   const totalElectores = currentCategoryData?.totalElectores || 0;
+  const cedulasExcedentes = currentCategoryData?.cedulasExcedentes || 0;
+  const tcv = currentCategoryData?.tcv;
   const isFormFinalized = currentCategoryData?.isFormFinalized || false;
   const isMesaDataSaved = currentCategoryData?.isMesaDataSaved || false;
   const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
@@ -695,6 +699,10 @@ export function ElectoralDashboard() {
           mesaNumber={mesaNumber}
           actaNumber={actaNumber}
           totalElectores={totalElectores}
+          cedulasExcedentes={cedulasExcedentes}
+          tcv={tcv}
+          onCedulasExcedentesChange={(value) => updateCurrentActaData({ cedulasExcedentes: value })}
+          onTcvChange={(value) => updateCurrentActaData({ tcv: value })}
           selectedLocation={{
             departamento: selectedDepartamento,
             provincia: selectedProvincia,
@@ -704,12 +712,27 @@ export function ElectoralDashboard() {
           circunscripcionElectoral={selectedCircunscripcionElectoral}
           mesaElectoralInfo={mesaNumber > 0 ? getMesaElectoralInfo(mesaNumber.toString()) : null}
           onJeeChange={handleJeeChange}
+          onDepartamentoChange={handleDepartamentoChange}
+          onProvinciaChange={handleProvinciaChange}
+          onDistritoChange={handleDistritoChange}
+          getDepartamentos={getDepartamentos}
+          getProvincias={getProvincias}
+          getDistritos={getDistritos}
+          isInternationalLocation={isInternationalLocation}
           jeeOptions={jeeData}
           politicalOrganizations={politicalOrganizations}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
             // Look up mesa electoral data to auto-populate location fields
             const mesaInfo = getMesaElectoralInfo(mesa.toString());
+
+            // Get current acta index to exclude it from search
+            const currentActaIndex = getActiveActaIndex(activeCategory);
+
+            // Check if this mesa number exists in any category to get cédulas excedentes and TCV
+            // Exclude current acta to avoid finding itself
+            const existingCedulasExcedentes = findCedulasExcedentesByMesa(mesa, activeCategory, currentActaIndex);
+            const existingTcv = findTcvByMesa(mesa, activeCategory, currentActaIndex);
 
             if (mesaInfo) {
               // Auto-populate location fields based on mesa data
@@ -736,7 +759,7 @@ export function ElectoralDashboard() {
               setSelectedCircunscripcionElectoral(circunscripcionToSet);
 
               // Update category data with mesa info and auto-populated location
-              updateCurrentActaData({
+              const updates: Partial<ActaData> = {
                 mesaNumber: mesa,
                 actaNumber: acta,
                 totalElectores: electores,
@@ -747,7 +770,37 @@ export function ElectoralDashboard() {
                   jee: selectedJee, // Keep current JEE selection
                   circunscripcionElectoral: circunscripcionToSet
                 }
-              });
+              };
+
+              // If cédulas excedentes found for this mesa, auto-populate it
+              if (existingCedulasExcedentes !== null) {
+                updates.cedulasExcedentes = existingCedulasExcedentes;
+              }
+
+              // If TCV found for this mesa, auto-populate it
+              if (existingTcv !== null) {
+                updates.tcv = existingTcv;
+              }
+
+              // Show toast notification for auto-completed values
+              if (existingCedulasExcedentes !== null || existingTcv !== null) {
+                const messages = [];
+                if (existingCedulasExcedentes !== null) messages.push(`Cédulas Excedentes: ${existingCedulasExcedentes}`);
+                if (existingTcv !== null) messages.push(`TCV: ${existingTcv}`);
+
+                toast.info(`Auto-completado - ${messages.join(', ')}`, {
+                  style: {
+                    background: '#3b82f6',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    width: '500px'
+                  },
+                  duration: 3000
+                });
+              }
+
+              updateCurrentActaData(updates);
             } else {
               // Mesa number not found in data - show error message
               toast.error(`Mesa N° ${mesa.toString().padStart(6, '0')} no encontrada en los datos electorales`, {
@@ -762,11 +815,41 @@ export function ElectoralDashboard() {
               });
 
               // Still update the mesa data but without auto-populating location
-              updateCurrentActaData({
+              const updates: Partial<ActaData> = {
                 mesaNumber: mesa,
                 actaNumber: acta,
                 totalElectores: electores
-              });
+              };
+
+              // If cédulas excedentes found for this mesa, auto-populate it even if mesa not in data
+              if (existingCedulasExcedentes !== null) {
+                updates.cedulasExcedentes = existingCedulasExcedentes;
+              }
+
+              // If TCV found for this mesa, auto-populate it even if mesa not in data
+              if (existingTcv !== null) {
+                updates.tcv = existingTcv;
+              }
+
+              // Show toast notification for auto-completed values
+              if (existingCedulasExcedentes !== null || existingTcv !== null) {
+                const messages = [];
+                if (existingCedulasExcedentes !== null) messages.push(`Cédulas Excedentes: ${existingCedulasExcedentes}`);
+                if (existingTcv !== null) messages.push(`TCV: ${existingTcv}`);
+
+                toast.info(`Auto-completado - ${messages.join(', ')}`, {
+                  style: {
+                    background: '#3b82f6',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    width: '500px'
+                  },
+                  duration: 3000
+                });
+              }
+
+              updateCurrentActaData(updates);
             }
           }}
           isFormFinalized={isFormFinalized}
@@ -825,95 +908,31 @@ export function ElectoralDashboard() {
 
             {/* Circunscripción Electoral Dropdown */}
             {showLocationDropdowns && (
-              <Select
-                value={selectedCircunscripcionElectoral || ""}
-                onValueChange={handleCircunscripcionElectoralChange}
-                disabled={areLocationFieldsDisabled}
-              >
-                <SelectTrigger
-                  className={`w-89 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                  title="Circunscripción Electoral"
-                >
-                  <SelectValue placeholder="Circunscripción Electoral" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getCircunscripcionElectoralOptions().map((circ) => (
-                    <SelectItem key={circ} value={circ}>
-                      {circ}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Location Dropdowns - Only visible for ingreso and recuento */}
-            {showLocationDropdowns && (
-              <>
-                {/* Departamento/Continente Dropdown */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Circunscripción Electoral:
+                </label>
                 <Select
-                  value={selectedDepartamento || undefined}
-                  onValueChange={handleDepartamentoChange}
+                  value={selectedCircunscripcionElectoral || ""}
+                  onValueChange={handleCircunscripcionElectoralChange}
                   disabled={areLocationFieldsDisabled}
                 >
                   <SelectTrigger
-                    className={`w-49 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isInternationalLocation ? "Continente" : "Departamento"}
+                    className={`w-89 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <SelectValue placeholder={isInternationalLocation ? "Continente" : "Departamento"} />
+                    <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getDepartamentos().map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
+                    {getCircunscripcionElectoralOptions().map((circ) => (
+                      <SelectItem key={circ} value={circ}>
+                        {circ}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-
-                {/* Provincia/País Dropdown */}
-                <Select
-                  value={selectedProvincia || undefined}
-                  onValueChange={handleProvinciaChange}
-                  disabled={!selectedDepartamento || areLocationFieldsDisabled}
-                >
-                  <SelectTrigger
-                    className={`w-56 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isInternationalLocation ? "País" : "Provincia"}
-                  >
-                    <SelectValue placeholder={isInternationalLocation ? "País" : "Provincia"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getProvincias(selectedDepartamento).map((prov) => (
-                      <SelectItem key={prov} value={prov}>
-                        {prov}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Distrito/Ciudad Dropdown */}
-                <Select
-                  value={selectedDistrito || undefined}
-                  onValueChange={handleDistritoChange}
-                  disabled={!selectedProvincia || areLocationFieldsDisabled}
-                >
-                  <SelectTrigger
-                    className={`w-64 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isInternationalLocation ? "Ciudad" : "Distrito"}
-                  >
-                    <SelectValue placeholder={isInternationalLocation ? "Ciudad" : "Distrito"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getDistritos(selectedDepartamento, selectedProvincia).map((dist) => (
-                      <SelectItem key={dist} value={dist}>
-                        {dist}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-              </>
+              </div>
             )}
+
             </div>
             <div className="ml-auto flex items-center space-x-3">
               <Button

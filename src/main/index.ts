@@ -131,55 +131,52 @@ function createWindow(): BrowserWindow {
 
             if (response.response === 1) {
               try {
-                // Clear only the current category data
+                // Clear only the current category data by resetting its actas array
                 const clearResult = await mainWindow.webContents.executeJavaScript(`
                   ((categoryToDelete) => {
                     try {
                       const categoryDataString = localStorage.getItem('electoral_category_data');
-                      
+
                       if (categoryDataString) {
                         const categoryData = JSON.parse(categoryDataString);
-                        
-                        // Delete the current category data
+
+                        // Reset the category's actas array to a single empty acta
                         if (categoryData[categoryToDelete]) {
-                          delete categoryData[categoryToDelete];
+                          categoryData[categoryToDelete] = {
+                            actas: []
+                          };
                         }
-                        
+
                         // Save the updated data back to localStorage
                         localStorage.setItem('electoral_category_data', JSON.stringify(categoryData));
-                        
-                        // Clear the active category since we deleted its data
-                        localStorage.removeItem('electoral_active_category');
-                        
-                        return { success: true, remainingCategories: Object.keys(categoryData) };
-                      } else {
-                        // If no data exists, just clear the active category
-                        localStorage.removeItem('electoral_active_category');
-                        return { success: true, remainingCategories: [] };
                       }
+
+                      // Reset the active acta index for this category to 0
+                      const activeActaIndices = localStorage.getItem('electoral_active_acta_index');
+                      if (activeActaIndices) {
+                        try {
+                          const indices = JSON.parse(activeActaIndices);
+                          if (indices[categoryToDelete] !== undefined) {
+                            indices[categoryToDelete] = 0;
+                            localStorage.setItem('electoral_active_acta_index', JSON.stringify(indices));
+                          }
+                        } catch (e) {
+                          console.error('Error clearing active acta index:', e);
+                        }
+                      }
+
+                      return { success: true };
                     } catch (e) {
                       console.error('Error in clearing script:', e);
                       return { success: false, error: e.message };
                     }
                   })('${activeCategory}')
                 `);
-                
+
                 if (clearResult.success) {
-                  // Dispatch reset event
-                  await mainWindow.webContents.executeJavaScript(`
-                    window.dispatchEvent(new CustomEvent('app-reset'));
-                  `);
-                  
-                  // After a delay, simulate minimize/restore to fix input events
-                  setTimeout(() => {
-                    mainWindow.blur();
-                    setTimeout(() => {
-                      mainWindow.focus();
-                      log.info('Window focus cycle completed');
-                    }, 100);
-                  }, 500);
-                  
-                  log.info(`Category data cleared for: ${activeCategory}, remaining: ${clearResult.remainingCategories}`);
+                  // Reload the window to refresh the UI
+                  mainWindow.reload();
+                  log.info(`Category data cleared for: ${activeCategory}`);
                 } else {
                   throw new Error(`Clear operation failed: ${clearResult.error}`);
                 }
