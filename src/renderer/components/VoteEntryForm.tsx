@@ -1392,7 +1392,7 @@ export function VoteEntryForm({
                       value={selectedLocation.jee || ""}
                       onValueChange={onJeeChange}
                     >
-                      <SelectTrigger className="w-48 h-8">
+                      <SelectTrigger className="w-47 h-8">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
