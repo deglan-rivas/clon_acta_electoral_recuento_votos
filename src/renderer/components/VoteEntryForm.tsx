@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { Plus, X, Edit, Check, ChevronDown, FileText, RefreshCw } from "lucide-react";
+import { Plus, X, Edit, Check, ChevronDown, FileText, RefreshCw, FileCheck } from "lucide-react";
 import { type VoteEntry, type PoliticalOrganization } from "../data/mockData";
 import { getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 import { toast } from "sonner";
@@ -1054,30 +1054,7 @@ export function VoteEntryForm({
   const handleFinalizeForm = async () => {
     console.log("Finalizando formulario...")
     const now = new Date();
-    switch (category) {
-      case "presidencial":
-        await handleGeneratePdfPresidencial(now, startTime); // Generar PDF al finalizar
-        break;
-      case "senadoresNacional":
-        await handleGeneratePdfSenadoresNacional(now, startTime);
-        break;
-      case "senadoresRegional":
-        console.log("Categoría es Senadores Regional");
-        break;
-      case "diputados":
-        console.log("Categoría es Diputados");
-        break;
-      case "parlamentoAndino":
-        console.log("Categoría es Parlamento Andino");
-        break;
-      default:
-        console.log("Categoría desconocida:", category);
-        break;
-    }
-    //if (category ==='presidencial')
-    //  return;
-    // const conteoVotos = calculateVoteData();
-    // console.log("Conteo de votos por partido:", conteoVotos);
+
     onEndTimeChange(now); // Capture end time
 
     // If TCV is null (linked to entries.length), save the actual value for auto-loading
@@ -1100,6 +1077,34 @@ export function VoteEntryForm({
       },
       duration: 3000
     });
+  };
+
+  // Handle generate PDF - called from Ver Acta button
+  const handleVerActa = async () => {
+    const finalizationTime = endTime || new Date();
+    switch (category) {
+      case "presidencial":
+        await handleGeneratePdfPresidencial(finalizationTime, startTime);
+        break;
+      case "senadoresNacional":
+        await handleGeneratePdfSenadoresNacional(finalizationTime, startTime);
+        break;
+      case "senadoresRegional":
+        console.log("Categoría es Senadores Regional");
+        // await handleGeneratePdfSenadoresRegional(finalizationTime, startTime);
+        break;
+      case "diputados":
+        console.log("Categoría es Diputados");
+        // await handleGeneratePdfDiputados(finalizationTime, startTime);
+        break;
+      case "parlamentoAndino":
+        console.log("Categoría es Parlamento Andino");
+        // await handleGeneratePdfParlamentoAndino(finalizationTime, startTime);
+        break;
+      default:
+        console.log("Categoría desconocida:", category);
+        break;
+    }
   };
 
   // Calculate vote counts for horizontal bars
@@ -1445,24 +1450,15 @@ export function VoteEntryForm({
                     />
                   </div>
 
-                  {/* Total de Ciudadanos que Votaron Display (editable if tcv is not null, otherwise linked to entries) */}
+                  {/* Total de Ciudadanos que Votaron Display (always non-editable, linked to entries or preloaded) */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                     <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                     <Input
                       type="number"
                       value={tcv !== null ? tcv : entries.length}
-                      onChange={(e) => {
-                        if (tcv !== null) {
-                          // TCV is independent, allow editing
-                          const value = parseInt(e.target.value) || 0;
-                          if (value >= 0) {
-                            onTcvChange(value);
-                          }
-                        }
-                      }}
-                      readOnly={tcv === null}
-                      disabled={tcv === null}
-                      className={`max-w-20 text-center font-semibold ${tcv === null ? 'bg-gray-200 text-gray-700 cursor-not-allowed' : ''}`}
+                      readOnly
+                      disabled
+                      className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
                     />
                   </div>
                 </>
@@ -1535,9 +1531,9 @@ export function VoteEntryForm({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onViewSummary}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Ver Resumen
+                    <DropdownMenuItem onClick={handleVerActa}>
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Ver Acta
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
                       // Create a new acta

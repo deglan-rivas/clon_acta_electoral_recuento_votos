@@ -36,25 +36,25 @@ const CONFIG = {
 // International locations for "PERUANOS RESIDENTES EN EL EXTRANJERO"
 const INTERNATIONAL_LOCATIONS = [
   // North America
-  { continente: 'AMERICA DEL NORTE', pais: 'ESTADOS UNIDOS', ciudad: 'NEW YORK' },
-  { continente: 'AMERICA DEL NORTE', pais: 'ESTADOS UNIDOS', ciudad: 'LOS ANGELES' },
-  { continente: 'AMERICA DEL NORTE', pais: 'ESTADOS UNIDOS', ciudad: 'MIAMI' },
-  { continente: 'AMERICA DEL NORTE', pais: 'ESTADOS UNIDOS', ciudad: 'CHICAGO' },
-  { continente: 'AMERICA DEL NORTE', pais: 'ESTADOS UNIDOS', ciudad: 'WASHINGTON' },
-  { continente: 'AMERICA DEL NORTE', pais: 'CANADA', ciudad: 'TORONTO' },
-  { continente: 'AMERICA DEL NORTE', pais: 'CANADA', ciudad: 'VANCOUVER' },
-  { continente: 'AMERICA DEL NORTE', pais: 'MEXICO', ciudad: 'CIUDAD DE MEXICO' },
+  { continente: 'AMERICA', pais: 'ESTADOS UNIDOS', ciudad: 'NEW YORK' },
+  { continente: 'AMERICA', pais: 'ESTADOS UNIDOS', ciudad: 'LOS ANGELES' },
+  { continente: 'AMERICA', pais: 'ESTADOS UNIDOS', ciudad: 'MIAMI' },
+  { continente: 'AMERICA', pais: 'ESTADOS UNIDOS', ciudad: 'CHICAGO' },
+  { continente: 'AMERICA', pais: 'ESTADOS UNIDOS', ciudad: 'WASHINGTON' },
+  { continente: 'AMERICA', pais: 'CANADA', ciudad: 'TORONTO' },
+  { continente: 'AMERICA', pais: 'CANADA', ciudad: 'VANCOUVER' },
+  { continente: 'AMERICA', pais: 'MEXICO', ciudad: 'CIUDAD DE MEXICO' },
 
   // South America
-  { continente: 'AMERICA DEL SUR', pais: 'ARGENTINA', ciudad: 'BUENOS AIRES' },
-  { continente: 'AMERICA DEL SUR', pais: 'ARGENTINA', ciudad: 'CORDOBA' },
-  { continente: 'AMERICA DEL SUR', pais: 'BRASIL', ciudad: 'SAO PAULO' },
-  { continente: 'AMERICA DEL SUR', pais: 'BRASIL', ciudad: 'RIO DE JANEIRO' },
-  { continente: 'AMERICA DEL SUR', pais: 'CHILE', ciudad: 'SANTIAGO' },
-  { continente: 'AMERICA DEL SUR', pais: 'COLOMBIA', ciudad: 'BOGOTA' },
-  { continente: 'AMERICA DEL SUR', pais: 'ECUADOR', ciudad: 'QUITO' },
-  { continente: 'AMERICA DEL SUR', pais: 'VENEZUELA', ciudad: 'CARACAS' },
-  { continente: 'AMERICA DEL SUR', pais: 'BOLIVIA', ciudad: 'LA PAZ' },
+  { continente: 'AMERICA', pais: 'ARGENTINA', ciudad: 'BUENOS AIRES' },
+  { continente: 'AMERICA', pais: 'ARGENTINA', ciudad: 'CORDOBA' },
+  { continente: 'AMERICA', pais: 'BRASIL', ciudad: 'SAO PAULO' },
+  { continente: 'AMERICA', pais: 'BRASIL', ciudad: 'RIO DE JANEIRO' },
+  { continente: 'AMERICA', pais: 'CHILE', ciudad: 'SANTIAGO' },
+  { continente: 'AMERICA', pais: 'COLOMBIA', ciudad: 'BOGOTA' },
+  { continente: 'AMERICA', pais: 'ECUADOR', ciudad: 'QUITO' },
+  { continente: 'AMERICA', pais: 'VENEZUELA', ciudad: 'CARACAS' },
+  { continente: 'AMERICA', pais: 'BOLIVIA', ciudad: 'LA PAZ' },
 
   // Europe
   { continente: 'EUROPA', pais: 'ESPAÑA', ciudad: 'MADRID' },
@@ -107,7 +107,7 @@ class MesaElectoralGenerator {
       .filter(record => record.departamento && record.provincia && record.distrito);
 
     // Load circunscripcion data (format: category;CIRCUNSCRIPCION_ELECTORAL)
-    const circunscripcionPath = path.join(__dirname, '../public/circunscripcion_electoral_por_departamento.csv');
+    const circunscripcionPath = path.join(__dirname, '../public/circunscripcion_electoral_por_categoria.csv');
     const circunscripcionContent = fs.readFileSync(circunscripcionPath, 'utf-8');
     const circunscripcionLines = circunscripcionContent.split('\n').slice(1); // Skip header
 

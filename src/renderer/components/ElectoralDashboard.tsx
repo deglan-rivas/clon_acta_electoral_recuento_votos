@@ -459,6 +459,11 @@ export function ElectoralDashboard() {
     { key: "parlamentoAndino", label: "Parlamento Andino", icon: Globe },
   ];
 
+  const sections = [
+    { key: "ingreso", label: "Ingreso de Votos", icon: FileText },
+    { key: "recuento", label: "Resumen Recuento", icon: BarChart3 },
+  ];
+
 
   // Check if current selection is international
   // Check both circunscripción electoral and if the actual location data indicates international
@@ -884,7 +889,14 @@ export function ElectoralDashboard() {
                 </h1>
               </div>
               {/* Category Selector */}
-              <Select value={activeCategory} onValueChange={setActiveCategory}>
+              <Select value={activeCategory} onValueChange={(newCategory) => {
+                setActiveCategory(newCategory);
+                // Always switch to recuento section when changing categories
+                const newCategoryData = getActiveActaData(newCategory);
+                if (newCategoryData.activeSection !== 'recuento') {
+                  saveActiveActaData(newCategory, { ...newCategoryData, activeSection: 'recuento' });
+                }
+              }}>
                 <SelectTrigger
                   className="w-52"
                   title={categories.find(cat => cat.key === activeCategory)?.label || "Seleccionar tipo de elección"}
@@ -899,6 +911,26 @@ export function ElectoralDashboard() {
                         <div className="flex items-center space-x-2">
                           <Icon className="h-4 w-4" />
                           <span>{category.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+
+              {/* Section Navigation */}
+              <Select value={activeSection} onValueChange={(section) => updateCurrentActaData({ activeSection: section })}>
+                <SelectTrigger className="w-52">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sections.map((section) => {
+                    const Icon = section.icon;
+                    return (
+                      <SelectItem key={section.key} value={section.key}>
+                        <div className="flex items-center space-x-2">
+                          <Icon className="h-4 w-4" />
+                          <span>{section.label}</span>
                         </div>
                       </SelectItem>
                     );

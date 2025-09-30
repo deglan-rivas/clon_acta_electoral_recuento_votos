@@ -114,15 +114,6 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Button
-        onClick={onBackToEntry}
-        className="bg-gray-600 hover:bg-gray-700 text-white"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Regresar
-      </Button>
-
       {/* Combined Statistics Header */}
       <Card>
         <CardContent className="p-4">
