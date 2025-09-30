@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Badge } from "./ui/badge";
@@ -9,7 +10,7 @@ import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { X } from "lucide-react";
-import { politicalOrganizations } from "../data/mockData";
+import { type PoliticalOrganization } from "../data/mockData";
 import circunscripcionCsvFile from '/circunscripcion_electoral_por_categoria.csv?url';
 import {
   getSelectedOrganizations,
@@ -46,9 +47,12 @@ interface SettingsModalProps {
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   currentCircunscripcionElectoral?: string;
+  politicalOrganizations: PoliticalOrganization[];
 }
 
-export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved, currentCircunscripcionElectoral }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved, currentCircunscripcionElectoral, politicalOrganizations }: SettingsModalProps) {
+  console.log('[SettingsModal] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
+
   // Load circunscripción electoral data from CSV
   const [circunscripcionData, setCircunscripcionData] = useState<CircunscripcionRecord[]>([]);
   const [selectedCircunscripcion, setSelectedCircunscripcion] = useState<string>(currentCircunscripcionElectoral || "");
@@ -106,14 +110,17 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
   // Original saved values (loaded once when modal opens)
   const [originalSelectedOrganizations] = useState<string[]>(() => {
+    console.log('[SettingsModal] Initializing originalSelectedOrganizations, politicalOrganizations:', politicalOrganizations?.length || 0);
     const saved = getSelectedOrganizations();
     // If no saved selection, default to including BLANCO and NULO
     if (saved.length === 0) {
-      const blancoNuloKeys = politicalOrganizations
+      const blancoNuloKeys = (politicalOrganizations || [])
         .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
         .map(org => org.key);
+      console.log('[SettingsModal] Default BLANCO/NULO keys:', blancoNuloKeys);
       return blancoNuloKeys;
     }
+    console.log('[SettingsModal] Using saved organizations:', saved.length);
     return saved;
   });
 
@@ -141,48 +148,61 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
   // Update organizations when circunscripción changes
   useEffect(() => {
-    if (selectedCircunscripcion) {
+    console.log('[SettingsModal] circunscripción changed:', selectedCircunscripcion, 'politicalOrganizations:', politicalOrganizations?.length || 0);
+    if (selectedCircunscripcion && politicalOrganizations && politicalOrganizations.length > 0) {
       const circunscripcionOrgs = getCircunscripcionOrganizations(selectedCircunscripcion);
+      console.log('[SettingsModal] Circunscripción orgs from storage:', circunscripcionOrgs.length);
       if (circunscripcionOrgs.length === 0) {
         // If no organizations saved for this circunscripción, default to BLANCO and NULO
-        const blancoNuloKeys = politicalOrganizations
+        const blancoNuloKeys = (politicalOrganizations || [])
           .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
           .map(org => org.key);
+        console.log('[SettingsModal] Setting default BLANCO/NULO keys:', blancoNuloKeys);
         setTempSelectedOrganizations(blancoNuloKeys);
       } else {
         setTempSelectedOrganizations(circunscripcionOrgs);
       }
     }
-  }, [selectedCircunscripcion]);
+  }, [selectedCircunscripcion, politicalOrganizations]);
 
   // Filtered organizations based on search
-  const filteredOrganizations = politicalOrganizations.filter(org =>
+  const filteredOrganizations = (politicalOrganizations || []).filter(org =>
     org.name.toLowerCase().includes(organizationFilter.toLowerCase()) ||
     (org.order && org.order.toString().includes(organizationFilter))
   );
+
+  console.log('[SettingsModal] Filtered organizations count:', filteredOrganizations.length);
 
   // Block control logic - same as VoteEntryForm
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
 
   // Ensure BLANCO and NULO are always selected in temp state
   useEffect(() => {
-    const blancoNuloKeys = politicalOrganizations
+    if (!politicalOrganizations || politicalOrganizations.length === 0) {
+      console.log('[SettingsModal] Skipping BLANCO/NULO check, no organizations loaded');
+      return;
+    }
+
+    const blancoNuloKeys = (politicalOrganizations || [])
       .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
       .map(org => org.key);
 
     const missingBlancoNulo = blancoNuloKeys.filter(key => !tempSelectedOrganizations.includes(key));
 
     if (missingBlancoNulo.length > 0) {
+      console.log('[SettingsModal] Adding missing BLANCO/NULO keys:', missingBlancoNulo);
       setTempSelectedOrganizations(prev => [...new Set([...prev, ...missingBlancoNulo])]);
     }
-  }, [tempSelectedOrganizations]);
+  }, [tempSelectedOrganizations, politicalOrganizations]);
 
   // Handle individual organization selection (temp state)
   const handleOrganizationToggle = (orgKey: string) => {
+    console.log('[SettingsModal] Toggling organization:', orgKey);
     // Find the organization to check if it's BLANCO or NULO
-    const org = politicalOrganizations.find(o => o.key === orgKey);
+    const org = (politicalOrganizations || []).find(o => o.key === orgKey);
     if (org && (org.name === 'BLANCO' || org.name === 'NULO')) {
       // Don't allow toggling BLANCO or NULO
+      console.log('[SettingsModal] Cannot toggle BLANCO/NULO');
       return;
     }
 
@@ -197,8 +217,9 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
   // Handle select all/none (works with filtered results, temp state)
   const handleSelectAll = () => {
+    console.log('[SettingsModal] Select all/none triggered');
     // Get BLANCO and NULO keys to always keep them selected
-    const blancoNuloKeys = politicalOrganizations
+    const blancoNuloKeys = (politicalOrganizations || [])
       .filter(org => org.name === 'BLANCO' || org.name === 'NULO')
       .map(org => org.key);
 
@@ -250,9 +271,12 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[60vw] !max-w-5xl max-h-[80vh] overflow-y-auto">
-        {/* <DialogHeader>
-          <DialogTitle className="text-xl">Configuración</DialogTitle>
-        </DialogHeader> */}
+        <VisuallyHidden.Root>
+          <DialogTitle>Configuración</DialogTitle>
+          <DialogDescription>
+            Configurar organizaciones políticas y límites de votos preferenciales
+          </DialogDescription>
+        </VisuallyHidden.Root>
 
         <Tabs defaultValue="organizations" className="w-full">
           <TabsList className={`grid w-full ${(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) ? 'grid-cols-2' : 'grid-cols-1'}`}>

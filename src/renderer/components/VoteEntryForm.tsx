@@ -6,8 +6,9 @@ import { Combobox } from "./ui/combobox";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Plus, X, Edit, Check } from "lucide-react";
-import { type VoteEntry, politicalOrganizations } from "../data/mockData";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { Plus, X, Edit, Check, ChevronDown, FileText, RefreshCw } from "lucide-react";
+import { type VoteEntry, type PoliticalOrganization } from "../data/mockData";
 import { getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 import { toast } from "sonner";
 
@@ -64,6 +65,11 @@ interface VoteEntryFormProps {
   onEndTimeChange: (time: Date | null) => void;
   onCurrentTimeChange: (time: Date) => void;
   onViewSummary: () => void;
+  onCreateNewActa?: () => void;
+  onSwitchToActa?: (index: number) => void;
+  categoryActas?: any[];
+  currentActaIndex?: number;
+  politicalOrganizations: PoliticalOrganization[];
 }
 
 export function VoteEntryForm({
@@ -74,8 +80,15 @@ export function VoteEntryForm({
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
   startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange,
-  onViewSummary
+  onViewSummary,
+  onCreateNewActa,
+  onSwitchToActa,
+  categoryActas = [],
+  currentActaIndex = 0,
+  politicalOrganizations
 }: VoteEntryFormProps) {
+  console.log('[VoteEntryForm] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
+
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
 
@@ -84,9 +97,11 @@ export function VoteEntryForm({
     ? getCircunscripcionOrganizations(circunscripcionElectoral)
     : getSelectedOrganizations();
 
-  const availableOrganizations = politicalOrganizations.filter(org =>
+  const availableOrganizations = (politicalOrganizations || []).filter(org =>
     selectedOrganizationKeys.includes(org.key)
   );
+
+  console.log('[VoteEntryForm] Available organizations:', availableOrganizations.length);
 
 
   // Local state for form inputs before saving
@@ -131,12 +146,10 @@ export function VoteEntryForm({
 
   // Update local state when parent values change
   useEffect(() => {
-    if (mesaNumber > 0) {
-      setLocalMesaNumber(mesaNumber.toString().padStart(6, '0'));
-    }
-    if (actaNumber) {
-      setLocalActaNumber(actaNumber);
-    }
+    // Always update mesa number (including when it's 0 to clear the field)
+    setLocalMesaNumber(mesaNumber > 0 ? mesaNumber.toString().padStart(6, '0') : '');
+    // Always update acta number (including when it's empty to clear the field)
+    setLocalActaNumber(actaNumber);
     setLocalTotalElectores(totalElectores);
     // setLocalTotalCedulasRecibidas(totalCedulasRecibidas);
   }, [mesaNumber, actaNumber, totalElectores]);
@@ -191,6 +204,10 @@ export function VoteEntryForm({
   const cursorPositionRef = useRef<number>(0);
   const shouldPreserveCursorRef = useRef<boolean>(false);
 
+  // State for acta dropdown
+  const [showActaDropdown, setShowActaDropdown] = useState<boolean>(false);
+  const actaDropdownRef = useRef<HTMLDivElement>(null);
+
   // Effect to restore cursor position
   useEffect(() => {
     if (shouldPreserveCursorRef.current && actaInputRef.current) {
@@ -203,6 +220,20 @@ export function VoteEntryForm({
       shouldPreserveCursorRef.current = false;
     }
   }, [localActaNumber]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actaDropdownRef.current && !actaDropdownRef.current.contains(event.target as Node)) {
+        setShowActaDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
 
   const handleAddEntry = () => {
@@ -632,7 +663,7 @@ export function VoteEntryForm({
     }
 
     if (localTotalElectores <= 0 || localTotalElectores > 300) {
-      toast.error("TCV debe estar entre 1 y 300", {
+      toast.error("TEH debe estar entre 1 y 300", {
         style: {
           background: '#dc2626',
           color: 'white',
@@ -1092,10 +1123,16 @@ export function VoteEntryForm({
                     <span className="font-semibold text-orange-900 ml-1">{selectedLocation.jee}</span>
                   </div>
 
-                  {/* Total Electores Display */}
+                  {/* Total Electores Hábiles Display */}
+                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE ELECTORES HÁBILES">
+                    <span className="text-sm font-medium text-orange-700">TEH:</span>
+                    <span className="font-semibold text-orange-900 ml-1">{localTotalElectores}</span>
+                  </div>
+
+                  {/* Total de Ciudadanos que Votaron Display */}
                   <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE CIUDADANOS QUE VOTARON">
                     <span className="text-sm font-medium text-orange-700">TCV:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{localTotalElectores}</span>
+                    <span className="font-semibold text-orange-900 ml-1">{entries.length}</span>
                   </div>
                 </>
               ) : (
@@ -1153,9 +1190,10 @@ export function VoteEntryForm({
                     />
                   </div>
 
-                  {/* Acta Number Input */}
-                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                  {/* Acta Number Input with Dropdown */}
+                  <div ref={actaDropdownRef} className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row relative">
                     <label className="text-sm font-medium text-gray-700 flex items-center pr-2">N° Acta</label>
+                    <div className="relative flex items-center">
                     <Input
                       ref={actaInputRef}
                       type="text"
@@ -1281,8 +1319,70 @@ export function VoteEntryForm({
                       setLocalActaNumber(formattedValue);
                     }
                   }}
-                      className="max-w-32 px-0.5 text-center font-semibold"
+                      className="max-w-32 px-0.5 pr-8 text-center font-semibold"
                     />
+                    {/* Dropdown Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowActaDropdown(!showActaDropdown)}
+                      className="absolute right-0 top-0 h-full px-2 hover:bg-gray-200 rounded-r transition-colors"
+                      title="Ver actas guardadas"
+                    >
+                      <ChevronDown className="h-4 w-4 text-gray-600" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showActaDropdown && categoryActas && categoryActas.length > 0 && (
+                      <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                        <div className="py-1">
+                          {categoryActas
+                            .filter((acta, index) => {
+                              // Show acta if it has an acta number OR if it's not the current acta
+                              // This hides only the current empty acta
+                              if (index === currentActaIndex && !acta.actaNumber && acta.mesaNumber === 0) {
+                                return false;
+                              }
+                              return true;
+                            })
+                            .map((acta, originalIndex) => {
+                              // Find the original index in the unfiltered array
+                              const index = categoryActas.indexOf(acta);
+                              return (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                if (onSwitchToActa) {
+                                  onSwitchToActa(index);
+                                }
+                                setShowActaDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left text-sm hover:bg-blue-50 transition-colors ${
+                                index === currentActaIndex ? 'bg-blue-100 font-semibold' : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">
+                                  {acta.actaNumber || (index === currentActaIndex ? '' : 'Sin número')}
+                                </span>
+                                {acta.isFormFinalized && (
+                                  <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded">
+                                    Finalizada
+                                  </span>
+                                )}
+                              </div>
+                              {acta.mesaNumber > 0 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Mesa: {String(acta.mesaNumber).padStart(6, '0')} | TEH: {acta.totalElectores || 0} | TCV: {acta.voteEntries?.length || 0}
+                                </div>
+                              )}
+                            </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                    </div>
                   </div>
 
                   {/* JEE Input */}
@@ -1305,9 +1405,9 @@ export function VoteEntryForm({
                     </Select>
                   </div>
 
-                  {/* Total Electores Input */}
+                  {/* Total Electores Hábiles Input */}
                   <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE ELECTORES HÁBILES">TEH</label>
                     <Input
                       type="number"
                       min={0}
@@ -1321,6 +1421,18 @@ export function VoteEntryForm({
                       }}
                       className="max-w-20 text-center font-semibold"
                       placeholder="0"
+                    />
+                  </div>
+
+                  {/* Total de Ciudadanos que Votaron Display (non-editable) */}
+                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
+                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
+                    <Input
+                      type="number"
+                      value={entries.length}
+                      readOnly
+                      disabled
+                      className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
                     />
                   </div>
                 </>
@@ -1383,14 +1495,31 @@ export function VoteEntryForm({
                 </div>
               )}
 
-              {/* Resumen Button - Only visible when form is finalized */}
+              {/* Resumen Dropdown Menu - Only visible when form is finalized */}
               {isFormFinalized && (
-                <Button
-                  onClick={onViewSummary}
-                  className="px-6 py-2 rounded font-medium bg-blue-800 hover:bg-blue-700 text-white"
-                >
-                  Resumen
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="px-6 py-2 rounded font-medium bg-blue-800 hover:bg-blue-700 text-white">
+                      Opciones
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={onViewSummary}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Ver Resumen
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      // Create a new acta
+                      if (onCreateNewActa) {
+                        onCreateNewActa();
+                      }
+                    }}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Nuevo
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
 

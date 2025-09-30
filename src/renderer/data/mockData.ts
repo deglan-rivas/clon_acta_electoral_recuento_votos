@@ -1,5 +1,12 @@
 // Datos mock para el sistema electoral JNE
 
+// Type for Political Organization data
+export type PoliticalOrganization = {
+  key: string;
+  order: string;
+  name: string;
+};
+
 export interface PoliticalParty {
   code: string;
   name: string;
@@ -153,46 +160,4 @@ export const mockElectoralData: Record<string, ElectoralData> = {
   }
 };
 
-export const politicalOrganizations = [
-  { key: "01", order: "01", name: "PARTIDO POLÍTICO AMANECER DE NUEVO" },
-  { key: "02", order: "02", name: "PARTIDO POLÍTICO PAZ Y AMOR" },
-  { key: "03", order: "03", name: "PARTIDO POLÍTICO GOTAS DE LLUVIA" },
-  { key: "04", order: "04", name: "PARTIDO POLÍTICO LA MAGIA DEL ENCUENTRO" },
-  { key: "05", order: "05", name: "PARTIDO POLÍTICO EN LA DISTANCIA" },
-  { key: "06", order: "06", name: "PARTIDO POLÍTICO AL OTRO LADO" },
-  { key: "07", order: "07", name: "PARTIDO POLÍTICO EL TRABAJO DIGNIFICA"},
-  { key: "08", order: "08", name: "PARTIDO POLÍTICO HOJAS AL VIENTO"},
-  { key: "09", order: "09", name: "PARTIDO POLÍTICO SEMBRANDO LA AMISTAD" },
-  { key: "10", order: "10", name: "PARTIDO POLÍTICO ESTAMOS EN ARMONÍA" },
-  { key: "11", order: "11", name: "PARTIDO POLÍTICO ALCANZAR EL INFINITO" },
-  { key: "12", order: "12", name: "PARTIDO POLÍTICO EL MEJOR AMIGO" },
-  { key: "13", order: "13", name: "PARTIDO POLÍTICO PIENSA POSITIVAMENTE" },
-  { key: "14", order: "14", name: "PARTIDO POLÍTICO LIDERANDO EL FUTURO" },
-  { key: "15", order: "15", name: "PARTIDO POLÍTICO NIÑOS PRIMERO" },
-  { key: "16", order: "16", name: "PARTIDO POLÍTICO FELICES POR SIEMPRE" },
-  { key: "17", order: "17", name: "PARTIDO POLÍTICO SALVEMOS AL PLANETA" },
-  { key: "18", order: "18", name: "PARTIDO POLÍTICO LOS CAMPEONES" },
-  { key: "19", order: "19", name: "PARTIDO POLÍTICO ORDENANDO LA CASA" },
-  { key: "20", order: "20", name: "PARTIDO POLÍTICO COLECCIONISTA DE OBJETOS" },
-  { key: "21", order: "21", name: "PARTIDO POLÍTICO OPTIMISMO TOTAL" },
-  { key: "22", order: "22", name: "PARTIDO POLÍTICO BUEN VIAJE" },
-  { key: "23", order: "23", name: "PARTIDO POLÍTICO VISTA ALEGRE" },
-  { key: "24", order: "24", name: "PARTIDO POLÍTICO EL MAPA DE LOS SUEÑOS" },
-  { key: "25", order: "25", name: "PARTIDO POLÍTICO EL VUELO DEL ESPÍRITU" },
-  { key: "26", order: "26", name: "PARTIDO POLÍTICO EL LENGUAJE DEL SILENCIO" },
-  { key: "27", order: "27", name: "PARTIDO POLÍTICO SUEÑOS COMPARTIDOS" },
-  { key: "28", order: "28", name: "PARTIDO POLÍTICO EL ABRAZO DE LA PAZ" },
-  { key: "29", order: "29", name: "PARTIDO POLÍTICO TODO ESTARÁ BIEN" },
-  { key: "30", order: "30", name: "PARTIDO POLÍTICO UN SOLO LATIDO" },
-  { key: "31", order: "31", name: "PARTIDO POLÍTICO EL PERDÓN ES DIVINO" },
-  { key: "32", order: "32", name: "PARTIDO POLÍTICO BRILLO DEL ALMA" },
-  { key: "33", order: "33", name: "PARTIDO POLÍTICO EL HILO INVISIBLE" },
-  { key: "34", order: "34", name: "PARTIDO POLÍTICO LA MELODÍA DEL CARIÑO" },
-  { key: "35", order: "35", name: "PARTIDO POLÍTICO PENSANDO EN TI" },
-  { key: "36", order: "36", name: "PARTIDO POLÍTICO EL ESPEJO DEL ALMA" },
-  { key: "37", order: "37", name: "PARTIDO POLÍTICO EL TEJIDO DE LA VIDA" },
-  { key: "38", order: "38", name: "PARTIDO POLÍTICO EL AROMA DE LA CONFIANZA" },
-  { key: "39", order: "39", name: "PARTIDO POLÍTICO EL SABOR DE LA LEALTAD" },
-  { key: "40", order: "", name: "BLANCO" },
-  { key: "41", order: "", name: "NULO" }
-];
+// Political organizations will be loaded from CSV in ElectoralDashboard

@@ -1,10 +1,10 @@
+import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Card, CardContent} from "./ui/card";
 import { Button } from "./ui/button";
 import { ArrowLeft } from "lucide-react";
-import { type ElectoralData } from "../data/mockData";
-import { getCategoryData, getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
-import { politicalOrganizations } from "../data/mockData";
+import { type ElectoralData, type PoliticalOrganization } from "../data/mockData";
+import { getActiveActaData, getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
 
 interface ElectoralCountTableProps {
   data: ElectoralData;
@@ -18,25 +18,30 @@ interface ElectoralCountTableProps {
   circunscripcionElectoral?: string;
   totalElectores?: number;
   onBackToEntry: () => void;
+  politicalOrganizations: PoliticalOrganization[];
   // totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0, onBackToEntry}: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0, onBackToEntry, politicalOrganizations}: ElectoralCountTableProps) {
+  console.log('[ElectoralCountTable] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
+
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
 
-  // Get vote entries for this category
-  const categoryData = getCategoryData(category);
-  const voteEntries = categoryData.voteEntries || [];
+  // Get vote entries for the currently active acta
+  const actaData = getActiveActaData(category);
+  const voteEntries = actaData.voteEntries || [];
 
   // Get selected organizations from localStorage (try circunscripción-specific first, fallback to global)
   const selectedOrganizationKeys = circunscripcionElectoral
     ? getCircunscripcionOrganizations(circunscripcionElectoral)
     : getSelectedOrganizations();
 
-  const availableOrganizations = politicalOrganizations.filter(org =>
+  const availableOrganizations = (politicalOrganizations || []).filter(org =>
     selectedOrganizationKeys.includes(org.key)
   );
+
+  console.log('[ElectoralCountTable] Available organizations:', availableOrganizations.length);
 
   // Calculate vote counts and preferential matrix for all political organizations
   const calculateVoteData = () => {

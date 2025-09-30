@@ -207,7 +207,7 @@ function createWindow(): BrowserWindow {
       ]
     }
   ]
-  
+
   // Add developer options only in development
   if (is.dev) {
     template.push({

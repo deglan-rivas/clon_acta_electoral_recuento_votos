@@ -24,10 +24,16 @@ import { Button } from "./ui/button";
 import {
   getActiveCategory,
   saveActiveCategory,
-  getAllCategoryData,
-  saveCategoryData,
-  type CategoryData,
+  getActiveActaData,
+  saveActiveActaData,
+  getActiveActaIndex,
+  saveActiveActaIndex,
+  createNewActa,
+  getAllActas,
+  type ActaData,
 } from "../lib/localStorage";
+import { type PoliticalOrganization } from "../data/mockData";
+import politicalOrgsCsvFile from '/organizaciones_politicas.csv?url';
 
 // Types for Ubigeo data
 type UbigeoRecord = {
@@ -52,17 +58,18 @@ type MesaElectoralRecord = {
 
 export function ElectoralDashboard() {
   const [activeCategory, setActiveCategory] = useState(() => getActiveCategory());
-  const [categoryData, setCategoryData] = useState(() => getAllCategoryData());
-  
+  const [currentActaData, setCurrentActaData] = useState(() => getActiveActaData(getActiveCategory()));
+
   // Ubigeo state
   const [ubigeoData, setUbigeoData] = useState<UbigeoRecord[]>([]);
   const [circunscripcionData, setCircunscripcionData] = useState<CircunscripcionRecord[]>([]);
   const [jeeData, setJeeData] = useState<string[]>([]);
   const [mesaElectoralData, setMesaElectoralData] = useState<MesaElectoralRecord[]>([]);
+  const [politicalOrganizations, setPoliticalOrganizations] = useState<PoliticalOrganization[]>([]);
 
-  // Get location from current category data
-  const getCurrentCategoryData = (): CategoryData => {
-    return categoryData[activeCategory];
+  // Get location from current acta data
+  const getCurrentActaData = (): ActaData => {
+    return currentActaData;
   };
 
   // Function to lookup mesa electoral data
@@ -74,7 +81,7 @@ export function ElectoralDashboard() {
     return mesaRecord || null;
   };
 
-  const currentLocationData = getCurrentCategoryData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
+  const currentLocationData = getCurrentActaData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
   const [selectedDepartamento, setSelectedDepartamento] = useState<string>(currentLocationData.departamento);
   const [selectedProvincia, setSelectedProvincia] = useState<string>(currentLocationData.provincia);
   const [selectedDistrito, setSelectedDistrito] = useState<string>(currentLocationData.distrito);
@@ -174,17 +181,43 @@ export function ElectoralDashboard() {
       }
     };
 
+    const loadPoliticalOrgs = async () => {
+      try {
+        console.log('[ElectoralDashboard] Loading political organizations from:', politicalOrgsCsvFile);
+        const response = await fetch(politicalOrgsCsvFile);
+        const text = await response.text();
+        console.log('[ElectoralDashboard] Political orgs CSV loaded, length:', text.length);
+        const lines = text.split('\n').slice(1); // Skip header
+        console.log('[ElectoralDashboard] Political orgs lines count:', lines.length);
+        const organizations: PoliticalOrganization[] = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const [key, order, name] = line.split(';');
+            return {
+              key: key?.trim() || '',
+              order: order?.trim() || '',
+              name: name?.trim() || ''
+            };
+          });
+        console.log('[ElectoralDashboard] Political organizations loaded:', organizations.length);
+        setPoliticalOrganizations(organizations);
+      } catch (error) {
+        console.error('[ElectoralDashboard] Error loading political organizations data:', error);
+      }
+    };
+
     loadUbigeoData();
     loadCircunscripcionData();
     loadJeeData();
     loadMesaElectoralData();
+    loadPoliticalOrgs();
   }, []);
 
   // Time tracking interval - update currentTime every second
   useEffect(() => {
-    const currentCategoryData = getCurrentCategoryData();
-    const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
-    const endTime = currentCategoryData?.endTime ? new Date(currentCategoryData.endTime) : null;
+    const actaData = getCurrentActaData();
+    const startTime = actaData?.startTime ? new Date(actaData.startTime) : null;
+    const endTime = actaData?.endTime ? new Date(actaData.endTime) : null;
 
     if (startTime && !endTime) {
       const interval = setInterval(() => {
@@ -193,36 +226,36 @@ export function ElectoralDashboard() {
 
       return () => clearInterval(interval);
     }
-  }, [activeCategory, categoryData]);
+  }, [activeCategory, currentActaData]);
 
 
-  // Save activeCategory to localStorage when it changes
+  // Save activeCategory to localStorage when it changes and load acta data
   useEffect(() => {
     saveActiveCategory(activeCategory);
+    const actaData = getActiveActaData(activeCategory);
+    setCurrentActaData(actaData);
   }, [activeCategory]);
 
-  // Save entire categoryData to localStorage when it changes
+  // Save current acta data to localStorage when it changes
   useEffect(() => {
-    Object.entries(categoryData).forEach(([category, data]) => {
-      saveCategoryData(category, data);
-    });
-  }, [categoryData]);
+    saveActiveActaData(activeCategory, currentActaData);
+  }, [currentActaData, activeCategory]);
 
-  // Sync location state when active category changes or when category data is updated
+  // Sync location state when active category changes or when acta data is updated
   useEffect(() => {
-    const currentLocationData = getCurrentCategoryData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
+    const currentLocationData = getCurrentActaData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
     setSelectedDepartamento(currentLocationData.departamento);
     setSelectedProvincia(currentLocationData.provincia);
     setSelectedDistrito(currentLocationData.distrito);
     setSelectedJee(currentLocationData.jee);
     setSelectedCircunscripcionElectoral(currentLocationData.circunscripcionElectoral);
-  }, [activeCategory, categoryData]);
+  }, [activeCategory, currentActaData]);
 
   // Auto-set circunscripción electoral when category changes and data is available
   useEffect(() => {
     if (circunscripcionData.length > 0) {
       const options = getCircunscripcionElectoralOptions();
-      const currentLocationData = getCurrentCategoryData()?.selectedLocation;
+      const currentLocationData = getCurrentActaData()?.selectedLocation;
 
       // For specific categories with only one option, auto-select it (only if not already set)
       if (options.length === 1 && (activeCategory === 'presidencial' || activeCategory === 'parlamentoAndino' || activeCategory === 'senadoresNacional')) {
@@ -232,7 +265,7 @@ export function ElectoralDashboard() {
           setSelectedCircunscripcionElectoral(autoSelectedCirc);
 
           // Update localStorage with auto-selected circunscripción
-          updateCurrentCategoryData({
+          updateCurrentActaData({
             selectedLocation: {
               departamento: selectedDepartamento,
               provincia: selectedProvincia,
@@ -247,15 +280,85 @@ export function ElectoralDashboard() {
     }
   }, [activeCategory, circunscripcionData]);
 
-  // Helper functions to get current category data
-  const updateCurrentCategoryData = (updates: Partial<CategoryData>): void => {
-    setCategoryData(prev => ({
+  // Helper function to update current acta data
+  const updateCurrentActaData = (updates: Partial<ActaData>): void => {
+    setCurrentActaData(prev => ({
       ...prev,
-      [activeCategory]: {
-        ...prev[activeCategory],
-        ...updates,
-      }
+      ...updates,
     }));
+  };
+
+  // Handler to create a new acta
+  const handleCreateNewActa = () => {
+    // Check if current acta is already empty (no data entered)
+    const currentActa = getCurrentActaData();
+    const isCurrentActaEmpty =
+      currentActa.mesaNumber === 0 &&
+      currentActa.actaNumber === '' &&
+      (!currentActa.voteEntries || currentActa.voteEntries.length === 0);
+
+    if (isCurrentActaEmpty) {
+      // Current acta is already empty, just show a message
+      toast.info("La acta actual ya está vacía", {
+        style: {
+          background: '#3b82f6',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '400px'
+        },
+        duration: 2000
+      });
+      return;
+    }
+
+    // Create new acta in localStorage (it will be set as active)
+    createNewActa(activeCategory);
+
+    // Load the new acta data
+    const newActaData = getActiveActaData(activeCategory);
+    setCurrentActaData(newActaData);
+
+    // Reset location states
+    setSelectedDepartamento('');
+    setSelectedProvincia('');
+    setSelectedDistrito('');
+    setSelectedJee('');
+    setSelectedCircunscripcionElectoral('');
+
+    toast.success("Nueva acta creada exitosamente", {
+      style: {
+        background: '#16a34a',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
+      },
+      duration: 2000
+    });
+  };
+
+  // Handler to switch to a specific acta by index
+  const handleSwitchToActa = (index: number) => {
+    saveActiveActaIndex(activeCategory, index);
+    const actaData = getActiveActaData(activeCategory);
+    setCurrentActaData(actaData);
+
+    toast.success(`Acta cambiada: ${actaData.actaNumber || 'Sin número'}`, {
+      style: {
+        background: '#3b82f6',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '16px',
+        width: '400px'
+      },
+      duration: 2000
+    });
+  };
+
+  // Get all actas for current category
+  const getCurrentCategoryActas = (): ActaData[] => {
+    return getAllActas(activeCategory);
   };
 
   // Function to determine circunscripción electoral based on category, departamento and provincia
@@ -311,8 +414,8 @@ export function ElectoralDashboard() {
     return match ? match.circunscripcion_electoral : departamento.toUpperCase();
   };
 
-  // Get current values from categoryData
-  const currentCategoryData = getCurrentCategoryData();
+  // Get current values from acta data
+  const currentCategoryData = getCurrentActaData();
   const activeSection = currentCategoryData?.activeSection || 'ingreso';
   const voteLimits = currentCategoryData?.voteLimits || { preferential1: 30, preferential2: 30 };
   const mesaNumber = currentCategoryData?.mesaNumber || 0;
@@ -454,7 +557,7 @@ export function ElectoralDashboard() {
     setSelectedJee("");
 
     // Update localStorage with new location data
-    updateCurrentCategoryData({
+    updateCurrentActaData({
       selectedLocation: {
         departamento: value,
         provincia: "",
@@ -472,7 +575,7 @@ export function ElectoralDashboard() {
     setSelectedJee("");
 
     // Update localStorage with new location data
-    updateCurrentCategoryData({
+    updateCurrentActaData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: value,
@@ -488,7 +591,7 @@ export function ElectoralDashboard() {
     setSelectedDistrito(value);
 
     // Update localStorage with new location data
-    updateCurrentCategoryData({
+    updateCurrentActaData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: selectedProvincia,
@@ -504,7 +607,7 @@ export function ElectoralDashboard() {
     setSelectedJee(value);
 
     // Update localStorage with new location data
-    updateCurrentCategoryData({
+    updateCurrentActaData({
       selectedLocation: {
         departamento: selectedDepartamento,
         provincia: selectedProvincia,
@@ -530,7 +633,7 @@ export function ElectoralDashboard() {
       setSelectedCircunscripcionElectoral(value);
 
       // Update localStorage with cleared location data
-      updateCurrentCategoryData({
+      updateCurrentActaData({
         selectedLocation: {
           departamento: "",
           provincia: "",
@@ -543,7 +646,7 @@ export function ElectoralDashboard() {
       setSelectedCircunscripcionElectoral(value);
 
       // Update localStorage with current location data
-      updateCurrentCategoryData({
+      updateCurrentActaData({
         selectedLocation: {
           departamento: selectedDepartamento,
           provincia: selectedProvincia,
@@ -561,7 +664,7 @@ export function ElectoralDashboard() {
   const renderSection = () => {
     const data = mockElectoralData[activeCategory];
     const preferentialConfig = getPreferentialVoteConfig(activeCategory);
-    const currentCategoryData = getCurrentCategoryData();
+    const currentCategoryData = getCurrentActaData();
 
     if (activeSection === "recuento") {
       return <ElectoralCountTable
@@ -575,7 +678,8 @@ export function ElectoralDashboard() {
         }}
         circunscripcionElectoral={selectedCircunscripcionElectoral}
         totalElectores={totalElectores}
-        onBackToEntry={() => updateCurrentCategoryData({ activeSection: 'ingreso' })}
+        onBackToEntry={() => updateCurrentActaData({ activeSection: 'ingreso' })}
+        politicalOrganizations={politicalOrganizations}
         // totalCedulasRecibidas={totalCedulasRecibidas}
       />;
     }
@@ -587,7 +691,7 @@ export function ElectoralDashboard() {
           existingEntries={currentCategoryData?.voteEntries || []}
           voteLimits={voteLimits}
           preferentialConfig={preferentialConfig}
-          onEntriesChange={(entries) => updateCurrentCategoryData({ voteEntries: entries })}
+          onEntriesChange={(entries) => updateCurrentActaData({ voteEntries: entries })}
           mesaNumber={mesaNumber}
           actaNumber={actaNumber}
           totalElectores={totalElectores}
@@ -601,6 +705,7 @@ export function ElectoralDashboard() {
           mesaElectoralInfo={mesaNumber > 0 ? getMesaElectoralInfo(mesaNumber.toString()) : null}
           onJeeChange={handleJeeChange}
           jeeOptions={jeeData}
+          politicalOrganizations={politicalOrganizations}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
             // Look up mesa electoral data to auto-populate location fields
@@ -631,7 +736,7 @@ export function ElectoralDashboard() {
               setSelectedCircunscripcionElectoral(circunscripcionToSet);
 
               // Update category data with mesa info and auto-populated location
-              updateCurrentCategoryData({
+              updateCurrentActaData({
                 mesaNumber: mesa,
                 actaNumber: acta,
                 totalElectores: electores,
@@ -657,7 +762,7 @@ export function ElectoralDashboard() {
               });
 
               // Still update the mesa data but without auto-populating location
-              updateCurrentCategoryData({
+              updateCurrentActaData({
                 mesaNumber: mesa,
                 actaNumber: acta,
                 totalElectores: electores
@@ -665,16 +770,20 @@ export function ElectoralDashboard() {
             }
           }}
           isFormFinalized={isFormFinalized}
-          onFormFinalizedChange={(finalized) => updateCurrentCategoryData({ isFormFinalized: finalized })}
+          onFormFinalizedChange={(finalized) => updateCurrentActaData({ isFormFinalized: finalized })}
           isMesaDataSaved={isMesaDataSaved}
-          onMesaDataSavedChange={(saved) => updateCurrentCategoryData({ isMesaDataSaved: saved })}
+          onMesaDataSavedChange={(saved) => updateCurrentActaData({ isMesaDataSaved: saved })}
           startTime={startTime}
           endTime={endTime}
           currentTime={currentTime}
-          onStartTimeChange={(time) => updateCurrentCategoryData({ startTime: time?.toISOString() || null })}
-          onEndTimeChange={(time) => updateCurrentCategoryData({ endTime: time?.toISOString() || null })}
+          onStartTimeChange={(time) => updateCurrentActaData({ startTime: time?.toISOString() || null })}
+          onEndTimeChange={(time) => updateCurrentActaData({ endTime: time?.toISOString() || null })}
           onCurrentTimeChange={setCurrentTime}
-          onViewSummary={() => updateCurrentCategoryData({ activeSection: 'recuento' })}
+          onViewSummary={() => updateCurrentActaData({ activeSection: 'recuento' })}
+          onCreateNewActa={handleCreateNewActa}
+          onSwitchToActa={handleSwitchToActa}
+          categoryActas={getCurrentCategoryActas()}
+          currentActaIndex={getActiveActaIndex(activeCategory)}
         />;
   };
 
@@ -693,7 +802,10 @@ export function ElectoralDashboard() {
               </div>
               {/* Category Selector */}
               <Select value={activeCategory} onValueChange={setActiveCategory}>
-                <SelectTrigger className="w-44">
+                <SelectTrigger
+                  className="w-52"
+                  title={categories.find(cat => cat.key === activeCategory)?.label || "Seleccionar tipo de elección"}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -719,7 +831,7 @@ export function ElectoralDashboard() {
                 disabled={areLocationFieldsDisabled}
               >
                 <SelectTrigger
-                  className={`w-48 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`w-89 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   title="Circunscripción Electoral"
                 >
                   <SelectValue placeholder="Circunscripción Electoral" />
@@ -744,7 +856,7 @@ export function ElectoralDashboard() {
                   disabled={areLocationFieldsDisabled}
                 >
                   <SelectTrigger
-                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`w-49 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     title={isInternationalLocation ? "Continente" : "Departamento"}
                   >
                     <SelectValue placeholder={isInternationalLocation ? "Continente" : "Departamento"} />
@@ -765,7 +877,7 @@ export function ElectoralDashboard() {
                   disabled={!selectedDepartamento || areLocationFieldsDisabled}
                 >
                   <SelectTrigger
-                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`w-56 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     title={isInternationalLocation ? "País" : "Provincia"}
                   >
                     <SelectValue placeholder={isInternationalLocation ? "País" : "Provincia"} />
@@ -786,7 +898,7 @@ export function ElectoralDashboard() {
                   disabled={!selectedProvincia || areLocationFieldsDisabled}
                 >
                   <SelectTrigger
-                    className={`w-40 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`w-64 ${areLocationFieldsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     title={isInternationalLocation ? "Ciudad" : "Distrito"}
                   >
                     <SelectValue placeholder={isInternationalLocation ? "Ciudad" : "Distrito"} />
@@ -838,11 +950,12 @@ export function ElectoralDashboard() {
         onOpenChange={setIsSettingsOpen}
         category={activeCategory}
         voteLimits={voteLimits}
-        onVoteLimitsChange={(limits) => updateCurrentCategoryData({ voteLimits: limits })}
+        onVoteLimitsChange={(limits) => updateCurrentActaData({ voteLimits: limits })}
         preferentialConfig={getPreferentialVoteConfig(activeCategory)}
         isFormFinalized={isFormFinalized}
         isMesaDataSaved={isMesaDataSaved}
         currentCircunscripcionElectoral={selectedCircunscripcionElectoral}
+        politicalOrganizations={politicalOrganizations}
       />
     </div>
   );
