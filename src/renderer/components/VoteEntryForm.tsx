@@ -729,7 +729,7 @@ export function VoteEntryForm({
   const handleGeneratePdfPresidencial = async (finalizationTime: Date, startTime: Date | null) => {
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = './ACTA_RECUENTO_PRESIDENCIAL.pdf';
+        const existingPdfUrl = './30_09_25/ACTA_RECUENTO_PRESIDENCIAL_PARTIDOS.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -738,7 +738,7 @@ export function VoteEntryForm({
       })();
 
       const labels: { [key: string]: { votes: number | string; x: number; y: number } } = {};
-      let y_pos = height - 225.5;
+      let y_pos = height - 250.5;
       politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         const isSelected = selectedOrganizationKeys.includes(org.key);
@@ -762,7 +762,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas:", labels);
 
-      const existingPdfUrl = './ACTA_RECUENTO_PRESIDENCIAL.pdf';
+      const existingPdfUrl = './30_09_25/ACTA_RECUENTO_PRESIDENCIAL_PARTIDOS.pdf';//'./ACTA_RECUENTO_PRESIDENCIAL.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
