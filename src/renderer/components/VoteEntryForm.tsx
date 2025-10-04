@@ -895,7 +895,7 @@ export function VoteEntryForm({
 
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = './03_10_25/39 ACTA DE RECUENTO SENADORES DISTRITO ÚNICO.pdf';
+        const existingPdfUrl = './03_10_25/39_ACTA_DE_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -912,9 +912,9 @@ export function VoteEntryForm({
         const isSelected = selectedOrganizationKeys.includes(org.key);
 
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: isSelected ? 0 : "-", x: 222.6, y: height - 760.8 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 245.6, y: height - 753.8 };
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: isSelected ? 0 : "-", x: 222.6, y: height - 790.4 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 245.6, y: height - 773.4 };
         } else {
           labels[partyName] = { votes: isSelected ? 0 : "-", x: 230, y: y_pos };
           y_pos -= 15.132;
@@ -929,7 +929,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas (Senadores Nacional):", labels);
 
-      const existingPdfUrl = './03_10_25/39 ACTA DE RECUENTO SENADORES DISTRITO ÚNICO.pdf';
+      const existingPdfUrl = './03_10_25/39_ACTA_DE_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -940,23 +940,25 @@ export function VoteEntryForm({
       const fechaFin = formatDate(finalizationTime);
 
       const data = [
-        { texto: localMesaNumber, x: 70, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: localActaNumber, x: 130, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: selectedLocation.jee.toUpperCase(), x: 195, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: selectedLocation.departamento.toUpperCase(), x: 505, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: selectedLocation.provincia.toUpperCase(), x: 655, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: selectedLocation.distrito.toUpperCase(), x: 808, y: height - 102, color: rgb(0, 0, 0), size: 9 },
-        { texto: horaFin, x: 345, y: height - 743, color: rgb(0, 0, 0), size: 10 },
-        { texto: fechaFin, x: 460, y: height - 743, color: rgb(0, 0, 0), size: 10 },
+        { texto: localMesaNumber, x: 44, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: localActaNumber, x: 106, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.jee.toUpperCase(), x: 168, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.departamento.toUpperCase(), x: 423, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.provincia.toUpperCase(), x: 581, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: selectedLocation.distrito.toUpperCase(), x: 739, y: height - 102, color: rgb(0, 0, 0), size: 9 },
+        { texto: horaFin, x: 95, y: height - 816, color: rgb(0, 0, 0), size: 10 },
+        { texto: fechaFin, x: 205, y: height - 816, color: rgb(0, 0, 0), size: 10 },
         { texto: `${entries.length}`, x: 1120, y: height - 114, color: rgb(0, 0, 0), size: 15 },
-        { texto: `${entries.length}`, x: 222.6, y: height - 820, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${localTotalElectores}`, x: 1120, y: height - 91, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${cedulasExcedentes}`, x: 525.6, y: height - 753.8, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 245.6, y: height - 793.4, color: rgb(0, 0, 0), size: 15 },
       ];
 
       if (startTime) {
         const horaInicio = formatTime(startTime);
         const fechaInicio = formatDate(startTime);
-        data.push({ texto: horaInicio, x: 120, y: height - 115, color: rgb(0, 0, 0), size: 10 });
-        data.push({ texto: fechaInicio, x: 205, y: height - 115, color: rgb(0, 0, 0), size: 10 });
+        data.push({ texto: horaInicio, x: 95, y: height - 118, color: rgb(0, 0, 0), size: 10 });
+        data.push({ texto: fechaInicio, x: 205, y: height - 118, color: rgb(0, 0, 0), size: 10 });
       }
 
       for (const partyName in labels) {
