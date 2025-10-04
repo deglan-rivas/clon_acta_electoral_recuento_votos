@@ -985,17 +985,23 @@ export function VoteEntryForm({
           if (!isBlancoOrNulo) {
               if (tableY < 50) return; // Stop if we're at the bottom of the page
 
+              const totalXPos = tableXStart + (30 * cellWidth);
+
               if (isSelected && matrix[partyKey]) {
                   const partyMatrix = matrix[partyKey];
+                  let horizontalSum = 0;
                   for (let i = 1; i <= 30; i++) {
                       const count = partyMatrix[i] || 0;
-                      firstPage.drawText(`${count}`, { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                      firstPage.drawText(`${count}`, { x: tableXStart + ((i - 1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                      horizontalSum += count;
                   }
+                  firstPage.drawText(`${horizontalSum}`, { x: totalXPos, y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
               } else {
                   // For unselected organizations, show dashes
                   for (let i = 1; i <= 30; i++) {
-                      firstPage.drawText("-", { x: tableXStart + ((i-1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
+                      firstPage.drawText("-", { x: tableXStart + ((i - 1) * cellWidth), y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
                   }
+                  firstPage.drawText("-", { x: totalXPos, y: tableY, font: helveticaBoldFont, size: fontSize, color: rgb(0, 0, 0) });
               }
 
               tableY -= lineHeight;
