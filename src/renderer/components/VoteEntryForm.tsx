@@ -738,17 +738,17 @@ export function VoteEntryForm({
       })();
 
       const labels: { [key: string]: { votes: number | string; x: number; y: number } } = {};
-      let y_pos = height - 250.5;
+      let y_pos = height - 248.5;
       politicalOrganizations.forEach(org => {
         const partyName = org.order ? `${org.order} | ${org.name}` : org.name;
         const isSelected = selectedOrganizationKeys.includes(org.key);
 
         if (org.name === "BLANCO") {
-          labels[partyName] = { votes: isSelected ? 0 : "-", x: 294.6, y: height - 1056 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 234.6, y: height - 1092 };
         } else if (org.name === "NULO") {
-          labels[partyName] = { votes: isSelected ? 0 : "-", x: 294.6, y: height - 1068 };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 234.6, y: height - 1115 };
         } else {
-          labels[partyName] = { votes: isSelected ? 0 : "-", x: 444, y: y_pos };
+          labels[partyName] = { votes: isSelected ? 0 : "-", x: 446, y: y_pos };
           y_pos -= 21.1;
         }
       });
@@ -780,16 +780,18 @@ export function VoteEntryForm({
         { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 175, color: rgb(0, 0, 0), size: 14 },
-        { texto: dateTimeString, x: 100, y: height - 1170, color: rgb(0, 0, 0), size: 10 },
+        { texto: dateTimeString, x: 102, y: height - 1166, color: rgb(0, 0, 0), size: 6.5 },
         { texto: `${entries.length}`, x: 763, y: height - 147, color: rgb(0, 0, 0), size: 15 },
-        { texto: `${entries.length}`, x: 294.6, y: height - 1080, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${localTotalElectores}`, x: 759, y: height - 121, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${cedulasExcedentes}`, x: 475, y: height - 1092, color: rgb(0, 0, 0), size: 15 },
+        { texto: `${entries.length}`, x: 234.6, y: height - 1138, color: rgb(0, 0, 0), size: 15 },
       ];
 
       if (startTime) {
         const horaInicio = formatTime(startTime);
         const fechaInicio = formatDate(startTime);
         const startDateTimeString = `${horaInicio} del ${fechaInicio}`;
-        data.push({ texto: startDateTimeString, x: 100, y: height - 1151, color: rgb(0, 0, 0), size: 10 });
+        data.push({ texto: startDateTimeString, x: 102, y: height - 198, color: rgb(0, 0, 0), size: 6.5 });
       }
 
       for (const partyName in labels) {
@@ -893,7 +895,7 @@ export function VoteEntryForm({
 
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = './ACTA_SENADORES_NACIONAL.pdf';
+        const existingPdfUrl = './03_10_25/ACTA_SENADORES_NACIONAL.pdf.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
