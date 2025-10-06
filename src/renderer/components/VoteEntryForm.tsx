@@ -755,7 +755,7 @@ export function VoteEntryForm({
   const handleGeneratePdfPresidencial = async (finalizationTime: Date, startTime: Date | null) => {
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = './03_10_25/ACTA DE RECUENTO PRESIDENCIAL 39  PARTIDOS.pdf';
+        const existingPdfUrl = './actas/ACTA_RECUENTO_PRESIDENCIAL.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -788,7 +788,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas:", labels);
 
-      const existingPdfUrl = './03_10_25/ACTA DE RECUENTO PRESIDENCIAL 39  PARTIDOS.pdf';//'./ACTA_RECUENTO_PRESIDENCIAL.pdf';
+      const existingPdfUrl = './actas/ACTA_RECUENTO_PRESIDENCIAL.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -797,7 +797,6 @@ export function VoteEntryForm({
 
       const horaFin = formatTime(finalizationTime);
       const fechaFin = formatDate(finalizationTime);
-      const dateTimeString = `${horaFin} del ${fechaFin}`;
 
       const data = [
         { texto: localMesaNumber, x: 45, y: height - 132, color: rgb(0, 0, 0), size: 14 },
@@ -806,7 +805,8 @@ export function VoteEntryForm({
         { texto: selectedLocation.departamento.toUpperCase(), x: 45, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.provincia.toUpperCase(), x: 230, y: height - 175, color: rgb(0, 0, 0), size: 14 },
         { texto: selectedLocation.distrito.toUpperCase(), x: 410, y: height - 175, color: rgb(0, 0, 0), size: 14 },
-        { texto: dateTimeString, x: 102, y: height - 1166, color: rgb(0, 0, 0), size: 6.5 },
+        { texto: horaFin, x: 112, y: height - 1166, color: rgb(0, 0, 0), size: 13 },
+        { texto: fechaFin, x: 232, y: height - 1166, color: rgb(0, 0, 0), size: 13 },
         { texto: `${entries.length}`, x: 763, y: height - 147, color: rgb(0, 0, 0), size: 15 },
         { texto: `${localTotalElectores}`, x: 759, y: height - 121, color: rgb(0, 0, 0), size: 15 },
         { texto: `${cedulasExcedentes}`, x: 475, y: height - 1092, color: rgb(0, 0, 0), size: 15 },
@@ -816,8 +816,8 @@ export function VoteEntryForm({
       if (startTime) {
         const horaInicio = formatTime(startTime);
         const fechaInicio = formatDate(startTime);
-        const startDateTimeString = `${horaInicio} del ${fechaInicio}`;
-        data.push({ texto: startDateTimeString, x: 102, y: height - 198, color: rgb(0, 0, 0), size: 6.5 });
+        data.push({ texto: horaInicio, x: 112, y: height - 198, color: rgb(0, 0, 0), size: 13 });
+        data.push({ texto: fechaInicio, x: 232, y: height - 198, color: rgb(0, 0, 0), size: 13 });
       }
 
       for (const partyName in labels) {
@@ -921,7 +921,7 @@ export function VoteEntryForm({
 
     try {
       const { width, height } = await (async () => {
-        const existingPdfUrl = './03_10_25/39_ACTA_DE_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
+        const existingPdfUrl = './actas/ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
         const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
@@ -955,7 +955,7 @@ export function VoteEntryForm({
 
       console.log("Diccionario de etiquetas de votos con coordenadas (Senadores Nacional):", labels);
 
-      const existingPdfUrl = './03_10_25/39_ACTA_DE_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
+      const existingPdfUrl = './actas/ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf';
       const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
