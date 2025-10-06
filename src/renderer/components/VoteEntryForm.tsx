@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, X, Edit, Check, ChevronDown, FileText, RefreshCw, FileCheck } from "lucide-react";
 import { type VoteEntry, type PoliticalOrganization } from "../data/mockData";
 import { getSelectedOrganizations, getCircunscripcionOrganizations } from "../lib/localStorage";
+import { getCategoryColors } from "../lib/categoryColors";
 import { toast } from "sonner";
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -107,6 +108,9 @@ export function VoteEntryForm({
   isMesaAlreadyFinalized
 }: VoteEntryFormProps) {
   console.log('[VoteEntryForm] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
+
+  // Get category-specific color theme
+  const categoryColors = getCategoryColors(category);
 
   // Use existingEntries directly from parent (which comes from categoryData)
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
@@ -1164,33 +1168,33 @@ export function VoteEntryForm({
                 // Display mode - show styled divs (when session started, after clicking Iniciar)
                 <>
                   {/* Mesa Number Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                    <span className="text-sm font-medium text-orange-700">Mesa:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{String(localMesaNumber || "").padStart(6, '0')}</span>
+                  <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+                    <span className="text-sm font-medium text-gray-700">Mesa:</span>
+                    <span className="font-semibold text-gray-800 ml-1">{String(localMesaNumber || "").padStart(6, '0')}</span>
                   </div>
 
                   {/* Acta Number Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                    <span className="text-sm font-medium text-orange-700">Acta:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{localActaNumber}</span>
+                  <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+                    <span className="text-sm font-medium text-gray-700">Acta:</span>
+                    <span className="font-semibold text-gray-800 ml-1">{localActaNumber}</span>
                   </div>
 
                   {/* JEE Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="JURADO ELECTORAL ESPECIAL">
-                    <span className="text-sm font-medium text-orange-700">JEE:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{selectedLocation.jee}</span>
+                  <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="JURADO ELECTORAL ESPECIAL">
+                    <span className="text-sm font-medium text-gray-700">JEE:</span>
+                    <span className="font-semibold text-gray-800 ml-1">{selectedLocation.jee}</span>
                   </div>
 
                   {/* Total Electores Hábiles Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE ELECTORES HÁBILES">
-                    <span className="text-sm font-medium text-orange-700">TEH:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{localTotalElectores}</span>
+                  <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE ELECTORES HÁBILES">
+                    <span className="text-sm font-medium text-gray-700">TEH:</span>
+                    <span className="font-semibold text-gray-800 ml-1">{localTotalElectores}</span>
                   </div>
 
                   {/* Total de Ciudadanos que Votaron Display */}
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap" title="TOTAL DE CIUDADANOS QUE VOTARON">
-                    <span className="text-sm font-medium text-orange-700">TCV:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{tcv !== null ? tcv : entries.length}</span>
+                  <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
+                    <span className="text-sm font-medium text-gray-700">TCV:</span>
+                    <span className="font-semibold text-gray-800 ml-1">{tcv !== null ? tcv : entries.length}</span>
                   </div>
                 </>
               ) : (
@@ -1518,13 +1522,14 @@ export function VoteEntryForm({
                   className={`px-6 py-2 rounded font-medium ${
                     !isBloque1Enabled
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-green-800 hover:bg-green-700 text-white"
+                      : "text-gray-800"
                   }`}
+                  style={!isBloque1Enabled ? {} : { backgroundColor: categoryColors.dark }}
                 >
                   Iniciar
                 </Button>
               ) : !isFormFinalized ? (
-                <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded font-medium text-center justify-center">
+                <div className="flex items-center gap-1 px-2 py-1 rounded font-medium text-center justify-center text-gray-800" style={{ backgroundColor: categoryColors.light }}>
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -1539,14 +1544,15 @@ export function VoteEntryForm({
                   disabled={!isMesaDataSaved}
                   className={`px-6 py-2 rounded font-medium ${
                     !isMesaDataSaved
-                      ? "bg-red-400 text-red-100 cursor-not-allowed hover:bg-red-400"
-                      : "bg-red-800 hover:bg-red-700 text-white"
+                      ? "cursor-not-allowed text-gray-400"
+                      : "text-gray-800"
                   }`}
+                  style={!isMesaDataSaved ? { backgroundColor: '#e5e7eb' } : { backgroundColor: categoryColors.dark }}
                 >
                   Finalizar
                 </Button>
               ) : (
-                <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-1 rounded font-medium text-center">
+                <div className="flex items-center gap-1 px-2 py-1 rounded font-medium text-center text-gray-800" style={{ backgroundColor: categoryColors.light }}>
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -1558,7 +1564,7 @@ export function VoteEntryForm({
               {isFormFinalized && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className="px-6 py-2 rounded font-medium bg-red-800 hover:bg-red-700 text-white">
+                    <Button className="px-6 py-2 rounded font-medium text-gray-800" style={{ backgroundColor: categoryColors.dark }}>
                       Opciones
                       <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
@@ -1626,27 +1632,27 @@ export function VoteEntryForm({
               // Display mode - show styled divs (when session started, after clicking Iniciar)
               <>
                 {/* Departamento/Continente Display */}
-                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                  <span className="text-sm font-medium text-orange-700">
+                <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+                  <span className="text-sm font-medium text-gray-700">
                     {isInternationalLocation ? "Continente:" : "Departamento:"}
                   </span>
-                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.departamento || "-"}</span>
+                  <span className="font-semibold text-gray-800 ml-1">{selectedLocation.departamento || "-"}</span>
                 </div>
 
                 {/* Provincia/País Display */}
-                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                  <span className="text-sm font-medium text-orange-700">
+                <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+                  <span className="text-sm font-medium text-gray-700">
                     {isInternationalLocation ? "País:" : "Provincia:"}
                   </span>
-                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.provincia || "-"}</span>
+                  <span className="font-semibold text-gray-800 ml-1">{selectedLocation.provincia || "-"}</span>
                 </div>
 
                 {/* Distrito/Ciudad Display */}
-                <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                  <span className="text-sm font-medium text-orange-700">
+                <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+                  <span className="text-sm font-medium text-gray-700">
                     {isInternationalLocation ? "Ciudad:" : "Distrito:"}
                   </span>
-                  <span className="font-semibold text-orange-900 ml-1">{selectedLocation.distrito || "-"}</span>
+                  <span className="font-semibold text-gray-800 ml-1">{selectedLocation.distrito || "-"}</span>
                 </div>
               </>
             ) : (
@@ -1733,7 +1739,7 @@ export function VoteEntryForm({
         {/* Horizontal Progress Bars Summary - Left Side (5/12 width) */}
         <Card className="w-full col-span-4">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2">
+            <CardTitle className="text-lg font-semibold pb-2" style={{ borderBottom: `2px solid ${categoryColors.dark}` }}>
               RANKING ACTA - {categoryLabel?.toUpperCase() || category.toUpperCase().replace(/([A-Z])/g, ' $1').trim()}
             </CardTitle>
           </CardHeader>
@@ -1765,12 +1771,12 @@ export function VoteEntryForm({
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <strong className="text-sm font-semibold">{party}:</strong>
-                          <span className="text-sm font-semibold text-red-800">{count} votos</span>
+                          <span className="text-sm font-semibold text-gray-700">{count} votos</span>
                         </div>
                         <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden relative">
-                          <div 
-                            className="h-full bg-red-800 transition-all duration-700 ease-out flex items-center justify-end pr-2 text-white text-xs font-semibold"
-                            style={{ width: `${barWidth}%` }}
+                          <div
+                            className="h-full transition-all duration-700 ease-out flex items-center justify-end pr-2 text-gray-800 text-xs font-semibold"
+                            style={{ width: `${barWidth}%`, backgroundColor: categoryColors.dark }}
                           >
                             {count}
                           </div>
@@ -1793,7 +1799,7 @@ export function VoteEntryForm({
         {/* Entries Table - Right Side (7/12 width) */}
         <Card className="w-full col-span-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between gap-4">
+            <CardTitle className="text-lg font-semibold pb-2 flex items-center justify-between gap-4" style={{ borderBottom: `2px solid ${categoryColors.dark}` }}>
               {/* Cédulas Excedentes Input */}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700">Cédulas Excedentes:</label>
@@ -1815,28 +1821,28 @@ export function VoteEntryForm({
 
               <div className="flex items-center gap-4">
                 <span>VOTOS RECONTADOS</span>
-                <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
+                <Badge variant="default" className="text-xl font-semibold text-gray-800" style={{ backgroundColor: categoryColors.dark }}>{entries.length} cédulas</Badge>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">
             <Table>
               <TableHeader>
-                <TableRow className="text-white bg-red-800">
-                  <TableHead className="text-white text-center font-semibold w-28">N° CÉDULA</TableHead>
-                  <TableHead className="text-white font-semibold">INGRESAR VOTOS</TableHead>
+                <TableRow style={{ backgroundColor: categoryColors.dark }}>
+                  <TableHead className="text-gray-800 text-center font-semibold w-28">N° CÉDULA</TableHead>
+                  <TableHead className="text-gray-800 font-semibold">INGRESAR VOTOS</TableHead>
                   {preferentialConfig.hasPreferential1 && (
-                    <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
+                    <TableHead className="text-gray-800 w-32 text-center font-semibold">VOTO PREF. 1</TableHead>
                   )}
                   {preferentialConfig.hasPreferential2 && (
-                    <TableHead className="text-white w-32 text-center font-semibold">VOTO PREF. 2</TableHead>
+                    <TableHead className="text-gray-800 w-32 text-center font-semibold">VOTO PREF. 2</TableHead>
                   )}
-                  <TableHead className="text-white w-32 text-center font-semibold">ACCIÓN</TableHead>
+                  <TableHead className="text-gray-800 w-32 text-center font-semibold">ACCIÓN</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {/* Form row */}
-                <TableRow className="border-2 bg-red-50 border-red-800 w-28">
+                <TableRow className="border-2 w-28" style={{ backgroundColor: '#f9fafb', borderColor: categoryColors.dark }}>
                   <TableCell className="px-2">
                     <Input
                       type="number"
@@ -1956,14 +1962,17 @@ export function VoteEntryForm({
                         </button>
                       </div>
                     ) : (
-                      <Button 
-                        onClick={handleAddEntry} 
+                      <Button
+                        onClick={handleAddEntry}
                         disabled={!newEntry.party || newEntry.party === "" || !isBloque2Enabled}
                         className={`h-12 px-6 text-base font-semibold ${
                           !newEntry.party || newEntry.party === "" || !isBloque2Enabled
                             ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
-                            : "text-white bg-red-800 hover:bg-red-700 hover:cursor-pointer"
+                            : "text-gray-800 hover:cursor-pointer"
                         }`}
+                        style={!newEntry.party || newEntry.party === "" || !isBloque2Enabled ? {} : {
+                          backgroundColor: categoryColors.dark,
+                        }}
                       >
                         <Plus className="h-5 w-5 mr-2" />
                         AGREGAR
@@ -1974,8 +1983,9 @@ export function VoteEntryForm({
                 
                 {[...entries].reverse().map((entry, index) => {
                   const isLastEntry = index === 0; // First item in reversed array is the last added entry
+                  const bgColor = index % 2 === 0 ? categoryColors.light : '#f9fafb';
                   return (
-                    <TableRow key={entries.length - 1 - index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <TableRow key={entries.length - 1 - index} style={{ backgroundColor: bgColor }}>
                       <TableCell className="text-center font-medium w-28">{entry.tableNumber}</TableCell>
                       <TableCell className="py-3">{entry.party}</TableCell>
                       {preferentialConfig.hasPreferential1 && (
