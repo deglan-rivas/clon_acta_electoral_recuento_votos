@@ -59,6 +59,7 @@ export interface ActaData {
   tcv: number | null; // Total de Ciudadanos que Votaron (null means use entries.length)
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
+  areMesaFieldsLocked: boolean; // Track if location and TEH fields are locked after auto-fill
   startTime: string | null; // Store as ISO string
   endTime: string | null; // Store as ISO string
   selectedLocation: {
@@ -90,6 +91,7 @@ export const getDefaultActaData = (): ActaData => ({
   tcv: null, // null means TCV is linked to entries.length
   isFormFinalized: false,
   isMesaDataSaved: false,
+  areMesaFieldsLocked: false,
   startTime: null,
   endTime: null,
   selectedLocation: {
@@ -297,6 +299,31 @@ export const saveCircunscripcionOrganizations = (circunscripcion: string, organi
 
 export const getAllCircunscripcionOrganizations = (): Record<string, string[]> => {
   return getFromLocalStorage(CIRCUNSCRIPCION_ORGANIZATIONS_KEY, {});
+};
+
+// Check if a mesa number has been finalized in the current category (excluding current acta)
+export const isMesaFinalizedInCategory = (mesaNumber: number, category: string, excludeActaIndex?: number): boolean => {
+  if (!mesaNumber || mesaNumber <= 0) return false;
+
+  const categoryData = getCategoryData(category);
+  if (!categoryData || !categoryData.actas) return false;
+
+  // Search through all actas in the current category
+  for (let i = 0; i < categoryData.actas.length; i++) {
+    const acta = categoryData.actas[i];
+
+    // Skip the current acta if specified
+    if (excludeActaIndex !== undefined && i === excludeActaIndex) {
+      continue;
+    }
+
+    // Check if this mesa number is finalized
+    if (acta.mesaNumber === mesaNumber && acta.isFormFinalized) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 // Find cédulas excedentes for a specific mesa number across all categories (excluding current acta)

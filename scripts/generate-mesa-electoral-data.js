@@ -248,14 +248,18 @@ class MesaElectoralGenerator {
       'circunscripcion_electoral',
       'departamento',
       'provincia',
-      'distrito'
+      'distrito',
+      'teh'
     ];
 
     // Convert data to CSV
     const csvContent = [
       headers.join(';'),
       ...this.mesaData.map(mesa =>
-        headers.map(header => mesa[header] || '').join(';')
+        headers.map(header => {
+          if (header === 'teh') return '300';
+          return mesa[header] || '';
+        }).join(';')
       )
     ].join('\n');
 

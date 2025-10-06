@@ -63,11 +63,13 @@ interface VoteEntryFormProps {
     departamento: string;
     provincia: string;
     distrito: string;
+    teh: string;
   } | null;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
   isMesaDataSaved?: boolean;
   onMesaDataSavedChange?: (isSaved: boolean) => void;
+  areMesaFieldsLocked?: boolean;
   // Time tracking props
   startTime: Date | null;
   endTime: Date | null;
@@ -81,6 +83,7 @@ interface VoteEntryFormProps {
   categoryActas?: any[];
   currentActaIndex?: number;
   politicalOrganizations: PoliticalOrganization[];
+  isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
 }
 
 export function VoteEntryForm({
@@ -93,13 +96,15 @@ export function VoteEntryForm({
   mesaElectoralInfo,
   isFormFinalized: externalIsFormFinalized, onFormFinalizedChange,
   isMesaDataSaved: externalIsMesaDataSaved, onMesaDataSavedChange,
+  areMesaFieldsLocked = false,
   startTime, endTime, currentTime, onStartTimeChange, onEndTimeChange, onCurrentTimeChange,
   onViewSummary,
   onCreateNewActa,
   onSwitchToActa,
   categoryActas = [],
   currentActaIndex = 0,
-  politicalOrganizations
+  politicalOrganizations,
+  isMesaAlreadyFinalized
 }: VoteEntryFormProps) {
   console.log('[VoteEntryForm] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
 
@@ -540,6 +545,23 @@ export function VoteEntryForm({
 
   // Handle save mesa data with validations
   const handleSaveMesaData = () => {
+    const mesaToCheck = parseInt(localMesaNumber) || 0;
+
+    // Validation 0: Check if mesa has already been finalized in this category
+    if (isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaToCheck)) {
+      toast.error(`Mesa N° ${mesaToCheck.toString().padStart(6, '0')} ya ha sido recontada para este tipo de elección`, {
+        style: {
+          background: '#dc2626',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          width: '550px'
+        },
+        duration: 5000
+      });
+      return;
+    }
+
     // Validation 1: Location must be fully selected
     if (!selectedLocation.departamento) {
       toast.error("Debe seleccionar un Departamento", {
@@ -1455,7 +1477,8 @@ export function VoteEntryForm({
                           setLocalTotalElectores(value);
                         }
                       }}
-                      className="max-w-20 text-center font-semibold"
+                      disabled={areMesaFieldsLocked}
+                      className={`max-w-20 text-center font-semibold ${areMesaFieldsLocked ? "opacity-50 cursor-not-allowed" : ""}`}
                       placeholder="0"
                     />
                   </div>
@@ -1625,31 +1648,6 @@ export function VoteEntryForm({
                   </span>
                   <span className="font-semibold text-orange-900 ml-1">{selectedLocation.distrito || "-"}</span>
                 </div>
-
-                {/* Cédulas Excedentes - Editable after Iniciar, Display after Finalizar */}
-                {isFormFinalized ? (
-                  <div className="bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 whitespace-nowrap">
-                    <span className="text-sm font-medium text-orange-700">Cédulas Excedentes:</span>
-                    <span className="font-semibold text-orange-900 ml-1">{cedulasExcedentes}</span>
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                    <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Excedentes</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={cedulasExcedentes || ""}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        if (value >= 0) {
-                          onCedulasExcedentesChange(value);
-                        }
-                      }}
-                      className="max-w-20 text-center font-semibold"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
               </>
             ) : (
               // Edit mode - show select dropdowns (before clicking Iniciar)
@@ -1662,8 +1660,9 @@ export function VoteEntryForm({
                   <Select
                     value={selectedLocation.departamento || undefined}
                     onValueChange={onDepartamentoChange}
+                    disabled={areMesaFieldsLocked}
                   >
-                    <SelectTrigger className="w-49 h-8">
+                    <SelectTrigger className={`w-49 h-8 ${areMesaFieldsLocked ? "opacity-50 cursor-not-allowed" : ""}`}>
                       <SelectValue placeholder={isInternationalLocation ? "Seleccionar Continente" : "Seleccionar Departamento"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1684,9 +1683,9 @@ export function VoteEntryForm({
                   <Select
                     value={selectedLocation.provincia || undefined}
                     onValueChange={onProvinciaChange}
-                    disabled={!selectedLocation.departamento}
+                    disabled={areMesaFieldsLocked}
                   >
-                    <SelectTrigger className={`w-56 h-8 ${!selectedLocation.departamento ? "opacity-50 cursor-not-allowed" : ""}`}>
+                    <SelectTrigger className={`w-56 h-8 ${areMesaFieldsLocked ? "opacity-50 cursor-not-allowed" : ""}`}>
                       <SelectValue placeholder={isInternationalLocation ? "Seleccionar País" : "Seleccionar Provincia"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1707,9 +1706,9 @@ export function VoteEntryForm({
                   <Select
                     value={selectedLocation.distrito || undefined}
                     onValueChange={onDistritoChange}
-                    disabled={!selectedLocation.provincia}
+                    disabled={areMesaFieldsLocked}
                   >
-                    <SelectTrigger className={`w-64 h-8 ${!selectedLocation.provincia ? "opacity-50 cursor-not-allowed" : ""}`}>
+                    <SelectTrigger className={`w-64 h-8 ${areMesaFieldsLocked ? "opacity-50 cursor-not-allowed" : ""}`}>
                       <SelectValue placeholder={isInternationalLocation ? "Seleccionar Ciudad" : "Seleccionar Distrito"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1720,24 +1719,6 @@ export function VoteEntryForm({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                {/* Cédulas Excedentes Input */}
-                <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
-                  <label className="text-sm font-medium text-gray-700 flex items-center pr-2">Cédulas Excedentes</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={cedulasExcedentes || ""}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      if (value >= 0) {
-                        onCedulasExcedentesChange(value);
-                      }
-                    }}
-                    className="max-w-20 text-center font-semibold"
-                    placeholder="0"
-                  />
                 </div>
               </>
             )}
@@ -1812,10 +1793,30 @@ export function VoteEntryForm({
         {/* Entries Table - Right Side (7/12 width) */}
         <Card className="w-full col-span-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-end gap-4">
-              
-              VOTOS RECONTADOS
-              <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
+            <CardTitle className="text-lg font-semibold border-b-2 border-red-800 pb-2 flex items-center justify-between gap-4">
+              {/* Cédulas Excedentes Input */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Cédulas Excedentes:</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={cedulasExcedentes || ""}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    if (value >= 0) {
+                      onCedulasExcedentesChange(value);
+                    }
+                  }}
+                  disabled={entries.length !== localTotalElectores || isFormFinalized}
+                  className={`max-w-20 text-center font-semibold border border-gray-300 ${entries.length !== localTotalElectores || isFormFinalized ? "opacity-50 cursor-not-allowed bg-gray-200" : "bg-white"}`}
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <span>VOTOS RECONTADOS</span>
+                <Badge variant="default" className="bg-red-800 text-xl font-semibold">{entries.length} cédulas</Badge>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-0">

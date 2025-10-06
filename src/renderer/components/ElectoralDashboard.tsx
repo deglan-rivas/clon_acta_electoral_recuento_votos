@@ -32,6 +32,7 @@ import {
   getAllActas,
   findCedulasExcedentesByMesa,
   findTcvByMesa,
+  isMesaFinalizedInCategory,
   type ActaData,
 } from "../lib/localStorage";
 import { type PoliticalOrganization } from "../data/mockData";
@@ -56,6 +57,7 @@ type MesaElectoralRecord = {
   departamento: string;
   provincia: string;
   distrito: string;
+  teh: string;
 };
 
 export function ElectoralDashboard() {
@@ -89,6 +91,12 @@ export function ElectoralDashboard() {
   const [selectedDistrito, setSelectedDistrito] = useState<string>(currentLocationData.distrito);
   const [selectedJee, setSelectedJee] = useState<string>(currentLocationData.jee);
   const [selectedCircunscripcionElectoral, setSelectedCircunscripcionElectoral] = useState<string>(currentLocationData.circunscripcionElectoral);
+
+  // Track if mesa-related fields (location + TEH) were auto-filled from mesa number
+  const [areMesaFieldsLocked, setAreMesaFieldsLocked] = useState<boolean>(() => {
+    const currentActa = getCurrentActaData();
+    return currentActa?.areMesaFieldsLocked || false;
+  });
 
   // Current time state (not persisted per category)
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -167,14 +175,15 @@ export function ElectoralDashboard() {
         const records: MesaElectoralRecord[] = lines
           .filter(line => line.trim())
           .map(line => {
-            const [mesa_number, tipo_ubicacion, circunscripcion_electoral, departamento, provincia, distrito] = line.split(';');
+            const [mesa_number, tipo_ubicacion, circunscripcion_electoral, departamento, provincia, distrito, teh] = line.split(';');
             return {
               mesa_number: mesa_number?.trim() || '',
               tipo_ubicacion: tipo_ubicacion?.trim() || '',
               circunscripcion_electoral: circunscripcion_electoral?.trim() || '',
               departamento: departamento?.trim() || '',
               provincia: provincia?.trim() || '',
-              distrito: distrito?.trim() || ''
+              distrito: distrito?.trim() || '',
+              teh: teh?.trim() || ''
             };
           });
         setMesaElectoralData(records);
@@ -245,12 +254,16 @@ export function ElectoralDashboard() {
 
   // Sync location state when active category changes or when acta data is updated
   useEffect(() => {
-    const currentLocationData = getCurrentActaData()?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
+    const currentActaData = getCurrentActaData();
+    const currentLocationData = currentActaData?.selectedLocation || { departamento: '', provincia: '', distrito: '', circunscripcionElectoral: '', jee: '' };
     setSelectedDepartamento(currentLocationData.departamento);
     setSelectedProvincia(currentLocationData.provincia);
     setSelectedDistrito(currentLocationData.distrito);
     setSelectedJee(currentLocationData.jee);
     setSelectedCircunscripcionElectoral(currentLocationData.circunscripcionElectoral);
+
+    // Sync areMesaFieldsLocked flag
+    setAreMesaFieldsLocked(currentActaData?.areMesaFieldsLocked || false);
   }, [activeCategory, currentActaData]);
 
   // Auto-set circunscripción electoral when category changes and data is available
@@ -327,6 +340,7 @@ export function ElectoralDashboard() {
     setSelectedDistrito('');
     setSelectedJee('');
     setSelectedCircunscripcionElectoral('');
+    setAreMesaFieldsLocked(false);
 
     toast.success("Nueva acta creada exitosamente", {
       style: {
@@ -430,8 +444,8 @@ export function ElectoralDashboard() {
   const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
   const endTime = currentCategoryData?.endTime ? new Date(currentCategoryData.endTime) : null;
 
-  // Location fields should be disabled when session is started or finalized
-  const areLocationFieldsDisabled = isMesaDataSaved || isFormFinalized;
+  // Location and TEH fields should be disabled when auto-filled from mesa number, session is started, or finalized
+  const areLocationFieldsDisabled = areMesaFieldsLocked || isMesaDataSaved || isFormFinalized;
 
   // Define preferential vote configuration by category
   const getPreferentialVoteConfig = (category: string) => {
@@ -728,11 +742,27 @@ export function ElectoralDashboard() {
           politicalOrganizations={politicalOrganizations}
           // totalCedulasRecibidas={totalCedulasRecibidas}
           onMesaDataChange={(mesa, acta, electores) => {
-            // Look up mesa electoral data to auto-populate location fields
-            const mesaInfo = getMesaElectoralInfo(mesa.toString());
-
             // Get current acta index to exclude it from search
             const currentActaIndex = getActiveActaIndex(activeCategory);
+
+            // Check if this mesa number has already been finalized in the current category
+            if (isMesaFinalizedInCategory(mesa, activeCategory, currentActaIndex)) {
+              const categoryLabel = categories.find(cat => cat.key === activeCategory)?.label || 'este tipo de elección';
+              toast.error(`Mesa N° ${mesa.toString().padStart(6, '0')} ya ha sido recontada para ${categoryLabel}`, {
+                style: {
+                  background: '#dc2626',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  width: '550px'
+                },
+                duration: 5000
+              });
+              return; // Stop processing this mesa number
+            }
+
+            // Look up mesa electoral data to auto-populate location fields
+            const mesaInfo = getMesaElectoralInfo(mesa.toString());
 
             // Check if this mesa number exists in any category to get cédulas excedentes and TCV
             // Exclude current acta to avoid finding itself
@@ -763,11 +793,18 @@ export function ElectoralDashboard() {
 
               setSelectedCircunscripcionElectoral(circunscripcionToSet);
 
+              // Auto-fill TEH from mesa data
+              const tehValue = parseInt(mesaInfo.teh) || electores;
+
+              // Lock mesa-related fields (location + TEH) since they were auto-filled
+              setAreMesaFieldsLocked(true);
+
               // Update category data with mesa info and auto-populated location
               const updates: Partial<ActaData> = {
                 mesaNumber: mesa,
                 actaNumber: acta,
-                totalElectores: electores,
+                totalElectores: tehValue,
+                areMesaFieldsLocked: true,
                 selectedLocation: {
                   departamento: mesaInfo.departamento,
                   provincia: mesaInfo.provincia,
@@ -861,6 +898,7 @@ export function ElectoralDashboard() {
           onFormFinalizedChange={(finalized) => updateCurrentActaData({ isFormFinalized: finalized })}
           isMesaDataSaved={isMesaDataSaved}
           onMesaDataSavedChange={(saved) => updateCurrentActaData({ isMesaDataSaved: saved })}
+          areMesaFieldsLocked={areMesaFieldsLocked}
           startTime={startTime}
           endTime={endTime}
           currentTime={currentTime}
@@ -872,6 +910,7 @@ export function ElectoralDashboard() {
           onSwitchToActa={handleSwitchToActa}
           categoryActas={getCurrentCategoryActas()}
           currentActaIndex={getActiveActaIndex(activeCategory)}
+          isMesaAlreadyFinalized={(mesaNumber) => isMesaFinalizedInCategory(mesaNumber, activeCategory, getActiveActaIndex(activeCategory))}
         />;
   };
 
