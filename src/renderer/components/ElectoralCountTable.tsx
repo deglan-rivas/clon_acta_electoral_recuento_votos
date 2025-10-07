@@ -20,10 +20,14 @@ interface ElectoralCountTableProps {
   totalElectores?: number;
   onBackToEntry: () => void;
   politicalOrganizations: PoliticalOrganization[];
+  voteLimits?: {
+    preferential1: number;
+    preferential2: number;
+  };
   // totalCedulasRecibidas?: number;
 }
 
-export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0, onBackToEntry, politicalOrganizations}: ElectoralCountTableProps) {
+export function ElectoralCountTable({ data, category, circunscripcionElectoral, totalElectores = 0, onBackToEntry, politicalOrganizations, voteLimits}: ElectoralCountTableProps) {
   console.log('[ElectoralCountTable] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
 
   // Get category-specific color theme
@@ -31,6 +35,9 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
 
   // Check if category should show preferential columns
   const showPreferentialColumns = ['senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(category);
+
+  // Get the maximum preferential vote number to display based on category
+  const maxPreferentialNumber = voteLimits?.preferential1 || 30;
 
   // Get vote entries for the currently active acta
   const actaData = getActiveActaData(category);
@@ -57,7 +64,7 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
       const partyKey = org.order ? `${org.order} | ${org.name}` : org.name;
       voteCount[partyKey] = 0;
       matrix[partyKey] = { total: 0 };
-      for (let i = 1; i <= 30; i++) {
+      for (let i = 1; i <= maxPreferentialNumber; i++) {
         matrix[partyKey][i] = 0;
       }
     });
@@ -71,7 +78,7 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
         // Handle preferential votes
         if (matrix[entry.party]) {
           [entry.preferentialVote1, entry.preferentialVote2].forEach(vote => {
-            if (vote >= 1 && vote <= 30) {
+            if (vote >= 1 && vote <= maxPreferentialNumber) {
               matrix[entry.party][vote]++;
               matrix[entry.party].total++;
             }
@@ -176,14 +183,14 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
                 <TableHead className="text-center font-semibold text-gray-800 py-1" rowSpan={2} style={{ width: '80px', minWidth: '80px', maxWidth: '80px', whiteSpace: 'normal', lineHeight: '1.2', fontSize: '0.80rem' }}>TOTAL DE VOTOS</TableHead>
                 {showPreferentialColumns && (
                   <>
-                    <TableHead className="text-center font-semibold text-gray-800 border-l-2 border-gray-400 py-1 h-6" colSpan={30}>VOTO PREFERENCIAL</TableHead>
+                    <TableHead className="text-center font-semibold text-gray-800 border-l-2 border-gray-400 py-1 h-6" colSpan={maxPreferentialNumber}>VOTO PREFERENCIAL</TableHead>
                     <TableHead className="w-20 text-center font-semibold text-gray-800 border-l-2 border-gray-400 py-1 h-6" rowSpan={2}>TOTAL VP</TableHead>
                   </>
                 )}
               </TableRow>
               {showPreferentialColumns && (
                 <TableRow className="h-6" style={{backgroundColor: categoryColors.dark}}>
-                  {Array.from({length: 30}, (_, i) => (
+                  {Array.from({length: maxPreferentialNumber}, (_, i) => (
                     <TableHead key={i + 1} className="w-8 text-center font-semibold text-red-600 bg-gray-300 text-xs px-1 py-0 h-6">{i + 1}</TableHead>
                   ))}
                 </TableRow>
@@ -205,23 +212,23 @@ export function ElectoralCountTable({ data, category, circunscripcionElectoral, 
                     {showPreferentialColumns && (
                       <>
                         {isBlancoOrNulo ? (
-                          <TableCell 
-                            colSpan={31} 
+                          <TableCell
+                            colSpan={maxPreferentialNumber + 1}
                             className="text-center text-gray-400 border-l border-gray-200 py-1"
                           >
                             {/* Empty cell for BLANCO and NULO */}
                           </TableCell>
                         ) : (
                           <>
-                            {Array.from({length: 30}, (_, i) => {
+                            {Array.from({length: maxPreferentialNumber}, (_, i) => {
                               const value = partyMatrix ? partyMatrix[i + 1] || 0 : 0;
                               const isNonZero = value > 0;
                               return (
-                                <TableCell 
-                                  key={i + 1} 
+                                <TableCell
+                                  key={i + 1}
                                   className={`w-8 text-center text-xs px-1 py-1 border-l border-gray-200 ${
-                                    isNonZero 
-                                      ? 'text-red-600 bg-green-100' 
+                                    isNonZero
+                                      ? 'text-red-600 bg-green-100'
                                       : ''
                                   }`}
                                 >

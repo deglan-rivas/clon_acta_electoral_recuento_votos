@@ -709,6 +709,7 @@ export function ElectoralDashboard() {
         totalElectores={totalElectores}
         onBackToEntry={() => updateCurrentActaData({ activeSection: 'ingreso' })}
         politicalOrganizations={politicalOrganizations}
+        voteLimits={voteLimits}
         // totalCedulasRecibidas={totalCedulasRecibidas}
       />;
     }
@@ -1045,9 +1046,6 @@ export function ElectoralDashboard() {
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
         category={activeCategory}
-        voteLimits={voteLimits}
-        onVoteLimitsChange={(limits) => updateCurrentActaData({ voteLimits: limits })}
-        preferentialConfig={getPreferentialVoteConfig(activeCategory)}
         isFormFinalized={isFormFinalized}
         isMesaDataSaved={isMesaDataSaved}
         currentCircunscripcionElectoral={selectedCircunscripcionElectoral}
