@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -27,30 +25,17 @@ type CircunscripcionRecord = {
   circunscripcion_electoral: string;
 };
 
-interface VoteLimits {
-  preferential1: number;
-  preferential2: number;
-}
-
-interface PreferentialConfig {
-  hasPreferential1: boolean;
-  hasPreferential2: boolean;
-}
-
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category: string;
-  voteLimits: VoteLimits;
-  onVoteLimitsChange: (limits: VoteLimits) => void;
-  preferentialConfig: PreferentialConfig;
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   currentCircunscripcionElectoral?: string;
   politicalOrganizations: PoliticalOrganization[];
 }
 
-export function SettingsModal({ open, onOpenChange, category, voteLimits, onVoteLimitsChange, preferentialConfig, isFormFinalized, isMesaDataSaved, currentCircunscripcionElectoral, politicalOrganizations }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, category, isFormFinalized, isMesaDataSaved, currentCircunscripcionElectoral, politicalOrganizations }: SettingsModalProps) {
   console.log('[SettingsModal] Rendered with politicalOrganizations:', politicalOrganizations?.length || 0);
 
   // Load circunscripción electoral data from CSV
@@ -124,8 +109,6 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     return saved;
   });
 
-  const [originalVoteLimits] = useState<VoteLimits>({ ...voteLimits });
-
   // Temporary state for current edits (not persisted until save)
   const [tempSelectedOrganizations, setTempSelectedOrganizations] = useState<string[]>(() => {
     // Load organizations for the selected circunscripción
@@ -134,7 +117,6 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     }
     return originalSelectedOrganizations;
   });
-  const [tempVoteLimits, setTempVoteLimits] = useState<VoteLimits>(originalVoteLimits);
 
   // Filter state
   const [organizationFilter, setOrganizationFilter] = useState("");
@@ -173,8 +155,6 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
 
   console.log('[SettingsModal] Filtered organizations count:', filteredOrganizations.length);
 
-  // Block control logic - same as VoteEntryForm
-  const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
 
   // Ensure BLANCO and NULO are always selected in temp state
   useEffect(() => {
@@ -242,11 +222,6 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
     }
   };
 
-  // Handle vote limits change (temp state)
-  const handleVoteLimitsChange = (limits: VoteLimits) => {
-    setTempVoteLimits(limits);
-  };
-
   // Save changes to localStorage and parent
   const handleSave = () => {
     if (selectedCircunscripcion) {
@@ -256,14 +231,12 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
       // Fallback to global save if no circunscripción selected
       saveSelectedOrganizations(tempSelectedOrganizations);
     }
-    onVoteLimitsChange(tempVoteLimits);
     onOpenChange(false);
   };
 
   // Cancel changes and revert to original state
   const handleCancel = () => {
     setTempSelectedOrganizations(originalSelectedOrganizations);
-    setTempVoteLimits(originalVoteLimits);
     setOrganizationFilter("");
     onOpenChange(false);
   };
@@ -274,16 +247,13 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
         <VisuallyHidden.Root>
           <DialogTitle>Configuración</DialogTitle>
           <DialogDescription>
-            Configurar organizaciones políticas y límites de votos preferenciales
+            Configurar organizaciones políticas
           </DialogDescription>
         </VisuallyHidden.Root>
 
         <Tabs defaultValue="organizations" className="w-full">
-          <TabsList className={`grid w-full ${(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="organizations">Organizaciones Políticas</TabsTrigger>
-            {(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) && (
-              <TabsTrigger value="votelimits">Límites de Votos Preferenciales</TabsTrigger>
-            )}
           </TabsList>
 
           <TabsContent value="organizations" className="space-y-3">
@@ -394,110 +364,6 @@ export function SettingsModal({ open, onOpenChange, category, voteLimits, onVote
               </div>
             )}
         </TabsContent>
-
-        {(preferentialConfig.hasPreferential1 || preferentialConfig.hasPreferential2) && (
-          <TabsContent value="votelimits" className="space-y-6">
-            <Card>
-              <CardContent>
-                <div className={`grid grid-cols-1 gap-6 ${preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 ? 'md:grid-cols-2' : ''}`}>
-                  {preferentialConfig.hasPreferential1 && (
-                    <div>
-                      <br/>
-                      <label
-                        htmlFor="pref1-limit"
-                        className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
-                      >
-                        Límite Voto Preferencial 1
-                      </label>
-                      <Input
-                        id="pref1-limit"
-                        type="number"
-                        min={1}
-                        max={199}
-                        step={1}
-                        value={tempVoteLimits.preferential1}
-                        onChange={(e) => {
-                          if (isBloque2Enabled) {
-                            handleVoteLimitsChange({
-                              ...tempVoteLimits,
-                              preferential1: parseInt(e.target.value) || 1
-                            });
-                          }
-                        }}
-                        className={`max-w-xs ${
-                          !isBloque2Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                        }`}
-                        placeholder="Ingrese límite para Voto Pref. 1"
-                        disabled={!isBloque2Enabled}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Rango válido: 1 - 199
-                      </p>
-                    </div>
-                  )}
-
-                  {preferentialConfig.hasPreferential2 && (
-                    <div>
-                      <label
-                        htmlFor="pref2-limit"
-                        className="text-sm font-medium mb-2 block text-gray-700 cursor-pointer"
-                      >
-                        Límite Voto Preferencial 2
-                      </label>
-                      <Input
-                        id="pref2-limit"
-                        type="number"
-                        min={1}
-                        max={199}
-                        step={1}
-                        value={tempVoteLimits.preferential2}
-                        onChange={(e) => {
-                          if (isBloque2Enabled) {
-                            handleVoteLimitsChange({
-                              ...tempVoteLimits,
-                              preferential2: parseInt(e.target.value) || 1
-                            });
-                          }
-                        }}
-                        className={`max-w-xs ${
-                          !isBloque2Enabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
-                        }`}
-                        placeholder="Ingrese límite para Voto Pref. 2"
-                        disabled={!isBloque2Enabled}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Rango válido: 1 - 199
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Current Limits Display */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">Límites Configurados Actualmente</h4>
-                  <div className={`grid gap-4 ${preferentialConfig.hasPreferential1 && preferentialConfig.hasPreferential2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {preferentialConfig.hasPreferential1 && (
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-                          Voto Pref. 1
-                        </Badge>
-                        <span className="text-sm font-semibold text-blue-900">{tempVoteLimits.preferential1}</span>
-                      </div>
-                    )}
-                    {preferentialConfig.hasPreferential2 && (
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-                          Voto Pref. 2
-                        </Badge>
-                        <span className="text-sm font-semibold text-blue-900">{tempVoteLimits.preferential2}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
 
       {/* Save/Cancel Buttons */}

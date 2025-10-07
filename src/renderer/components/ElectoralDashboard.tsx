@@ -37,6 +37,7 @@ import {
 } from "../lib/localStorage";
 import { type PoliticalOrganization } from "../data/mockData";
 import politicalOrgsCsvFile from '/organizaciones_politicas.csv?url';
+import { getVoteLimitsForCategory } from "../lib/voteLimits";
 
 // Types for Ubigeo data
 type UbigeoRecord = {
@@ -245,6 +246,11 @@ export function ElectoralDashboard() {
     saveActiveCategory(activeCategory);
     const actaData = getActiveActaData(activeCategory);
     setCurrentActaData(actaData);
+
+    // Load vote limits for the category
+    getVoteLimitsForCategory(activeCategory).then(limits => {
+      updateCurrentActaData({ voteLimits: limits });
+    });
   }, [activeCategory]);
 
   // Save current acta data to localStorage when it changes
