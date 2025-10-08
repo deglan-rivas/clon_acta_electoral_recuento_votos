@@ -243,7 +243,7 @@ function createWindow(): BrowserWindow {
   })
 
   // Log renderer process console messages
-  newWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+  newWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
     const logLevel = level === 0 ? 'info' : level === 1 ? 'warn' : 'error'
     log[logLevel](`Renderer [${sourceId}:${line}]: ${message}`)
   })
@@ -266,7 +266,7 @@ function createWindow(): BrowserWindow {
 }
 
 // IPC handlers for PDF operations
-ipcMain.handle('save-pdf', async (event, pdfBytes: Uint8Array, filename: string) => {
+ipcMain.handle('save-pdf', async (_event, pdfBytes: Uint8Array, filename: string) => {
   try {
     // Get user's Desktop directory
     const desktopPath = app.getPath('desktop')
@@ -279,11 +279,11 @@ ipcMain.handle('save-pdf', async (event, pdfBytes: Uint8Array, filename: string)
     return { success: true, filePath }
   } catch (error) {
     log.error('Error saving PDF:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: (error as Error).message }
   }
 })
 
-ipcMain.handle('open-pdf', async (event, filePath: string) => {
+ipcMain.handle('open-pdf', async (_event, filePath: string) => {
   try {
     // Open the PDF file with the default PDF viewer
     await shell.openPath(filePath)
@@ -292,7 +292,7 @@ ipcMain.handle('open-pdf', async (event, filePath: string) => {
     return { success: true }
   } catch (error) {
     log.error('Error opening PDF:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: (error as Error).message }
   }
 })
 

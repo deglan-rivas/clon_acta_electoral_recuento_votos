@@ -9,7 +9,8 @@
     "preview": "electron-vite preview",
     "pack": "electron-builder",
     "dist": "electron-vite build && electron-builder",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "main": "out/main/index.js",
   "dependencies": {

@@ -25,10 +25,10 @@ const api = {
   },
   // Expose logging to renderer
   log: {
-    info: (message: string, ...args: any[]) => log.info(message, ...args),
-    warn: (message: string, ...args: any[]) => log.warn(message, ...args),
-    error: (message: string, ...args: any[]) => log.error(message, ...args),
-    debug: (message: string, ...args: any[]) => log.debug(message, ...args)
+    info: (message: string, ...args: unknown[]) => log.info(message, ...args),
+    warn: (message: string, ...args: unknown[]) => log.warn(message, ...args),
+    error: (message: string, ...args: unknown[]) => log.error(message, ...args),
+    debug: (message: string, ...args: unknown[]) => log.debug(message, ...args)
   }
 }
 
@@ -49,9 +49,8 @@ if (process.contextIsolated) {
     log.error('Failed to expose APIs to renderer:', error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-expect-error - window.electron is defined in global.d.ts
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
   window.api = api
   console.log('APIs added to window object directly')
 }
