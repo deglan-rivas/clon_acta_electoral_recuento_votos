@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ChevronDown, RefreshCw, FileCheck } from "lucide-react";
 import type { CategoryColors } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
+import { useActaNumberInput } from "../../hooks/useActaNumberInput";
 
 interface ActaHeaderPanelProps {
   // Mesa data
@@ -98,6 +99,13 @@ export function ActaHeaderPanel({
   const [showActaDropdown, setShowActaDropdown] = useState<boolean>(false);
   const actaDropdownRef = useRef<HTMLDivElement>(null);
   const actaInputRef = useRef<HTMLInputElement>(null);
+
+  // Acta number input handlers
+  const actaInputHandlers = useActaNumberInput({
+    localActaNumber,
+    setLocalActaNumber,
+    setLocalMesaNumber
+  });
 
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized;
@@ -249,12 +257,8 @@ export function ActaHeaderPanel({
                     type="text"
                     maxLength={11}
                     value={localActaNumber}
-                    onChange={(e) => {
-                      const newValue = e.target.value.toUpperCase();
-                      if (newValue.length <= 11) {
-                        setLocalActaNumber(newValue);
-                      }
-                    }}
+                    onKeyDown={actaInputHandlers.handleKeyDown}
+                    onChange={actaInputHandlers.handleChange}
                     className="max-w-32 px-0.5 pr-8 text-center font-semibold"
                   />
                   <button
