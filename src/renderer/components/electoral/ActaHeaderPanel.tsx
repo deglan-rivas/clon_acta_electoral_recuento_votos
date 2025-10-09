@@ -142,6 +142,13 @@ export function ActaHeaderPanel({
       return;
     }
 
+    // Validate acta format
+    const actaRegex = /^\d{6}-\d{2}-[A-Z]$/;
+    if (!actaRegex.test(localActaNumber)) {
+      ToastService.error("N° Acta debe tener formato 000000-00-A");
+      return;
+    }
+
     if (!selectedLocation.departamento || !selectedLocation.provincia || !selectedLocation.distrito) {
       ToastService.error("Debe seleccionar la ubicación completa (Departamento, Provincia, Distrito)");
       return;
