@@ -19,8 +19,8 @@ import { useActaRepository } from "../hooks/useActaRepository";
 import { getCategoryColors } from "../utils/categoryColors";
 import { ToastService } from "../services/ui/toastService";
 import { validateMesaData } from "../services/domain/mesaValidationService";
-import { generatePresidencialPdf } from "../services/pdf/generators/presidencialPdfGenerator";
-import { generateSenadoresNacionalPdf } from "../services/pdf/generators/senadoresNacionalPdfGenerator";
+import { generatePdfByElectionType } from "../services/pdf/pdfGeneratorFactory";
+import type { ElectionType } from "../services/pdf/types/pdfTypes";
 
 // Component Props Interfaces
 interface VoteEntryPageProps {
@@ -39,7 +39,8 @@ interface VoteEntryPageProps {
   onTcvChange: (value: number | null) => void;
   selectedLocation: SelectedLocation;
   circunscripcionElectoral: string;
-  onMesaDataChange: (mesa: number, acta: string, electores: number) => void;
+  onLoadMesaInfo: (mesa: number) => void; // Load mesa data from CSV (no save)
+  onMesaDataChange: (mesa: number, acta: string, electores: number) => void; // Save to localStorage
   onJeeChange: (jee: string) => void;
   onDepartamentoChange: (value: string) => void;
   onProvinciaChange: (value: string) => void;
@@ -88,6 +89,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     onTcvChange,
     selectedLocation,
     circunscripcionElectoral,
+    onLoadMesaInfo,
     onMesaDataChange,
     onJeeChange,
     onDepartamentoChange,
@@ -160,6 +162,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
   // Handle save mesa data with validations
   const handleSaveMesaData = async () => {
+    console.log('[VoteEntryPage.handleSaveMesaData] Called');
+
     const validationResult = validateMesaData({
       selectedLocation,
       circunscripcionElectoral,
@@ -178,10 +182,12 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
     // Capture start time
     const now = new Date();
+    console.log('[VoteEntryPage.handleSaveMesaData] Setting start time:', now);
     onStartTimeChange(now);
     onCurrentTimeChange(now);
 
     // Update saved state
+    console.log('[VoteEntryPage.handleSaveMesaData] Setting isMesaDataSaved to true');
     if (onMesaDataSavedChange) {
       onMesaDataSavedChange(true);
     } else {
@@ -189,6 +195,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     }
 
     // Save to repository
+    console.log('[VoteEntryPage.handleSaveMesaData] Calling onSaveActa');
     if (onSaveActa) {
       await onSaveActa();
     }
@@ -198,23 +205,47 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
   // Handle finalize form - disable all inputs permanently
   const handleFinalizeForm = async () => {
+    // Validate that there are entries
+    if (entries.length === 0) {
+      ToastService.error("No se puede finalizar sin votos registrados. Ingrese al menos un voto.", '500px', 4000);
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `¿Está seguro que desea finalizar el acta?\n\n` +
+      `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
+      `Acta: ${actaNumber}\n` +
+      `Total de votos: ${entries.length}\n\n` +
+      `Una vez finalizada, no podrá realizar más cambios.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     console.log("Finalizando formulario...");
     const now = new Date();
 
-    onEndTimeChange(now); // Capture end time
+    // With Zustand, all updates are SYNCHRONOUS - no delay needed! ✅
+    onEndTimeChange(now); // Capture end time (instant with Zustand)
 
     // If TCV is null (linked to entries.length), save the actual value for auto-loading
     if (tcv === null) {
-      onTcvChange(entries.length);
+      onTcvChange(entries.length); // Instant with Zustand
     }
 
+    // Update isFormFinalized in parent state
     if (onFormFinalizedChange) {
-      onFormFinalizedChange(true);
+      onFormFinalizedChange(true); // Instant with Zustand
     } else {
       setLocalIsFormFinalized(true);
     }
 
-    // Save to repository
+    // NO DELAY NEEDED! Zustand updates are synchronous ✅
+    // State is already updated and persisted automatically
+
+    // Save hook (now a no-op with Zustand, kept for compatibility)
     if (onSaveActa) {
       await onSaveActa();
     }
@@ -237,36 +268,26 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       selectedLocation,
       startTime,
       endTime: finalizationTime,
+      isInternationalLocation, // Pass international location flag to PDF generator
     };
 
+    console.log('[VoteEntryPage] PDF Generation - isInternationalLocation:', isInternationalLocation);
+    console.log('[VoteEntryPage] PDF Generation - Category:', category);
+    console.log('[VoteEntryPage] PDF Data:', pdfData);
+
     try {
-      switch (category) {
-        case "presidencial":
-          await generatePresidencialPdf(pdfData);
-          break;
-        case "senadoresNacional":
-          await generateSenadoresNacionalPdf(pdfData);
-          break;
-        case "senadoresRegional":
-          console.log("Categoría es Senadores Regional - PDF generator not yet implemented");
-          ToastService.info("Generador PDF para Senadores Regional en desarrollo", '500px');
-          break;
-        case "diputados":
-          console.log("Categoría es Diputados - PDF generator not yet implemented");
-          ToastService.info("Generador PDF para Diputados en desarrollo", '500px');
-          break;
-        case "parlamentoAndino":
-          console.log("Categoría es Parlamento Andino - PDF generator not yet implemented");
-          ToastService.info("Generador PDF para Parlamento Andino en desarrollo", '500px');
-          break;
-        default:
-          console.log("Categoría desconocida:", category);
-          ToastService.error("Categoría electoral desconocida");
-          break;
-      }
+      // Use factory method for all PDF generation
+      await generatePdfByElectionType(category as ElectionType, pdfData);
+      ToastService.success("PDF generado exitosamente");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      ToastService.error("Error al generar el PDF");
+
+      // Check if it's a "not implemented" error
+      if (error instanceof Error && error.message.includes('not yet implemented')) {
+        ToastService.info(error.message, '500px');
+      } else {
+        ToastService.error("Error al generar el PDF");
+      }
     }
   };
 
@@ -296,6 +317,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 getDepartamentos={getDepartamentos}
                 getProvincias={getProvincias}
                 getDistritos={getDistritos}
+                onLoadMesaInfo={onLoadMesaInfo}
                 onMesaDataChange={onMesaDataChange}
                 onJeeChange={onJeeChange}
                 onDepartamentoChange={onDepartamentoChange}

@@ -47,7 +47,8 @@ interface ActaHeaderPanelProps {
   getDistritos: (departamento: string, provincia: string) => string[];
 
   // Callbacks
-  onMesaDataChange: (mesa: number, acta: string, electores: number) => void;
+  onLoadMesaInfo: (mesa: number) => void; // Load mesa data from CSV (no save)
+  onMesaDataChange: (mesa: number, acta: string, electores: number) => void; // Save to localStorage
   onJeeChange: (jee: string) => void;
   onDepartamentoChange: (value: string) => void;
   onProvinciaChange: (value: string) => void;
@@ -78,6 +79,7 @@ export function ActaHeaderPanel({
   getDepartamentos,
   getProvincias,
   getDistritos,
+  onLoadMesaInfo,
   onMesaDataChange,
   onJeeChange,
   onDepartamentoChange,
@@ -107,14 +109,55 @@ export function ActaHeaderPanel({
     setLocalMesaNumber
   });
 
+  // Ref to track previous mesa number without causing re-renders
+  const prevMesaNumberRef = useRef<string>('');
+
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized;
 
   // Update local state when parent values change
   useEffect(() => {
-    setLocalMesaNumber(mesaNumber > 0 ? mesaNumber.toString().padStart(6, '0') : '');
-    setLocalActaNumber(actaNumber);
+    const prevMesaNumber = prevMesaNumberRef.current;
+    const newMesaNumber = mesaNumber > 0 ? mesaNumber.toString().padStart(6, '0') : '';
+
+    console.log('[ActaHeaderPanel useEffect] Debug info:', {
+      prevMesaNumber,
+      newMesaNumber,
+      mesaNumber,
+      actaNumber,
+      localActaNumber,
+      condition1_length: newMesaNumber.length === 6,
+      condition2_changed: newMesaNumber !== prevMesaNumber,
+      condition3_emptyActa: !actaNumber,
+      allConditionsMet: newMesaNumber.length === 6 && newMesaNumber !== prevMesaNumber && !actaNumber
+    });
+
+    setLocalMesaNumber(newMesaNumber);
     setLocalTotalElectores(totalElectores);
+
+    // If mesa number was updated from parent and it's a valid 6-digit number,
+    // auto-generate acta number prefix (only if acta is empty)
+    if (newMesaNumber.length === 6 && newMesaNumber !== prevMesaNumber && !actaNumber) {
+      const newActaNumber = newMesaNumber + '-';
+      console.log('[ActaHeaderPanel] Auto-generating acta number:', newActaNumber);
+      setLocalActaNumber(newActaNumber);
+
+      // Focus on acta input after a short delay
+      setTimeout(() => {
+        actaInputRef.current?.focus();
+        const input = actaInputRef.current;
+        if (input) {
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }, 100);
+    } else {
+      // Only sync from parent if we're not auto-generating
+      console.log('[ActaHeaderPanel] Syncing from parent actaNumber:', actaNumber);
+      setLocalActaNumber(actaNumber);
+    }
+
+    // Update ref for next comparison
+    prevMesaNumberRef.current = newMesaNumber;
   }, [mesaNumber, actaNumber, totalElectores]);
 
   // Close dropdown when clicking outside
@@ -131,6 +174,13 @@ export function ActaHeaderPanel({
 
   const handleSaveMesaData = async () => {
     const mesaNum = parseInt(localMesaNumber);
+
+    console.log('[ActaHeaderPanel.handleSaveMesaData] Starting save with:', {
+      mesaNum,
+      localMesaNumber,
+      localActaNumber,
+      localTotalElectores
+    });
 
     if (!localMesaNumber || localMesaNumber.length !== 6) {
       ToastService.error("El número de mesa debe tener 6 dígitos");
@@ -170,6 +220,15 @@ export function ActaHeaderPanel({
       return;
     }
 
+    // Update mesa data with current local values before saving
+    console.log('[ActaHeaderPanel.handleSaveMesaData] Calling onMesaDataChange with:', {
+      mesaNum,
+      localActaNumber,
+      localTotalElectores
+    });
+    onMesaDataChange(mesaNum, localActaNumber, localTotalElectores);
+
+    console.log('[ActaHeaderPanel.handleSaveMesaData] Calling onSaveMesaData');
     onSaveMesaData();
   };
 
@@ -237,7 +296,9 @@ export function ActaHeaderPanel({
                         }
 
                         setLocalActaNumber(newActaNumber);
-                        onMesaDataChange(parseInt(value), newActaNumber, localTotalElectores);
+
+                        // Load mesa info from CSV (no save to localStorage yet)
+                        onLoadMesaInfo(parseInt(value));
 
                         if (!secondPart && !thirdPart) {
                           setTimeout(() => {

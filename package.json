@@ -59,7 +59,8 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
     "tailwindcss": "^4.1.12",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.2",

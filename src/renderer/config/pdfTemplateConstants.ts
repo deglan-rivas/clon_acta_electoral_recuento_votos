@@ -21,13 +21,22 @@ export const PDF_COLORS = {
   white: rgb(1, 1, 1),
 } as const;
 
-// PDF Templates paths
+// PDF Templates paths - National versions
 export const PDF_TEMPLATES = {
   presidencial: './actas/ACTA_RECUENTO_PRESIDENCIAL.pdf',
   senadoresNacional: './actas/ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
   senadoresRegional: './actas/ACTA_RECUENTO_SENADORES_REGIONAL.pdf',
   diputados: './actas/ACTA_RECUENTO_DIPUTADOS.pdf',
   parlamentoAndino: './actas/ACTA_RECUENTO_PARLAMENTO_ANDINO.pdf',
+} as const;
+
+// PDF Templates paths - International versions (EXTRANJERO)
+export const PDF_TEMPLATES_EXTRANJERO = {
+  presidencial: './actas/EXTRANJERO_ACTA_RECUENTO_PRESIDENCIAL.pdf',
+  senadoresNacional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
+  senadoresRegional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_MULTIPLE.pdf',
+  diputados: './actas/EXTRANJERO_ACTA_RECUENTO_DIPUTADOS.pdf',
+  parlamentoAndino: './actas/EXTRANJERO_ACTA_RECUENTO_REPRESENTANTES.pdf',
 } as const;
 
 // Presidencial Template Configuration

@@ -1,6 +1,5 @@
 // Service for handling mesa data changes and auto-population logic
 import type { ActaData, MesaElectoralRecord, SelectedLocation } from '../../types/acta.types';
-import type { IActaRepository } from '../../repositories/interfaces/IActaRepository';
 import { ToastService } from '../ui/toastService';
 import { GeographicDataService } from '../data/geographicDataService';
 import { CircunscripcionService } from './circunscripcionService';
@@ -12,48 +11,48 @@ export interface MesaDataChangeParams {
   electores: number;
   activeCategory: string;
   categoryLabel: string;
-  repository: IActaRepository;
+  updateActaData: (updates: Partial<ActaData>) => void;
+}
+
+export interface LoadMesaInfoParams {
+  mesa: number;
+  activeCategory: string;
   mesaElectoralData: MesaElectoralRecord[];
   circunscripcionData: any[];
   selectedJee: string;
   onLocationUpdate: (location: SelectedLocation) => void;
   onMesaFieldsLocked: (locked: boolean) => void;
-  updateActaData: (updates: Partial<ActaData>) => void;
+  onMesaNumberUpdate: (mesa: number) => void;
+  onTotalElectoresUpdate: (teh: number) => void;
 }
 
 export class MesaDataHandler {
   /**
-   * Handle mesa data change - auto-populate location and validate
+   * Load mesa info and auto-populate fields (no localStorage save)
+   * Called when user enters a 6-digit mesa number
    */
-  static async handleMesaDataChange(params: MesaDataChangeParams): Promise<void> {
+  static async loadMesaInfo(params: LoadMesaInfoParams): Promise<void> {
     const {
       mesa,
-      acta,
-      electores,
       activeCategory,
-      categoryLabel,
       repository,
       mesaElectoralData,
       circunscripcionData,
       selectedJee,
       onLocationUpdate,
       onMesaFieldsLocked,
-      updateActaData
+      onMesaNumberUpdate,
+      onTotalElectoresUpdate
     } = params;
 
-    // Check if this mesa number has already been finalized in the current category
-    const isFinalized = await repository.isMesaFinalized(mesa, activeCategory);
-    if (isFinalized) {
-      ToastService.mesaAlreadyFinalized(mesa, categoryLabel);
-      return; // Stop processing this mesa number
-    }
+    console.log('[MesaDataHandler.loadMesaInfo] Called with mesa:', mesa);
 
-    // Look up mesa electoral data to auto-populate location fields
+    // Update mesa number in state (so the input field shows it)
+    console.log('[MesaDataHandler.loadMesaInfo] Calling onMesaNumberUpdate with:', mesa);
+    onMesaNumberUpdate(mesa);
+
+    // Look up mesa electoral data
     const mesaInfo = GeographicDataService.getMesaElectoralInfo(mesa.toString(), mesaElectoralData);
-
-    // Check if this mesa number exists in any category to get cédulas excedentes and TCV
-    const existingCedulasExcedentes = await repository.findCedulasExcedentesByMesa(mesa);
-    const existingTcv = await repository.findTcvByMesa(mesa);
 
     if (mesaInfo) {
       // Auto-populate location fields based on mesa data
@@ -61,26 +60,29 @@ export class MesaDataHandler {
       const provincia = mesaInfo.provincia;
       const distrito = mesaInfo.distrito;
 
-      // Determine circunscripción electoral based on category precedence
+      // Determine circunscripción electoral based on category
       let circunscripcionToSet = '';
       const availableOptions = CircunscripcionService.getCircunscripcionElectoralOptions(
         activeCategory,
         circunscripcionData
       );
 
-      // Categories with fixed circunscripción (presidencial, senadoresNacional, parlamentoAndino)
-      // take precedence from circunscripcion_electoral_por_categoria.csv
       if (NATIONAL_CATEGORIES.includes(activeCategory)) {
-        // Use category-specific circunscripción (e.g., "UNICO NACIONAL")
         if (availableOptions.length === 1) {
           circunscripcionToSet = availableOptions[0];
         }
       } else {
-        // For other categories (senadoresRegional, diputados), use mesa data's circunscripción
         circunscripcionToSet = mesaInfo.circunscripcion_electoral || '';
       }
 
-      // Update location state
+      // Update location state (not saved yet)
+      console.log('[MesaDataHandler.loadMesaInfo] Calling onLocationUpdate with:', {
+        departamento,
+        provincia,
+        distrito,
+        circunscripcionElectoral: circunscripcionToSet,
+        jee: selectedJee
+      });
       onLocationUpdate({
         departamento,
         provincia,
@@ -90,65 +92,54 @@ export class MesaDataHandler {
       });
 
       // Auto-fill TEH from mesa data
-      const tehValue = parseInt(mesaInfo.teh) || electores;
+      const tehValue = parseInt(mesaInfo.teh) || 0;
+      console.log('[MesaDataHandler.loadMesaInfo] Calling onTotalElectoresUpdate with:', tehValue);
+      onTotalElectoresUpdate(tehValue);
 
-      // Lock mesa-related fields (location + TEH) since they were auto-filled
+      // Lock mesa-related fields since they were auto-filled
+      console.log('[MesaDataHandler.loadMesaInfo] Calling onMesaFieldsLocked with: true');
       onMesaFieldsLocked(true);
 
-      // Update category data with mesa info and auto-populated location
-      const updates: Partial<ActaData> = {
-        mesaNumber: mesa,
-        actaNumber: acta,
-        totalElectores: tehValue,
-        areMesaFieldsLocked: true,
-        selectedLocation: {
-          departamento,
-          provincia,
-          distrito,
-          jee: selectedJee,
-          circunscripcionElectoral: circunscripcionToSet
-        }
-      };
-
-      // If cédulas excedentes found for this mesa, auto-populate it
-      if (existingCedulasExcedentes !== null) {
-        updates.cedulasExcedentes = existingCedulasExcedentes;
-      }
-
-      // If TCV found for this mesa, auto-populate it
-      if (existingTcv !== null) {
-        updates.tcv = existingTcv;
-      }
-
-      // Show toast notification for auto-completed values
-      ToastService.autoCompleted(existingCedulasExcedentes, existingTcv);
-
-      updateActaData(updates);
+      ToastService.success(`Datos de mesa ${mesa.toString().padStart(6, '0')} cargados`, '400px', 2000);
     } else {
-      // Mesa number not found in data - show error message
       ToastService.mesaNotFound(mesa);
-
-      // Still update the mesa data but without auto-populating location
-      const updates: Partial<ActaData> = {
-        mesaNumber: mesa,
-        actaNumber: acta,
-        totalElectores: electores
-      };
-
-      // If cédulas excedentes found for this mesa, auto-populate it even if mesa not in data
-      if (existingCedulasExcedentes !== null) {
-        updates.cedulasExcedentes = existingCedulasExcedentes;
-      }
-
-      // If TCV found for this mesa, auto-populate it even if mesa not in data
-      if (existingTcv !== null) {
-        updates.tcv = existingTcv;
-      }
-
-      // Show toast notification for auto-completed values
-      ToastService.autoCompleted(existingCedulasExcedentes, existingTcv);
-
-      updateActaData(updates);
     }
+  }
+
+  /**
+   * Save mesa data (updates are now synchronous with Zustand)
+   * Called when "Iniciar" button is clicked
+   * Note: Mesa info (location, TEH) should already be loaded via loadMesaInfo()
+   */
+  static async handleMesaDataChange(params: MesaDataChangeParams): Promise<void> {
+    const {
+      mesa,
+      acta,
+      electores,
+      activeCategory,
+      categoryLabel,
+      updateActaData
+    } = params;
+
+    console.log('[MesaDataHandler.handleMesaDataChange] Called with:', {
+      mesa,
+      acta,
+      electores,
+      activeCategory
+    });
+
+    // Note: Mesa finalization check is now done in ActaHeaderPanel
+    // before calling this function
+
+    // Update mesa data - synchronous with Zustand!
+    const updates: Partial<ActaData> = {
+      mesaNumber: mesa,
+      actaNumber: acta,
+      totalElectores: electores
+    };
+
+    console.log('[MesaDataHandler.handleMesaDataChange] Updates to apply:', updates);
+    console.log('[MesaDataHandler.handleMesaDataChange] Calling updateActaData (synchronous)');
+    updateActaData(updates);
   }
 }

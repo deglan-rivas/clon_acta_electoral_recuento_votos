@@ -5,12 +5,10 @@ import { mockElectoralData } from "../mocks/electoralData";
 import { SettingsModal } from "../components/settings/SettingsModal";
 import { AppHeader } from "./AppHeader";
 import { AppDataProvider, useAppData } from "../providers/AppDataProvider";
-import { useCategoryManager } from "../hooks/useCategoryManager";
 import { useLocationState } from "../hooks/useLocationState";
-import { useActaRepository } from "../hooks/useActaRepository";
+import { useElectoralActions } from "../hooks/useElectoralActions";
 import { Toaster } from "../components/ui/sonner";
-import type { ActaData, SelectedLocation } from "../types/acta.types";
-import { DEFAULT_ACTA_DATA } from "../types/acta.types";
+import type { SelectedLocation } from "../types/acta.types";
 import { ELECTORAL_CATEGORIES, PREFERENTIAL_VOTE_CONFIG } from "../config/electoralCategories";
 import { GeographicDataService } from "../services/data/geographicDataService";
 import { CircunscripcionService } from "../services/domain/circunscripcionService";
@@ -18,7 +16,6 @@ import { ToastService } from "../services/ui/toastService";
 import { MesaDataHandler } from "../services/domain/mesaDataHandler";
 
 function AppLayoutContent() {
-  const repository = useActaRepository();
   const {
     ubigeoData,
     circunscripcionData,
@@ -27,47 +24,52 @@ function AppLayoutContent() {
     politicalOrganizations
   } = useAppData();
 
+  // Zustand store actions and state
   const {
     activeCategory,
-    setActiveCategory,
-    currentActaData,
+    currentActa,
     categoryActas,
     currentActaIndex,
-    updateCurrentActaData,
-    saveCurrentActa,
-  } = useCategoryManager();
-
-  // Get location from current acta data with default fallback
-  const getCurrentActaData = (): ActaData => {
-    return currentActaData || DEFAULT_ACTA_DATA;
-  };
+    currentTime,
+    isSettingsOpen,
+    setActiveCategory,
+    updateActaData,
+    createNewActa: createNewActaAction,
+    switchToActa,
+    updateLocation,
+    setMesaNumber,
+    setActaNumber,
+    setTotalElectores,
+    setMesaDataSaved,
+    setFormFinalized,
+    setMesaFieldsLocked,
+    setStartTime,
+    setEndTime,
+    setCurrentTime,
+    setSettingsOpen,
+    isMesaFinalized,
+  } = useElectoralActions();
 
   // Memoize the location update callback to prevent recreation
   const handleLocationUpdate = useCallback((location: SelectedLocation) => {
-    updateCurrentActaData({ selectedLocation: location });
-  }, [updateCurrentActaData]);
+    updateActaData({ selectedLocation: location });
+  }, [updateActaData]);
 
   const location = useLocationState({
-    currentActaData,
+    currentActaData: currentActa,
     onLocationUpdate: handleLocationUpdate,
   });
 
-  // Derive areMesaFieldsLocked directly from currentActaData instead of using state
-  const areMesaFieldsLocked = getCurrentActaData()?.areMesaFieldsLocked || false;
+  // Derive areMesaFieldsLocked directly from currentActa
+  const areMesaFieldsLocked = currentActa?.areMesaFieldsLocked || false;
 
   // Track which category we've auto-set circunscripción for to prevent loops
   const autoSetCircunscripcionRef = useRef<string | null>(null);
 
-  // Current time state (not persisted per category)
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
-
-  // Settings modal state
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
   // Time tracking interval - update currentTime every second
-  // Only depend on specific values, not the whole currentActaData object
-  const startTimeStr = currentActaData?.startTime;
-  const endTimeStr = currentActaData?.endTime;
+  // Only depend on specific values, not the whole currentActa object
+  const startTimeStr = currentActa?.startTime;
+  const endTimeStr = currentActa?.endTime;
 
   useEffect(() => {
     const startTime = startTimeStr ? new Date(startTimeStr) : null;
@@ -80,14 +82,14 @@ function AppLayoutContent() {
 
       return () => clearInterval(interval);
     }
-  }, [startTimeStr, endTimeStr]);
+  }, [startTimeStr, endTimeStr, setCurrentTime]);
 
   // Auto-set circunscripción electoral when category changes and data is available
   useEffect(() => {
     if (circunscripcionData.length === 0) return;
 
     const options = getCircunscripcionElectoralOptions();
-    const currentLocationData = getCurrentActaData()?.selectedLocation;
+    const currentLocationData = currentActa?.selectedLocation;
 
     // For specific categories with only one option, auto-select it (only if not already set)
     if (options.length === 1 && (activeCategory === 'presidencial' || activeCategory === 'parlamentoAndino' || activeCategory === 'senadoresNacional')) {
@@ -96,7 +98,7 @@ function AppLayoutContent() {
       if (!currentLocationData?.circunscripcionElectoral && autoSetCircunscripcionRef.current !== activeCategory) {
         autoSetCircunscripcionRef.current = activeCategory;
         // Directly update without calling location handler to avoid loop
-        updateCurrentActaData({
+        updateActaData({
           selectedLocation: {
             ...currentLocationData,
             circunscripcionElectoral: autoSelectedCirc
@@ -113,7 +115,6 @@ function AppLayoutContent() {
 
   // Handler to create a new acta
   const handleCreateNewActa = async () => {
-    const currentActa = getCurrentActaData();
     const isCurrentActaEmpty =
       currentActa.mesaNumber === 0 &&
       currentActa.actaNumber === '' &&
@@ -124,38 +125,32 @@ function AppLayoutContent() {
       return;
     }
 
-    await repository.createNewActa(activeCategory);
-    const newActaData = await repository.getActiveActa(activeCategory);
-    updateCurrentActaData(newActaData);
-
+    await createNewActaAction();
     location.setSelectedCircunscripcionElectoral('');
-    updateCurrentActaData({ areMesaFieldsLocked: false });
+    updateActaData({ areMesaFieldsLocked: false });
 
     ToastService.newActaCreated();
   };
 
   // Handler to switch to a specific acta by index
   const handleSwitchToActa = async (index: number) => {
-    await repository.saveActiveActaIndex(activeCategory, index);
-    const actaData = await repository.getActiveActa(activeCategory);
-    updateCurrentActaData(actaData);
-
-    ToastService.actaSwitched(actaData.actaNumber);
+    switchToActa(index);
+    const newActa = categoryActas[index];
+    ToastService.actaSwitched(newActa?.actaNumber || '');
   };
 
   // Get current values from acta data
-  const currentCategoryData = getCurrentActaData();
-  const activeSection = currentCategoryData?.activeSection || 'ingreso';
-  const voteLimits = currentCategoryData?.voteLimits || { preferential1: 30, preferential2: 30 };
-  const mesaNumber = currentCategoryData?.mesaNumber || 0;
-  const actaNumber = currentCategoryData?.actaNumber || '';
-  const totalElectores = currentCategoryData?.totalElectores || 0;
-  const cedulasExcedentes = currentCategoryData?.cedulasExcedentes || 0;
-  const tcv = currentCategoryData?.tcv;
-  const isFormFinalized = currentCategoryData?.isFormFinalized || false;
-  const isMesaDataSaved = currentCategoryData?.isMesaDataSaved || false;
-  const startTime = currentCategoryData?.startTime ? new Date(currentCategoryData.startTime) : null;
-  const endTime = currentCategoryData?.endTime ? new Date(currentCategoryData.endTime) : null;
+  const activeSection = currentActa?.activeSection || 'ingreso';
+  const voteLimits = currentActa?.voteLimits || { preferential1: 30, preferential2: 30 };
+  const mesaNumber = currentActa?.mesaNumber || 0;
+  const actaNumber = currentActa?.actaNumber || '';
+  const totalElectores = currentActa?.totalElectores || 0;
+  const cedulasExcedentes = currentActa?.cedulasExcedentes || 0;
+  const tcv = currentActa?.tcv;
+  const isFormFinalized = currentActa?.isFormFinalized || false;
+  const isMesaDataSaved = currentActa?.isMesaDataSaved || false;
+  const startTime = currentActa?.startTime ? new Date(currentActa.startTime) : null;
+  const endTime = currentActa?.endTime ? new Date(currentActa.endTime) : null;
 
   // Location and TEH fields should be disabled when auto-filled from mesa number, session is started, or finalized
   const areLocationFieldsDisabled = areMesaFieldsLocked || isMesaDataSaved || isFormFinalized;
@@ -180,7 +175,6 @@ function AppLayoutContent() {
   const renderSection = () => {
     const data = mockElectoralData[activeCategory];
     const preferentialConfig = PREFERENTIAL_VOTE_CONFIG[activeCategory] || { hasPreferential1: false, hasPreferential2: false };
-    const currentCategoryData = getCurrentActaData();
 
     if (activeSection === "recuento") {
       return <VoteSummaryPage
@@ -194,7 +188,7 @@ function AppLayoutContent() {
         }}
         circunscripcionElectoral={location.selectedCircunscripcionElectoral}
         totalElectores={totalElectores}
-        onBackToEntry={() => updateCurrentActaData({ activeSection: 'ingreso' })}
+        onBackToEntry={() => updateActaData({ activeSection: 'ingreso' })}
         politicalOrganizations={politicalOrganizations}
         voteLimits={voteLimits}
       />;
@@ -204,17 +198,17 @@ function AppLayoutContent() {
       key={`${activeCategory}`}
       category={activeCategory}
       categoryLabel={ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory)?.label}
-      existingEntries={currentCategoryData?.voteEntries || []}
+      existingEntries={currentActa?.voteEntries || []}
       voteLimits={voteLimits}
       preferentialConfig={preferentialConfig}
-      onEntriesChange={(entries) => updateCurrentActaData({ voteEntries: entries })}
+      onEntriesChange={(entries) => updateActaData({ voteEntries: entries })}
       mesaNumber={mesaNumber}
       actaNumber={actaNumber}
       totalElectores={totalElectores}
       cedulasExcedentes={cedulasExcedentes}
       tcv={tcv}
-      onCedulasExcedentesChange={(value) => updateCurrentActaData({ cedulasExcedentes: value })}
-      onTcvChange={(value) => updateCurrentActaData({ tcv: value })}
+      onCedulasExcedentesChange={(value) => updateActaData({ cedulasExcedentes: value })}
+      onTcvChange={(value) => updateActaData({ tcv: value })}
       selectedLocation={{
         departamento: location.selectedDepartamento,
         provincia: location.selectedProvincia,
@@ -234,6 +228,22 @@ function AppLayoutContent() {
       isInternationalLocation={isInternationalLocation}
       jeeOptions={jeeData}
       politicalOrganizations={politicalOrganizations}
+      onLoadMesaInfo={async (mesa) => {
+        await MesaDataHandler.loadMesaInfo({
+          mesa,
+          activeCategory,
+          mesaElectoralData,
+          circunscripcionData,
+          selectedJee: location.selectedJee,
+          onLocationUpdate: (updatedLocation: SelectedLocation) => {
+            // Update all location fields at once to avoid cascading resets - SYNCHRONOUS with Zustand!
+            updateActaData({ selectedLocation: updatedLocation });
+          },
+          onMesaFieldsLocked: setMesaFieldsLocked,
+          onMesaNumberUpdate: setMesaNumber,
+          onTotalElectoresUpdate: setTotalElectores
+        });
+      }}
       onMesaDataChange={async (mesa, acta, electores) => {
         const categoryLabel = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory)?.label || 'este tipo de elección';
 
@@ -243,38 +253,30 @@ function AppLayoutContent() {
           electores,
           activeCategory,
           categoryLabel,
-          repository,
-          mesaElectoralData,
-          circunscripcionData,
-          selectedJee: location.selectedJee,
-          onLocationUpdate: (updatedLocation: SelectedLocation) => {
-            location.handleDepartamentoChange(updatedLocation.departamento);
-            location.handleProvinciaChange(updatedLocation.provincia);
-            location.handleDistritoChange(updatedLocation.distrito);
-            location.setSelectedCircunscripcionElectoral(updatedLocation.circunscripcionElectoral);
-          },
-          onMesaFieldsLocked: (locked: boolean) => updateCurrentActaData({ areMesaFieldsLocked: locked }),
-          updateActaData: updateCurrentActaData
+          updateActaData: updateActaData
         });
       }}
       isFormFinalized={isFormFinalized}
-      onFormFinalizedChange={(finalized) => updateCurrentActaData({ isFormFinalized: finalized })}
+      onFormFinalizedChange={setFormFinalized}
       isMesaDataSaved={isMesaDataSaved}
-      onMesaDataSavedChange={(saved) => updateCurrentActaData({ isMesaDataSaved: saved })}
+      onMesaDataSavedChange={setMesaDataSaved}
       areMesaFieldsLocked={areMesaFieldsLocked}
       startTime={startTime}
       endTime={endTime}
       currentTime={currentTime}
-      onStartTimeChange={(time) => updateCurrentActaData({ startTime: time?.toISOString() || null })}
-      onEndTimeChange={(time) => updateCurrentActaData({ endTime: time?.toISOString() || null })}
+      onStartTimeChange={setStartTime}
+      onEndTimeChange={setEndTime}
       onCurrentTimeChange={setCurrentTime}
-      onViewSummary={() => updateCurrentActaData({ activeSection: 'recuento' })}
+      onViewSummary={() => updateActaData({ activeSection: 'recuento' })}
       onCreateNewActa={handleCreateNewActa}
       onSwitchToActa={handleSwitchToActa}
       categoryActas={categoryActas}
       currentActaIndex={currentActaIndex}
-      isMesaAlreadyFinalized={(mesaNumber) => repository.isMesaFinalized(mesaNumber, activeCategory)}
-      onSaveActa={saveCurrentActa}
+      isMesaAlreadyFinalized={(mesaNumber) => isMesaFinalized(mesaNumber, activeCategory)}
+      onSaveActa={async () => {
+        // With Zustand, state is already saved synchronously, no need for explicit save
+        console.log('[AppContainer] onSaveActa called - state already persisted');
+      }}
     />;
   };
 
@@ -288,15 +290,11 @@ function AppLayoutContent() {
         areLocationFieldsDisabled={areLocationFieldsDisabled}
         showLocationDropdowns={showLocationDropdowns}
         onCategoryChange={async (newCategory) => {
-          setActiveCategory(newCategory);
-          const newCategoryData = await repository.getActiveActa(newCategory);
-          if (newCategoryData.activeSection !== 'recuento') {
-            await repository.saveActiveActa(newCategory, { ...newCategoryData, activeSection: 'recuento' });
-          }
+          await setActiveCategory(newCategory);
         }}
-        onSectionChange={(section) => updateCurrentActaData({ activeSection: section })}
+        onSectionChange={(section) => updateActaData({ activeSection: section })}
         onCircunscripcionChange={location.handleCircunscripcionElectoralChange}
-        onSettingsClick={() => setIsSettingsOpen(true)}
+        onSettingsClick={() => setSettingsOpen(true)}
       />
 
       <main className="w-full px-4 sm:px-6 lg:px-8 py-4">
@@ -307,7 +305,7 @@ function AppLayoutContent() {
 
       <SettingsModal
         open={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
+        onOpenChange={setSettingsOpen}
         category={activeCategory}
         currentCircunscripcionElectoral={location.selectedCircunscripcionElectoral}
         politicalOrganizations={politicalOrganizations}

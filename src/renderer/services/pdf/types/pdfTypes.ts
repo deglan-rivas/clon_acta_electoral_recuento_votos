@@ -26,6 +26,7 @@ export interface BaseElectoralPdfData {
   selectedLocation: SelectedLocation;
   startTime: Date | null;
   endTime: Date;
+  isInternationalLocation?: boolean; // Flag to determine if using EXTRANJERO templates
 }
 
 /**

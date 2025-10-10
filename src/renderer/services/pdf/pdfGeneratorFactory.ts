@@ -7,6 +7,7 @@ import type {
 } from './types/pdfTypes';
 import {
   PDF_TEMPLATES,
+  PDF_TEMPLATES_EXTRANJERO,
   PRESIDENCIAL_LAYOUT,
   SENADORES_NACIONAL_LAYOUT,
   SENATORS_COUNT,
@@ -21,6 +22,24 @@ import {
   PartyVotesRenderer,
   PreferentialTableRenderer
 } from './rendering/renderPhases';
+
+/**
+ * Gets the appropriate PDF template path based on election type and location
+ *
+ * @param electionType - Type of election
+ * @param isInternational - Whether the acta is for international (EXTRANJERO) location
+ * @returns Template path for the PDF
+ */
+function getTemplatePath(electionType: ElectionType, isInternational: boolean = false): string {
+  const templates = isInternational ? PDF_TEMPLATES_EXTRANJERO : PDF_TEMPLATES;
+  const templatePath = templates[electionType];
+
+  console.log('[getTemplatePath] Election Type:', electionType);
+  console.log('[getTemplatePath] Is International:', isInternational);
+  console.log('[getTemplatePath] Selected Template:', templatePath);
+
+  return templatePath;
+}
 
 /**
  * Registry of election type configurations
@@ -112,6 +131,10 @@ export async function generatePdfByElectionType(
   data: BaseElectoralPdfData,
   usePipeline: boolean = true
 ): Promise<void> {
+  console.log('[generatePdfByElectionType] Starting PDF generation');
+  console.log('[generatePdfByElectionType] Election Type:', electionType);
+  console.log('[generatePdfByElectionType] isInternationalLocation from data:', data.isInternationalLocation);
+
   const baseConfig = ELECTION_CONFIGS[electionType];
 
   if (!baseConfig.layoutConfig) {
@@ -121,7 +144,19 @@ export async function generatePdfByElectionType(
     );
   }
 
-  const config: PdfGeneratorConfig = baseConfig as PdfGeneratorConfig;
+  // Determine which template to use based on location type
+  const isInternational = data.isInternationalLocation || false;
+  console.log('[generatePdfByElectionType] isInternational (after default):', isInternational);
+
+  const templatePath = getTemplatePath(electionType, isInternational);
+
+  // Create config with appropriate template path
+  const config: PdfGeneratorConfig = {
+    ...baseConfig,
+    templatePath,
+  } as PdfGeneratorConfig;
+
+  console.log('[generatePdfByElectionType] Final config templatePath:', config.templatePath);
 
   // Validate configuration (throws if invalid)
   validatePdfGeneratorConfig(config);
