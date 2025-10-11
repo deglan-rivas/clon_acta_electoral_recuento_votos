@@ -12,7 +12,8 @@ import {
   type VoteLimits,
   type PreferentialConfig,
   type SelectedLocation,
-  type MesaElectoralInfo
+  type MesaElectoralInfo,
+  type JeeRecord
 } from "../types";
 import { type PoliticalOrganization } from "../types";
 import { useActaRepository } from "../hooks/useActaRepository";
@@ -49,7 +50,7 @@ interface VoteEntryPageProps {
   getProvincias: (departamento: string) => string[];
   getDistritos: (departamento: string, provincia: string) => string[];
   isInternationalLocation: boolean;
-  jeeOptions: string[];
+  jeeOptions: JeeRecord[];
   mesaElectoralInfo?: MesaElectoralInfo | null;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
@@ -68,7 +69,7 @@ interface VoteEntryPageProps {
   categoryActas?: any[];
   currentActaIndex?: number;
   politicalOrganizations: PoliticalOrganization[];
-  isMesaAlreadyFinalized?: (mesaNumber: number) => Promise<boolean>;
+  isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
   onSaveActa?: () => Promise<void>;
 }
 
@@ -211,12 +212,25 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
+    // Validate TCV matches entries when TCV is loaded from repository
+    // If TCV is null, it's bound to entries.length (no validation needed)
+    // If TCV has a value, it was loaded from another category, so entries must match
+    if (tcv !== null && entries.length !== tcv) {
+      ToastService.error(
+        `El número de votos ingresados ${entries.length} no coincide con el TCV esperado ${tcv}.`,
+        '550px',
+        5000
+      );
+      return;
+    }
+
     // Show confirmation dialog
     const confirmed = window.confirm(
       `¿Está seguro que desea finalizar el acta?\n\n` +
       `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
       `Acta: ${actaNumber}\n` +
-      `Total de votos: ${entries.length}\n\n` +
+      `Total de votos: ${entries.length}\n` +
+      `TCV: ${tcv !== null ? tcv : entries.length}\n\n` +
       `Una vez finalizada, no podrá realizar más cambios.`
     );
 
@@ -312,6 +326,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 isFormFinalized={isFormFinalized}
                 categoryActas={categoryActas}
                 currentActaIndex={currentActaIndex}
+                activeCategory={category}
                 categoryColors={categoryColors}
                 jeeOptions={jeeOptions}
                 getDepartamentos={getDepartamentos}

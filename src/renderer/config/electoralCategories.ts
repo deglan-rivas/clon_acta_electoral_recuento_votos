@@ -3,17 +3,18 @@ import { Crown, Building2, Users, Vote, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface ElectoralCategory {
+  id: string;
   key: string;
   label: string;
   icon: LucideIcon;
 }
 
 export const ELECTORAL_CATEGORIES: ElectoralCategory[] = [
-  { key: "presidencial", label: "Presidencial", icon: Crown },
-  { key: "senadoresNacional", label: "Senadores Nacional", icon: Building2 },
-  { key: "senadoresRegional", label: "Senadores Regional", icon: Users },
-  { key: "diputados", label: "Diputados", icon: Vote },
-  { key: "parlamentoAndino", label: "Parlamento Andino", icon: Globe },
+  { id: "A", key: "presidencial", label: "Presidencial", icon: Crown },
+  { id: "B", key: "senadoresNacional", label: "Senadores Nacional", icon: Building2 },
+  { id: "C", key: "senadoresRegional", label: "Senadores Regional", icon: Users },
+  { id: "D", key: "diputados", label: "Diputados", icon: Vote },
+  { id: "E", key: "parlamentoAndino", label: "Parlamento Andino", icon: Globe },
 ];
 
 export const PREFERENTIAL_VOTE_CONFIG: Record<string, { hasPreferential1: boolean; hasPreferential2: boolean }> = {

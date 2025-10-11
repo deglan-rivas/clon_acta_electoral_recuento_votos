@@ -139,7 +139,7 @@ export function validateLayoutConfig(layout: LayoutConfig, layoutName: string = 
   ];
 
   requiredFields.forEach(fieldName => {
-    validateFieldConfig(fieldName, layout.fields[fieldName], layoutName);
+    validateFieldConfig(fieldName, layout.fields[fieldName as keyof typeof layout.fields], layoutName);
   });
 
   // Validate coordinate ranges

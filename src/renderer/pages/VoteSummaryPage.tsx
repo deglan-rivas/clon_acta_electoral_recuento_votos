@@ -19,7 +19,6 @@ interface VoteSummaryPageProps {
   };
   circunscripcionElectoral?: string;
   totalElectores?: number;
-  onBackToEntry: () => void;
   politicalOrganizations: PoliticalOrganization[];
   voteLimits?: {
     preferential1: number;
@@ -31,7 +30,6 @@ export function VoteSummaryPage({
   category,
   circunscripcionElectoral,
   totalElectores = 0,
-  onBackToEntry,
   politicalOrganizations,
   voteLimits,
 }: VoteSummaryPageProps) {

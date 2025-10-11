@@ -24,6 +24,9 @@ export interface LoadMesaInfoParams {
   onMesaFieldsLocked: (locked: boolean) => void;
   onMesaNumberUpdate: (mesa: number) => void;
   onTotalElectoresUpdate: (teh: number) => void;
+  onTcvUpdate: (tcv: number | null) => void;
+  onCedulasExcedentesUpdate: (cedulasExcedentes: number) => void;
+  actaRepository?: any; // Repository to check for existing TCV and CedulasExcedentes values
 }
 
 export class MesaDataHandler {
@@ -35,14 +38,16 @@ export class MesaDataHandler {
     const {
       mesa,
       activeCategory,
-      repository,
       mesaElectoralData,
       circunscripcionData,
       selectedJee,
       onLocationUpdate,
       onMesaFieldsLocked,
       onMesaNumberUpdate,
-      onTotalElectoresUpdate
+      onTotalElectoresUpdate,
+      onTcvUpdate,
+      onCedulasExcedentesUpdate,
+      actaRepository
     } = params;
 
     console.log('[MesaDataHandler.loadMesaInfo] Called with mesa:', mesa);
@@ -51,7 +56,7 @@ export class MesaDataHandler {
     console.log('[MesaDataHandler.loadMesaInfo] Calling onMesaNumberUpdate with:', mesa);
     onMesaNumberUpdate(mesa);
 
-    // Look up mesa electoral data
+    // Look up mesa electoral data from CSV
     const mesaInfo = GeographicDataService.getMesaElectoralInfo(mesa.toString(), mesaElectoralData);
 
     if (mesaInfo) {
@@ -100,9 +105,57 @@ export class MesaDataHandler {
       console.log('[MesaDataHandler.loadMesaInfo] Calling onMesaFieldsLocked with: true');
       onMesaFieldsLocked(true);
 
+      // Check if TCV exists in repository for this mesa in another category
+      // CSV is not bounded to entries size, but if mesa is not in repository, TCV will be null (bound to entries.length)
+      if (actaRepository) {
+        try {
+          const tcvFromRepository = await actaRepository.findTcvByMesa(mesa, activeCategory);
+          console.log('[MesaDataHandler.loadMesaInfo] TCV from repository:', tcvFromRepository);
+
+          if (tcvFromRepository !== null) {
+            // Mesa found in another category - use that TCV value
+            console.log('[MesaDataHandler.loadMesaInfo] Setting TCV from repository:', tcvFromRepository);
+            onTcvUpdate(tcvFromRepository);
+          } else {
+            // Mesa not found in repository - TCV will remain null (bound to entries.length)
+            console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, TCV will be bound to entries.length');
+            onTcvUpdate(null);
+          }
+        } catch (error) {
+          console.error('[MesaDataHandler.loadMesaInfo] Error loading TCV from repository:', error);
+          onTcvUpdate(null);
+        }
+
+        // Check if CedulasExcedentes exists in repository for this mesa in another category
+        try {
+          const cedulasExcedentesFromRepository = await actaRepository.findCedulasExcedentesByMesa(mesa, activeCategory);
+          console.log('[MesaDataHandler.loadMesaInfo] CedulasExcedentes from repository:', cedulasExcedentesFromRepository);
+
+          if (cedulasExcedentesFromRepository !== null) {
+            // Mesa found in another category - use that CedulasExcedentes value
+            console.log('[MesaDataHandler.loadMesaInfo] Setting CedulasExcedentes from repository:', cedulasExcedentesFromRepository);
+            onCedulasExcedentesUpdate(cedulasExcedentesFromRepository);
+          } else {
+            // Mesa not found in repository - CedulasExcedentes defaults to 0
+            console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, CedulasExcedentes defaults to 0');
+            onCedulasExcedentesUpdate(0);
+          }
+        } catch (error) {
+          console.error('[MesaDataHandler.loadMesaInfo] Error loading CedulasExcedentes from repository:', error);
+          onCedulasExcedentesUpdate(0);
+        }
+      } else {
+        // No repository provided - defaults
+        onTcvUpdate(null);
+        onCedulasExcedentesUpdate(0);
+      }
+
       ToastService.success(`Datos de mesa ${mesa.toString().padStart(6, '0')} cargados`, '400px', 2000);
     } else {
       ToastService.mesaNotFound(mesa);
+      // Mesa not found in CSV - defaults
+      onTcvUpdate(null);
+      onCedulasExcedentesUpdate(0);
     }
   }
 
@@ -116,16 +169,13 @@ export class MesaDataHandler {
       mesa,
       acta,
       electores,
-      activeCategory,
-      categoryLabel,
       updateActaData
     } = params;
 
     console.log('[MesaDataHandler.handleMesaDataChange] Called with:', {
       mesa,
       acta,
-      electores,
-      activeCategory
+      electores
     });
 
     // Note: Mesa finalization check is now done in ActaHeaderPanel

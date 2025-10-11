@@ -2,7 +2,6 @@
 // This replaces the updateActaData pattern with synchronous store updates
 
 import { useElectoralStore } from '../store/electoralStore';
-import type { ActaData, SelectedLocation } from '../types/acta.types';
 
 export function useElectoralActions() {
   const store = useElectoralStore();
@@ -34,7 +33,7 @@ export function useElectoralActions() {
     setActaNumber: store.setActaNumber,
     setTotalElectores: store.setTotalElectores,
     setCedulasExcedentes: store.setCedulasExcedentes,
-    setTcv: store.setTcv,
+    setTcv: store.setTcv, // Used to set TCV from repository or clear it
 
     // Session
     setMesaDataSaved: store.setMesaDataSaved,

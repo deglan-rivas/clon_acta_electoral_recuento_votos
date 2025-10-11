@@ -7,9 +7,9 @@ import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { ChevronDown, RefreshCw, FileCheck } from "lucide-react";
-import type { CategoryColors } from "../../types/acta.types";
+import type { CategoryColors, JeeRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
-import { useActaNumberInput } from "../../hooks/useActaNumberInput";
+import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
 
 interface ActaHeaderPanelProps {
   // Mesa data
@@ -37,11 +37,12 @@ interface ActaHeaderPanelProps {
   categoryActas?: any[];
   currentActaIndex?: number;
 
-  // Category styling
+  // Category info
+  activeCategory: string; // For generating acta number with category ID
   categoryColors: CategoryColors;
 
   // Location options
-  jeeOptions: string[];
+  jeeOptions: JeeRecord[];
   getDepartamentos: () => string[];
   getProvincias: (departamento: string) => string[];
   getDistritos: (departamento: string, provincia: string) => string[];
@@ -58,7 +59,7 @@ interface ActaHeaderPanelProps {
   onVerActa: () => void;
   onCreateNewActa?: () => void;
   onSwitchToActa?: (index: number) => void;
-  isMesaAlreadyFinalized?: (mesaNumber: number) => Promise<boolean>;
+  isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
 }
 
 export function ActaHeaderPanel({
@@ -74,6 +75,7 @@ export function ActaHeaderPanel({
   isFormFinalized,
   categoryActas = [],
   currentActaIndex = 0,
+  activeCategory,
   categoryColors,
   jeeOptions,
   getDepartamentos,
@@ -102,15 +104,16 @@ export function ActaHeaderPanel({
   const actaDropdownRef = useRef<HTMLDivElement>(null);
   const actaInputRef = useRef<HTMLInputElement>(null);
 
-  // Acta number input handlers
-  const actaInputHandlers = useActaNumberInput({
-    localActaNumber,
-    setLocalActaNumber,
-    setLocalMesaNumber
-  });
+  // Acta number input handlers - COMMENTED OUT: Acta number is now auto-generated
+  // const actaInputHandlers = useActaNumberInput({
+  //   localActaNumber,
+  //   setLocalActaNumber,
+  //   setLocalMesaNumber
+  // });
 
-  // Ref to track previous mesa number without causing re-renders
+  // Refs to track previous values without causing re-renders
   const prevMesaNumberRef = useRef<string>('');
+  const prevJeeRef = useRef<string>('');
 
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized;
@@ -118,7 +121,9 @@ export function ActaHeaderPanel({
   // Update local state when parent values change
   useEffect(() => {
     const prevMesaNumber = prevMesaNumberRef.current;
+    const prevJee = prevJeeRef.current;
     const newMesaNumber = mesaNumber > 0 ? mesaNumber.toString().padStart(6, '0') : '';
+    const currentJee = selectedLocation.jee;
 
     console.log('[ActaHeaderPanel useEffect] Debug info:', {
       prevMesaNumber,
@@ -126,30 +131,69 @@ export function ActaHeaderPanel({
       mesaNumber,
       actaNumber,
       localActaNumber,
-      condition1_length: newMesaNumber.length === 6,
-      condition2_changed: newMesaNumber !== prevMesaNumber,
-      condition3_emptyActa: !actaNumber,
-      allConditionsMet: newMesaNumber.length === 6 && newMesaNumber !== prevMesaNumber && !actaNumber
+      prevJee,
+      currentJee,
+      jeeChanged: currentJee !== prevJee,
+      mesaChanged: newMesaNumber !== prevMesaNumber
     });
 
     setLocalMesaNumber(newMesaNumber);
     setLocalTotalElectores(totalElectores);
 
-    // If mesa number was updated from parent and it's a valid 6-digit number,
-    // auto-generate acta number prefix (only if acta is empty)
-    if (newMesaNumber.length === 6 && newMesaNumber !== prevMesaNumber && !actaNumber) {
-      const newActaNumber = newMesaNumber + '-';
-      console.log('[ActaHeaderPanel] Auto-generating acta number:', newActaNumber);
+    // Auto-generate acta number when:
+    // 1. Mesa number is valid (6 digits)
+    // 2. Either mesa number OR JEE changed
+    // 3. Acta number is not already set
+    const shouldGenerateActa = newMesaNumber.length === 6 &&
+                              (newMesaNumber !== prevMesaNumber || currentJee !== prevJee) &&
+                              !actaNumber;
+
+    console.log('[ActaHeaderPanel] Acta number generation check:', {
+      newMesaNumberLength: newMesaNumber.length,
+      prevMesaNumber,
+      newMesaNumber,
+      prevJee,
+      currentJee,
+      actaNumber,
+      selectedJee: selectedLocation.jee,
+      activeCategory,
+      jeeOptionsCount: jeeOptions.length,
+      shouldGenerateActa
+    });
+
+    if (shouldGenerateActa) {
+      // Find the JEE ID from the selected JEE name
+      const selectedJeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
+      const jeeId = selectedJeeRecord?.id || '';
+
+      console.log('[ActaHeaderPanel] Finding JEE:', {
+        searchingFor: selectedLocation.jee,
+        foundRecord: selectedJeeRecord,
+        jeeId,
+        allJeeOptions: jeeOptions
+      });
+
+      // Find the category ID
+      const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
+      const categoryId = categoryRecord?.id || '';
+
+      console.log('[ActaHeaderPanel] Finding Category:', {
+        searchingFor: activeCategory,
+        foundRecord: categoryRecord,
+        categoryId,
+        allCategories: ELECTORAL_CATEGORIES
+      });
+
+      // Generate acta number: mesaNumber-jeeId-categoryId
+      const newActaNumber = `${newMesaNumber}-${jeeId}-${categoryId}`;
+      console.log('[ActaHeaderPanel] Auto-generating acta number:', {
+        newActaNumber,
+        parts: { mesaNumber: newMesaNumber, jeeId, categoryId }
+      });
       setLocalActaNumber(newActaNumber);
 
-      // Focus on acta input after a short delay
-      setTimeout(() => {
-        actaInputRef.current?.focus();
-        const input = actaInputRef.current;
-        if (input) {
-          input.setSelectionRange(input.value.length, input.value.length);
-        }
-      }, 100);
+      // Update refs
+      prevJeeRef.current = currentJee;
     } else {
       // Only sync from parent if we're not auto-generating
       console.log('[ActaHeaderPanel] Syncing from parent actaNumber:', actaNumber);
@@ -158,7 +202,7 @@ export function ActaHeaderPanel({
 
     // Update ref for next comparison
     prevMesaNumberRef.current = newMesaNumber;
-  }, [mesaNumber, actaNumber, totalElectores]);
+  }, [mesaNumber, actaNumber, totalElectores, jeeOptions, selectedLocation.jee, activeCategory]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -215,7 +259,7 @@ export function ActaHeaderPanel({
     }
 
     // Check if mesa is already finalized
-    if (isMesaAlreadyFinalized && await isMesaAlreadyFinalized(mesaNum)) {
+    if (isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
       ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada en esta categoría`, '450px', 4000);
       return;
     }
@@ -325,9 +369,9 @@ export function ActaHeaderPanel({
                     type="text"
                     maxLength={11}
                     value={localActaNumber}
-                    onKeyDown={actaInputHandlers.handleKeyDown}
-                    onChange={actaInputHandlers.handleChange}
-                    className="max-w-32 px-0.5 pr-8 text-center font-semibold"
+                    readOnly
+                    disabled
+                    className="max-w-32 px-0.5 pr-8 text-center font-semibold bg-gray-200 cursor-not-allowed"
                   />
                   <button
                     type="button"
@@ -343,7 +387,8 @@ export function ActaHeaderPanel({
                       <div className="py-1">
                         {categoryActas
                           .filter((acta, index) => {
-                            if (index === currentActaIndex && !acta.actaNumber && acta.mesaNumber === 0) {
+                            // Exclude the currently active/editing acta
+                            if (index === currentActaIndex) {
                               return false;
                             }
                             return true;
@@ -360,13 +405,11 @@ export function ActaHeaderPanel({
                                   }
                                   setShowActaDropdown(false);
                                 }}
-                                className={`w-full px-4 py-2 text-left text-sm hover:bg-blue-50 transition-colors ${
-                                  index === currentActaIndex ? 'bg-blue-100 font-semibold' : ''
-                                }`}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-blue-50 transition-colors"
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="font-medium">
-                                    {acta.actaNumber || (index === currentActaIndex ? '' : 'Sin número')}
+                                    {acta.actaNumber || 'Sin número'}
                                   </span>
                                   {acta.isFormFinalized && (
                                     <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded">
@@ -396,8 +439,8 @@ export function ActaHeaderPanel({
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jeeOptions.map((jee) => (
-                      <SelectItem key={jee} value={jee}>{jee}</SelectItem>
+                    {jeeOptions.map((jeeRecord) => (
+                      <SelectItem key={jeeRecord.id} value={jeeRecord.jee}>{jeeRecord.jee}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

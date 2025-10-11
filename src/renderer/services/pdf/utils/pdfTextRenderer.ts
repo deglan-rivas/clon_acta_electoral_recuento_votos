@@ -8,11 +8,15 @@ import { PDF_COLORS } from '../../../config/pdfTemplateConstants';
  * Handles text rendering operations on PDF pages
  */
 export class PdfTextRenderer {
-  constructor(
-    private page: PDFPage,
-    private font: PDFFont,
-    private defaultColor: RGB = PDF_COLORS.black
-  ) {}
+  private page: PDFPage;
+  private font: PDFFont;
+  private defaultColor: RGB;
+
+  constructor(page: PDFPage, font: PDFFont, defaultColor: RGB = PDF_COLORS.black) {
+    this.page = page;
+    this.font = font;
+    this.defaultColor = defaultColor;
+  }
 
   /**
    * Draws a single text item on the PDF page

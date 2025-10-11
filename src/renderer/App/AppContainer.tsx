@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { VoteSummaryPage } from "../pages/VoteSummaryPage";
 import { VoteEntryPage } from "../pages/VoteEntryPage";
 import { mockElectoralData } from "../mocks/electoralData";
@@ -7,6 +7,7 @@ import { AppHeader } from "./AppHeader";
 import { AppDataProvider, useAppData } from "../providers/AppDataProvider";
 import { useLocationState } from "../hooks/useLocationState";
 import { useElectoralActions } from "../hooks/useElectoralActions";
+import { useActaRepository } from "../hooks/useActaRepository";
 import { Toaster } from "../components/ui/sonner";
 import type { SelectedLocation } from "../types/acta.types";
 import { ELECTORAL_CATEGORIES, PREFERENTIAL_VOTE_CONFIG } from "../config/electoralCategories";
@@ -24,6 +25,9 @@ function AppLayoutContent() {
     politicalOrganizations
   } = useAppData();
 
+  // Repository for accessing stored actas
+  const actaRepository = useActaRepository();
+
   // Zustand store actions and state
   const {
     activeCategory,
@@ -36,10 +40,10 @@ function AppLayoutContent() {
     updateActaData,
     createNewActa: createNewActaAction,
     switchToActa,
-    updateLocation,
     setMesaNumber,
-    setActaNumber,
     setTotalElectores,
+    setTcv,
+    setCedulasExcedentes,
     setMesaDataSaved,
     setFormFinalized,
     setMesaFieldsLocked,
@@ -188,7 +192,6 @@ function AppLayoutContent() {
         }}
         circunscripcionElectoral={location.selectedCircunscripcionElectoral}
         totalElectores={totalElectores}
-        onBackToEntry={() => updateActaData({ activeSection: 'ingreso' })}
         politicalOrganizations={politicalOrganizations}
         voteLimits={voteLimits}
       />;
@@ -241,7 +244,10 @@ function AppLayoutContent() {
           },
           onMesaFieldsLocked: setMesaFieldsLocked,
           onMesaNumberUpdate: setMesaNumber,
-          onTotalElectoresUpdate: setTotalElectores
+          onTotalElectoresUpdate: setTotalElectores,
+          onTcvUpdate: setTcv,
+          onCedulasExcedentesUpdate: setCedulasExcedentes,
+          actaRepository: actaRepository
         });
       }}
       onMesaDataChange={async (mesa, acta, electores) => {

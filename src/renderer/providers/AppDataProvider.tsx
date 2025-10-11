@@ -4,6 +4,7 @@ import { CsvDataService } from "../services/data/csvDataService";
 import type {
   UbigeoRecord,
   CircunscripcionRecord,
+  JeeRecord,
   MesaElectoralRecord
 } from "../types/acta.types";
 import type { PoliticalOrganization } from "../types";
@@ -11,7 +12,7 @@ import type { PoliticalOrganization } from "../types";
 interface AppDataContextType {
   ubigeoData: UbigeoRecord[];
   circunscripcionData: CircunscripcionRecord[];
-  jeeData: string[];
+  jeeData: JeeRecord[];
   mesaElectoralData: MesaElectoralRecord[];
   politicalOrganizations: PoliticalOrganization[];
   isLoading: boolean;
@@ -22,7 +23,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [ubigeoData, setUbigeoData] = useState<UbigeoRecord[]>([]);
   const [circunscripcionData, setCircunscripcionData] = useState<CircunscripcionRecord[]>([]);
-  const [jeeData, setJeeData] = useState<string[]>([]);
+  const [jeeData, setJeeData] = useState<JeeRecord[]>([]);
   const [mesaElectoralData, setMesaElectoralData] = useState<MesaElectoralRecord[]>([]);
   const [politicalOrganizations, setPoliticalOrganizations] = useState<PoliticalOrganization[]>([]);
   const [isLoading, setIsLoading] = useState(true);

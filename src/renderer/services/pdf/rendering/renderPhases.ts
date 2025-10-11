@@ -67,11 +67,14 @@ export class PartyVotesRenderer implements RenderPhase {
  */
 export class PreferentialTableRenderer implements RenderPhase {
   name = 'PreferentialTable';
+  private candidateCount: number;
 
-  constructor(private candidateCount: number) {}
+  constructor(candidateCount: number) {
+    this.candidateCount = candidateCount;
+  }
 
   render(context: RenderContext): void {
-    const { page, renderer, data, voteData, layoutConfig, pageHeight } = context;
+    const { renderer, data, voteData, layoutConfig, pageHeight } = context;
     const { politicalOrganizations, selectedOrganizationKeys } = data;
     const { matrix } = voteData;
     const { preferentialTable } = layoutConfig;
@@ -91,7 +94,7 @@ export class PreferentialTableRenderer implements RenderPhase {
       if (!isBlancoOrNulo) {
         if (tableY < 50) return; // Stop if we're at the bottom of the page
 
-        const totalXPos = preferentialTable.startX + (this.candidateCount * preferentialTable.cellWidth);
+        const totalXPos = preferentialTable.startX + (this.candidateCount * preferentialTable.cellWidth) + 5;
 
         if (isSelected && matrix && matrix[partyKey]) {
           const partyMatrix = matrix[partyKey];
@@ -100,9 +103,11 @@ export class PreferentialTableRenderer implements RenderPhase {
           // Draw counts for each candidate
           for (let i = 1; i <= this.candidateCount; i++) {
             const count = partyMatrix[i] || 0;
+            const countStr = `${count}`;
+            const xOffset = countStr.length === 2 ? 5 : 0;
             renderer.drawText({
-              texto: `${count}`,
-              x: preferentialTable.startX + ((i - 1) * preferentialTable.cellWidth),
+              texto: countStr,
+              x: preferentialTable.startX + ((i - 1) * preferentialTable.cellWidth) - xOffset,
               y: tableY,
               size: preferentialTable.fontSize
             }, PDF_COLORS.black);
@@ -110,9 +115,11 @@ export class PreferentialTableRenderer implements RenderPhase {
           }
 
           // Draw row total
+          const horizontalSumStr = `${horizontalSum}`;
+          const xOffsetSum = horizontalSumStr.length === 2 ? 5 : 0;
           renderer.drawText({
-            texto: `${horizontalSum}`,
-            x: totalXPos,
+            texto: horizontalSumStr,
+            x: totalXPos - xOffsetSum,
             y: tableY,
             size: preferentialTable.fontSize
           }, PDF_COLORS.black);

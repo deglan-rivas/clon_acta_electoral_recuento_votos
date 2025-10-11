@@ -85,6 +85,11 @@ export interface CircunscripcionRecord {
   circunscripcion_electoral: string;
 }
 
+export interface JeeRecord {
+  id: string;
+  jee: string;
+}
+
 export interface MesaElectoralRecord {
   mesa_number: string;
   tipo_ubicacion: string;

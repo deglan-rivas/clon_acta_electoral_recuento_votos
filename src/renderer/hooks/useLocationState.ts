@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import type { SelectedLocation } from "../types/acta.types";
 import type { ActaData } from "../types/acta.types";
 

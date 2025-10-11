@@ -1,6 +1,6 @@
 // Hook for loading political organizations based on circumscription
 
-import { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { type PoliticalOrganization } from '../types';
 import { useActaRepository } from './useActaRepository';
 import { getBlancoNuloKeys } from '../utils/organizationUtils';

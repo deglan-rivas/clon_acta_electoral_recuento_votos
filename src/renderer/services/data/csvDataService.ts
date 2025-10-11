@@ -1,5 +1,5 @@
 // Service for loading CSV data files
-import type { UbigeoRecord, CircunscripcionRecord, MesaElectoralRecord } from '../../types/acta.types';
+import type { UbigeoRecord, CircunscripcionRecord, JeeRecord, MesaElectoralRecord } from '../../types/acta.types';
 import type { PoliticalOrganization } from '../../types';
 
 // CSV file imports
@@ -67,16 +67,26 @@ export class CsvDataService {
 
   /**
    * Load JEE (Jurados Electorales Especiales) data
+   * CSV format: id;jee
    */
-  static async loadJeeData(): Promise<string[]> {
+  static async loadJeeData(): Promise<JeeRecord[]> {
     try {
       const response = await fetch(jeeCsvFile);
       const text = await response.text();
       const lines = text.split('\n').slice(1); // Skip header
-      const jeeList = lines
+      const jeeRecords: JeeRecord[] = lines
         .filter(line => line.trim())
-        .map(line => line.trim());
-      return jeeList.sort();
+        .map(line => {
+          const [id, jee] = line.split(';');
+          return {
+            id: id?.trim() || '',
+            jee: jee?.trim() || ''
+          };
+        })
+        .filter(record => record.id && record.jee); // Remove entries with missing id or jee
+
+      // Sort by jee name
+      return jeeRecords.sort((a, b) => a.jee.localeCompare(b.jee));
     } catch (error) {
       console.error('Error loading JEE data:', error);
       return [];

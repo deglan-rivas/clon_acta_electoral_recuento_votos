@@ -2,7 +2,6 @@
 
 import type {
   TextItem,
-  PartyLabel,
   PartyLabels,
   LayoutConfig,
   BaseElectoralPdfData,
@@ -16,10 +15,13 @@ import { formatMesaNumber } from '../../../config/pdfTemplateConstants';
  * Maps PDF fields to text items with coordinates
  */
 export class PdfFieldMapper {
-  constructor(
-    private layout: LayoutConfig,
-    private pageHeight: number
-  ) {}
+  private layout: LayoutConfig;
+  private pageHeight: number;
+
+  constructor(layout: LayoutConfig, pageHeight: number) {
+    this.layout = layout;
+    this.pageHeight = pageHeight;
+  }
 
   /**
    * Maps common fields present in all electoral PDFs

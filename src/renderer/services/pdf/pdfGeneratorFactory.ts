@@ -121,15 +121,14 @@ function createRenderingPipeline(electionType: ElectionType): PdfRenderingPipeli
 
 /**
  * Generates a PDF for any election type using the factory pattern
+ * Uses the pipeline rendering approach for modular, reusable rendering
  *
  * @param electionType - Type of election
  * @param data - Electoral data
- * @param usePipeline - Whether to use pipeline pattern (default: true)
  */
 export async function generatePdfByElectionType(
   electionType: ElectionType,
-  data: BaseElectoralPdfData,
-  usePipeline: boolean = true
+  data: BaseElectoralPdfData
 ): Promise<void> {
   console.log('[generatePdfByElectionType] Starting PDF generation');
   console.log('[generatePdfByElectionType] Election Type:', electionType);
@@ -162,14 +161,9 @@ export async function generatePdfByElectionType(
   validatePdfGeneratorConfig(config);
 
   const voteCalculationFn = createVoteCalculationFn(electionType);
+  const pipeline = createRenderingPipeline(electionType);
 
-  if (usePipeline) {
-    const pipeline = createRenderingPipeline(electionType);
-    await generateElectoralPdf(data, config, voteCalculationFn, pipeline);
-  } else {
-    // Legacy mode without pipeline
-    await generateElectoralPdf(data, config, voteCalculationFn);
-  }
+  await generateElectoralPdf(data, config, voteCalculationFn, pipeline);
 }
 
 /**

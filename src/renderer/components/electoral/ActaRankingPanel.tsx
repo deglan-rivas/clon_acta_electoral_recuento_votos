@@ -2,7 +2,6 @@
 // Always visible, shows empty state when no votes
 
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../ui/badge";
 import type { VoteEntry, CategoryColors } from "../../types/acta.types";
 import type { PoliticalOrganization } from "../../types/organization.types";
 
@@ -57,7 +56,7 @@ export function ActaRankingPanel({
           className="text-lg font-semibold pb-2"
           style={{ borderBottom: `2px solid ${categoryColors.dark}` }}
         >
-          RANKING ACTA - {categoryLabel?.toUpperCase() || 'ORGANIZACIÓN POLÍTICA'}
+          RESUMEN ACTA - {categoryLabel?.toUpperCase() || 'ORGANIZACIÓN POLÍTICA'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

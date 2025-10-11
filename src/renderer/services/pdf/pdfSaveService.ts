@@ -25,7 +25,7 @@ export async function savePdfWithFallback(
       if (saveResult.success && saveResult.filePath) {
         console.log("PDF guardado exitosamente en:", saveResult.filePath);
 
-        ToastService.success(`PDF guardado en el escritorio: ${filename}`);
+        //ToastService.success(`PDF guardado en el escritorio: ${filename}`);        
 
         // Automatically open the PDF
         const openResult = await window.api.openPdf(saveResult.filePath);

@@ -90,7 +90,7 @@ export const SENADORES_NACIONAL_LAYOUT = {
     tcvBottom: { x: 245.6, yOffset: 793.4, size: FONT_SIZES.xxlarge },
   },
   partyVotes: {
-    x: 230,
+    x: 225,
     size: FONT_SIZES.xxlarge,
   },
   specialVotes: {
@@ -99,7 +99,7 @@ export const SENADORES_NACIONAL_LAYOUT = {
   },
   preferentialTable: {
     startY: 149, // Offset from top
-    startX: 268.8,
+    startX: 263.8,
     cellWidth: 22.95,
     fontSize: 11.5,
     lineHeight: 15.132,
