@@ -166,7 +166,7 @@ export function VoteSummaryPage({
                                 <TableCell
                                   key={i + 1}
                                   className={`w-8 text-center text-xs px-1 py-1 border-l border-gray-200 ${isNonZero
-                                      ? 'text-red-600 bg-green-100'
+                                      ? 'text-red-600 font-semibold'
                                       : ''
                                     }`}
                                 >
