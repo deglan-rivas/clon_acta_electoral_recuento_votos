@@ -18,6 +18,7 @@ import {
 } from "../../utils/organizationUtils";
 import { CircunscripcionSelector } from "./CircunscripcionSelector";
 import { OrganizationsTable } from "./OrganizationsTable";
+import { useElectoralStore, type AlertType } from "../../store/electoralStore";
 
 interface SettingsModalProps {
   open: boolean;
@@ -29,10 +30,12 @@ interface SettingsModalProps {
 
 export function SettingsModal({ open, onOpenChange, category, currentCircunscripcionElectoral, politicalOrganizations }: SettingsModalProps) {
   const repository = useActaRepository();
+  const { alertType, setAlertType } = useElectoralStore();
 
   // Load circunscripción electoral data from CSV
   const circunscripcionData = useCircunscripcionData(open);
   const [selectedCircunscripcion, setSelectedCircunscripcion] = useState<string>(currentCircunscripcionElectoral || "");
+  const [localAlertType, setLocalAlertType] = useState<AlertType>(alertType);
 
   // Get unique circunscripciones filtered by category
   const uniqueCircunscripciones = getUniqueCircunscripcionesByCategory(circunscripcionData, category);
@@ -62,8 +65,9 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
     if (open) {
       setSelectedCircunscripcion(currentCircunscripcionElectoral || "");
       setOrganizationFilter("");
+      setLocalAlertType(alertType);
     }
-  }, [open, currentCircunscripcionElectoral]);
+  }, [open, currentCircunscripcionElectoral, alertType]);
 
   // Filtered organizations based on search
   const filtered = filterOrganizations(politicalOrganizations || [], organizationFilter);
@@ -112,6 +116,10 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
     } else {
       await repository.saveSelectedOrganizations(selectedOrganizations);
     }
+
+    // Save alert type
+    setAlertType(localAlertType);
+
     onOpenChange(false);
   };
 
@@ -119,6 +127,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   const handleCancel = () => {
     setSelectedOrganizations(originalSelectedOrganizations);
     setOrganizationFilter("");
+    setLocalAlertType(alertType);
     onOpenChange(false);
   };
 
@@ -133,8 +142,9 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
         </VisuallyHidden.Root>
 
         <Tabs defaultValue="organizations" className="w-full">
-          <TabsList className="grid w-full grid-cols-1">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="organizations">Organizaciones Políticas</TabsTrigger>
+            <TabsTrigger value="alerts">Configuración de Alertas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="organizations" className="space-y-3">
@@ -166,6 +176,65 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
                 onClearSearch={() => setOrganizationFilter("")}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="alerts" className="space-y-4">
+            <div className="text-sm text-gray-600 mb-4">
+              Configure el tipo de alerta que se mostrará después de agregar un voto.
+            </div>
+
+            <div className="space-y-4">
+              {/* Alert Type Options */}
+              <div className="border rounded-lg p-4 space-y-3">
+                <h3 className="font-semibold text-base mb-3">Tipo de Alerta</h3>
+
+                {/* Option 1: Alert with button */}
+                <label className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg">
+                  <input
+                    type="radio"
+                    name="alertType"
+                    value="with-button"
+                    checked={localAlertType === 'with-button'}
+                    onChange={(e) => setLocalAlertType(e.target.value as AlertType)}
+                    className="mt-1 w-4 h-4 text-red-800"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">Alerta con botón ACEPTAR</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      La alerta se mostrará hasta que el usuario haga clic en el botón ACEPTAR.
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: Auto-dismiss alert */}
+                <label className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg">
+                  <input
+                    type="radio"
+                    name="alertType"
+                    value="auto-dismiss"
+                    checked={localAlertType === 'auto-dismiss'}
+                    onChange={(e) => setLocalAlertType(e.target.value as AlertType)}
+                    className="mt-1 w-4 h-4 text-red-800"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">Alerta que desaparece automáticamente</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      La alerta se mostrará durante 2 segundos y desaparecerá automáticamente.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Preview section */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-semibold text-sm mb-2">Vista previa</h3>
+                <div className="text-xs text-gray-600">
+                  {localAlertType === 'with-button'
+                    ? 'Se mostrará una alerta con el título "Recuento de Votos JNE", un mensaje confirmando el voto ingresado, el total de votos registrados y un botón ACEPTAR.'
+                    : 'Se mostrará una alerta con el título "Recuento de Votos JNE", un mensaje confirmando el voto ingresado y el total de votos registrados. La alerta desaparecerá automáticamente después de 2 segundos.'}
+                </div>
+              </div>
+            </div>
           </TabsContent>
       </Tabs>
 

@@ -12,6 +12,8 @@ import { Plus, Edit, Check, X } from "lucide-react";
 import type { VoteEntry, VoteLimits, PreferentialConfig, CategoryColors } from "../../types/acta.types";
 import type { PoliticalOrganization } from "../../types/organization.types";
 import { ToastService } from "../../services/ui/toastService";
+import { VoteAlert } from "../ui/VoteAlert";
+import { useElectoralStore } from "../../store/electoralStore";
 
 interface VoteEntryTableProps {
   entries: VoteEntry[];
@@ -44,6 +46,10 @@ export function VoteEntryTable({
 }: VoteEntryTableProps) {
   // Block control logic
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
+
+  // Alert state
+  const { alertType } = useElectoralStore();
+  const [showAlert, setShowAlert] = useState(false);
 
   // Calculate next table number
   const getNextTableNumber = () => {
@@ -135,7 +141,8 @@ export function VoteEntryTable({
       await onSaveActa();
     }
 
-    ToastService.success("Voto agregado exitosamente");
+    // Show alert instead of toast
+    setShowAlert(true);
   };
 
   const handleEditEntry = (entry: VoteEntry) => {
@@ -216,8 +223,17 @@ export function VoteEntryTable({
   };
 
   return (
-    <Card className="w-full col-span-8">
-      <CardHeader>
+    <>
+      {/* Vote Alert */}
+      <VoteAlert
+        isOpen={showAlert}
+        voteCount={entries.length}
+        alertType={alertType}
+        onClose={() => setShowAlert(false)}
+      />
+
+      <Card className="w-full col-span-8">
+        <CardHeader>
         <CardTitle
           className="text-lg font-semibold pb-2 flex items-center justify-between gap-4"
           style={{ borderBottom: `2px solid ${categoryColors.dark}` }}
@@ -454,5 +470,6 @@ export function VoteEntryTable({
         </Table>
       </CardContent>
     </Card>
+    </>
   );
 }
