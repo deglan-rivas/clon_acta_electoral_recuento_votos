@@ -12,7 +12,7 @@ import {
   SENADORES_NACIONAL_LAYOUT,
   SENATORS_COUNT,
   DEPUTIES_COUNT
-} from '../../config/pdfTemplateConstants';
+} from './pdfTemplateConstants';
 import { validatePdfGeneratorConfig } from './validation/configValidator';
 import { generateElectoralPdf } from './basePdfGenerator';
 import { calculateVoteCount, calculateVoteDataWithPreferential } from '../calculations/voteCalculationService';

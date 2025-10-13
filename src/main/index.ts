@@ -6,6 +6,9 @@ import log from 'electron-log'
 import icon from '../../resources/icon.ico?asset'
 import { getExpirationChecker, getExpirationStatus, ExpirationStatus } from './utils/expiration-checker'
 
+// Initialize electron-log immediately - MUST be done before any other operations
+log.initialize({ preload: true })
+
 // Configure electron-log
 log.transports.file.level = 'info'
 log.transports.console.level = 'info'
@@ -276,11 +279,12 @@ function createWindow(): BrowserWindow {
     }
   })
 
-  // Log renderer process console messages
-  newWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-    const logLevel = level === 0 ? 'info' : level === 1 ? 'warn' : 'error'
-    log[logLevel](`Renderer [${sourceId}:${line}]: ${message}`)
-  })
+  // Note: Console message logging disabled to prevent feedback loops with electron-log/renderer
+  // Renderer logs are already forwarded via electron-log's IPC transport
+  // newWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+  //   const logLevel = level === 0 ? 'info' : level === 1 ? 'warn' : 'error'
+  //   log[logLevel](`Renderer [${sourceId}:${line}]: ${message}`)
+  // })
 
   newWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

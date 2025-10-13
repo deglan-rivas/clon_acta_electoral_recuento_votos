@@ -2,7 +2,7 @@
 
 import type { PDFPage, PDFFont, RGB } from 'pdf-lib';
 import type { TextItem } from '../types/pdfTypes';
-import { PDF_COLORS } from '../../../config/pdfTemplateConstants';
+import { PDF_COLORS } from '../pdfTemplateConstants';
 
 /**
  * Handles text rendering operations on PDF pages

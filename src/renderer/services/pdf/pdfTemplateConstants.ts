@@ -55,7 +55,7 @@ export const PRESIDENCIAL_LAYOUT = {
     endTime: { x: 112, yOffset: 1166, size: FONT_SIZES.large },
     endDate: { x: 232, yOffset: 1166, size: FONT_SIZES.large },
     tcvTopRight: { x: 763, yOffset: 147, size: FONT_SIZES.xxlarge },
-    totalElectores: { x: 755, yOffset: 121, size: FONT_SIZES.xxlarge },
+    totalElectores: { x: 763, yOffset: 121, size: FONT_SIZES.xxlarge },
     cedulasExcedentes: { x: 475, yOffset: 1092, size: FONT_SIZES.xxlarge },
     tcvBottom: { x: 234.6, yOffset: 1138, size: FONT_SIZES.xxlarge },
   },

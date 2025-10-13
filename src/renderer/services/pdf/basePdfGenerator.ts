@@ -10,7 +10,7 @@ import { PdfTextRenderer } from './utils/pdfTextRenderer';
 import { PdfRenderingPipeline } from './rendering/renderPhases';
 import type { RenderContext } from './rendering/renderPhases';
 import { savePdfWithFallback } from './pdfSaveService';
-import { formatMesaNumber } from '../../config/pdfTemplateConstants';
+import { formatMesaNumber } from './pdfTemplateConstants';
 
 /**
  * Core PDF generation logic shared by all electoral types

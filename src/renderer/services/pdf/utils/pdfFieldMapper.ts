@@ -9,7 +9,7 @@ import type {
 } from '../types/pdfTypes';
 import type { PoliticalOrganization } from '../../../types';
 import { formatTime, formatDate } from '../../../utils/dateFormatters';
-import { formatMesaNumber } from '../../../config/pdfTemplateConstants';
+import { formatMesaNumber } from '../pdfTemplateConstants';
 
 /**
  * Maps PDF fields to text items with coordinates
@@ -41,6 +41,18 @@ export class PdfFieldMapper {
     const mesaNumberPadded = formatMesaNumber(mesaNumber);
     const horaFin = formatTime(endTime);
     const fechaFin = formatDate(endTime);
+
+    const entriesStr = `${entries.length}`;
+    // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
+    const xOffsetEntries = entriesStr.length >= 3 ? 10 : entriesStr.length === 2 ? 5 : 0;
+
+    const totalElectoresStr = `${totalElectores}`;
+    // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
+    const xOffsetTotalElectores = totalElectoresStr.length >= 3 ? 10 : totalElectoresStr.length === 2 ? 5 : 0;
+
+    const cedulasExcedentesStr = `${cedulasExcedentes}`;
+    // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
+    const xOffsetCedulasExcedentes = cedulasExcedentesStr.length >= 3 ? 10 : cedulasExcedentesStr.length === 2 ? 5 : 0
 
     const textItems: TextItem[] = [
       {
@@ -92,26 +104,26 @@ export class PdfFieldMapper {
         size: this.layout.fields.endDate.size
       },
       {
-        texto: `${entries.length}`,
-        x: this.layout.fields.tcvTopRight.x,
+        texto: entriesStr,
+        x: this.layout.fields.tcvTopRight.x - xOffsetEntries,
         y: this.pageHeight - this.layout.fields.tcvTopRight.yOffset,
         size: this.layout.fields.tcvTopRight.size
       },
       {
-        texto: `${totalElectores}`,
-        x: this.layout.fields.totalElectores.x,
+        texto: totalElectoresStr,
+        x: this.layout.fields.totalElectores.x - xOffsetTotalElectores,
         y: this.pageHeight - this.layout.fields.totalElectores.yOffset,
         size: this.layout.fields.totalElectores.size
       },
       {
-        texto: `${cedulasExcedentes}`,
-        x: this.layout.fields.cedulasExcedentes.x,
+        texto: cedulasExcedentesStr,
+        x: this.layout.fields.cedulasExcedentes.x - xOffsetCedulasExcedentes,
         y: this.pageHeight - this.layout.fields.cedulasExcedentes.yOffset,
         size: this.layout.fields.cedulasExcedentes.size
       },
       {
-        texto: `${entries.length}`,
-        x: this.layout.fields.tcvBottom.x,
+        texto: entriesStr,
+        x: this.layout.fields.tcvBottom.x - xOffsetEntries,
         y: this.pageHeight - this.layout.fields.tcvBottom.yOffset,
         size: this.layout.fields.tcvBottom.size
       }
@@ -199,9 +211,12 @@ export class PdfFieldMapper {
     for (const partyName in labels) {
       if (labels.hasOwnProperty(partyName)) {
         const label = labels[partyName];
+        const votesStr = `${label.votes}`;
+        // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
+        const xOffset = votesStr.length >= 3 ? 10 : votesStr.length === 2 ? 5 : 0;
         textItems.push({
-          texto: `${label.votes}`,
-          x: label.x,
+          texto: votesStr,
+          x: label.x - xOffset,
           y: label.y,
           size: this.layout.partyVotes.size
         });

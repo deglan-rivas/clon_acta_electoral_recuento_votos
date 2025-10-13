@@ -386,7 +386,7 @@ export function ActaHeaderPanel({
                     <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
                       <div className="py-1">
                         {categoryActas
-                          .filter((acta, index) => {
+                          .filter((_acta, index) => {
                             // Exclude the currently active/editing acta
                             if (index === currentActaIndex) {
                               return false;

@@ -162,11 +162,12 @@ export function VoteSummaryPage({
                             {Array.from({ length: maxPreferentialNumber }, (_, i) => {
                               const value = partyMatrix ? partyMatrix[i + 1] || 0 : 0;
                               const isNonZero = value > 0;
+                              const classError = 'text-red-600';
                               return (
                                 <TableCell
                                   key={i + 1}
                                   className={`w-8 text-center text-xs px-1 py-1 border-l border-gray-200 ${isNonZero
-                                      ? 'text-red-600 font-semibold'
+                                      ? 'font-semibold'
                                       : ''
                                     }`}
                                 >

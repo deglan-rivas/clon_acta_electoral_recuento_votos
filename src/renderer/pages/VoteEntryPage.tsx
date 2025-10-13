@@ -208,7 +208,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const handleFinalizeForm = async () => {
     // Validate that there are entries
     if (entries.length === 0) {
-      ToastService.error("No se puede finalizar sin votos registrados. Ingrese al menos un voto.", '500px', 4000);
+      ToastService.error("No se puede finalizar el recuento sin votos registrados. Ingrese al menos un voto.", '500px', 4000);
       return;
     }
 
@@ -226,11 +226,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
     // Show confirmation dialog
     const confirmed = window.confirm(
-      `¿Está seguro que desea finalizar el acta?\n\n` +
+      `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
       `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
       `Acta: ${actaNumber}\n` +
       `Total de votos: ${entries.length}\n` +
-      `TCV: ${tcv !== null ? tcv : entries.length}\n\n` +
       `Una vez finalizada, no podrá realizar más cambios.`
     );
 

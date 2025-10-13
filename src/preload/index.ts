@@ -2,8 +2,13 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import log from 'electron-log/renderer'
 
-// Configure renderer logging
-log.transports.ipc.level = 'info'
+// Initialize and configure renderer logging
+try {
+  log.initialize()
+  log.transports.ipc.level = 'info'
+} catch (error) {
+  console.error('Failed to initialize electron-log in renderer:', error)
+}
 
 // Custom APIs for renderer
 const api = {
@@ -47,22 +52,21 @@ const api = {
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
-console.log('Preload script executing...')
-console.log('process.contextIsolated:', process.contextIsolated)
-console.log('api object:', api)
-
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
-    console.log('APIs exposed successfully via contextBridge')
+    log.info('APIs exposed successfully via contextBridge')
   } catch (error) {
-    console.error('Error exposing APIs:', error)
-    log.error('Failed to expose APIs to renderer:', error)
+    try {
+      log.error('Failed to expose APIs to renderer:', error)
+    } catch {
+      // Log not ready yet, suppress output to avoid loops
+    }
   }
 } else {
   // @ts-expect-error - window.electron is defined in global.d.ts
   window.electron = electronAPI
   window.api = api
-  console.log('APIs added to window object directly')
+  log.info('APIs added to window object directly')
 }

@@ -8,7 +8,7 @@ import type {
 } from '../types/pdfTypes';
 import { PdfTextRenderer } from '../utils/pdfTextRenderer';
 import { PdfFieldMapper } from '../utils/pdfFieldMapper';
-import { PDF_COLORS } from '../../../config/pdfTemplateConstants';
+import { PDF_COLORS } from '../pdfTemplateConstants';
 
 /**
  * Base interface for rendering phases
@@ -104,7 +104,8 @@ export class PreferentialTableRenderer implements RenderPhase {
           for (let i = 1; i <= this.candidateCount; i++) {
             const count = partyMatrix[i] || 0;
             const countStr = `${count}`;
-            const xOffset = countStr.length === 2 ? 5 : 0;
+            // Calculate offset: 1 digit = 0, 2 digits = 3, 3+ digits = 6
+            const xOffset = countStr.length >= 3 ? 6 : countStr.length === 2 ? 3 : 0;
             renderer.drawText({
               texto: countStr,
               x: preferentialTable.startX + ((i - 1) * preferentialTable.cellWidth) - xOffset,
@@ -116,7 +117,8 @@ export class PreferentialTableRenderer implements RenderPhase {
 
           // Draw row total
           const horizontalSumStr = `${horizontalSum}`;
-          const xOffsetSum = horizontalSumStr.length === 2 ? 5 : 0;
+          // Calculate offset: 1 digit = 0, 2 digits = 3, 3+ digits = 6
+          const xOffsetSum = horizontalSumStr.length >= 3 ? 6 : horizontalSumStr.length === 2 ? 3 : 0;
           renderer.drawText({
             texto: horizontalSumStr,
             x: totalXPos - xOffsetSum,
