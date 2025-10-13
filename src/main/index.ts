@@ -4,6 +4,7 @@ import { writeFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import log from 'electron-log'
 import icon from '../../resources/icon.ico?asset'
+import { getExpirationChecker, getExpirationStatus, ExpirationStatus } from './utils/expiration-checker'
 
 // Configure electron-log
 log.transports.file.level = 'info'
@@ -28,9 +29,29 @@ process.on('unhandledRejection', (reason, promise) => {
 
 log.info('Application starting...')
 
+// Check trial expiration on startup
+const expirationChecker = getExpirationChecker();
+const expirationResult = expirationChecker.checkExpiration();
+log.info(`Trial status: ${expirationResult.status}, Days remaining: ${expirationResult.daysRemaining}`);
+
 let mainWindow: BrowserWindow;
 
 function createWindow(): BrowserWindow {
+  // Check expiration before creating window
+  const status = getExpirationStatus();
+
+  // If expired, show dialog and prevent window creation
+  if (status.status === ExpirationStatus.EXPIRED) {
+    log.error('Application expired, blocking startup');
+    dialog.showErrorBox(
+      'Aplicación Expirada',
+      status.message
+    );
+    app.quit();
+    // Return a dummy window object (will never be used due to app.quit())
+    return null as any;
+  }
+
   // Create the browser window.
   const newWindow = new BrowserWindow({
     width: 1920,
@@ -240,6 +261,19 @@ function createWindow(): BrowserWindow {
     newWindow.maximize()
     newWindow.show()
     log.info('Main window shown')
+
+    // Show warning dialog if in warning period
+    const status = getExpirationStatus();
+    if (status.status === ExpirationStatus.WARNING) {
+      log.warn('Showing expiration warning dialog');
+      dialog.showMessageBox(newWindow, {
+        type: 'warning',
+        title: 'Aviso de Expiración',
+        message: 'Período de Prueba Próximo a Expirar',
+        detail: status.message,
+        buttons: ['Entendido']
+      });
+    }
   })
 
   // Log renderer process console messages
@@ -264,6 +298,28 @@ function createWindow(): BrowserWindow {
   mainWindow = newWindow;
   return newWindow;
 }
+
+// IPC handlers for trial expiration
+ipcMain.handle('check-expiration', async () => {
+  try {
+    const status = getExpirationStatus();
+    log.info(`Expiration check requested: ${status.status}`);
+    return {
+      success: true,
+      status: status.status,
+      daysRemaining: status.daysRemaining,
+      expirationDate: status.expirationDate.toISOString(),
+      message: status.message,
+      allowAccess: status.allowAccess
+    };
+  } catch (error) {
+    log.error('Error checking expiration:', error);
+    return {
+      success: false,
+      error: (error as Error).message
+    };
+  }
+});
 
 // IPC handlers for PDF operations
 ipcMain.handle('save-pdf', async (_event, pdfBytes: Uint8Array, filename: string) => {

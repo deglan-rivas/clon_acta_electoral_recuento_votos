@@ -1,10 +1,48 @@
 import { useEffect, useState } from "react";
 import { AppContainer } from "./App/AppContainer";
 import { useActaRepository } from "./hooks/useActaRepository";
+import { ExpirationWarningBanner } from "./components/ExpirationWarningBanner";
 
 export default function App() {
   const repository = useActaRepository();
   const [appKey, setAppKey] = useState(Date.now());
+  const [expirationStatus, setExpirationStatus] = useState<{
+    status: 'valid' | 'warning' | 'expired' | 'disabled';
+    daysRemaining: number;
+    expirationDate: string;
+    message: string;
+  } | null>(null);
+  const [showBanner, setShowBanner] = useState(true);
+
+  // Check trial expiration status on mount
+  useEffect(() => {
+    const checkExpiration = async () => {
+      try {
+        const result = await window.api.checkExpiration();
+        if (result.success) {
+          setExpirationStatus({
+            status: result.status as 'valid' | 'warning' | 'expired' | 'disabled',
+            daysRemaining: result.daysRemaining || 0,
+            expirationDate: result.expirationDate || '',
+            message: result.message || ''
+          });
+
+          // Log expiration status
+          window.api.log.info(`Trial status: ${result.status}, Days remaining: ${result.daysRemaining}`);
+        }
+      } catch (error) {
+        console.error('Failed to check expiration:', error);
+        window.api.log.error('Failed to check expiration', error);
+      }
+    };
+
+    checkExpiration();
+
+    // Recheck expiration every hour
+    const interval = setInterval(checkExpiration, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Expose repository utilities to global window for developer menu
@@ -49,6 +87,15 @@ export default function App() {
 
   return (
     <div key={appKey}>
+      {expirationStatus && showBanner && (
+        <ExpirationWarningBanner
+          status={expirationStatus.status}
+          daysRemaining={expirationStatus.daysRemaining}
+          expirationDate={expirationStatus.expirationDate}
+          message={expirationStatus.message}
+          onDismiss={() => setShowBanner(false)}
+        />
+      )}
       <AppContainer />
     </div>
   );

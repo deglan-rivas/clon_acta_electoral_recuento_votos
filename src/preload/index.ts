@@ -23,6 +23,18 @@ const api = {
   openPdf: (filePath: string): Promise<{ success: boolean; error?: string }> => {
     return ipcRenderer.invoke('open-pdf', filePath)
   },
+  // Trial expiration APIs
+  checkExpiration: (): Promise<{
+    success: boolean;
+    status?: string;
+    daysRemaining?: number;
+    expirationDate?: string;
+    message?: string;
+    allowAccess?: boolean;
+    error?: string;
+  }> => {
+    return ipcRenderer.invoke('check-expiration')
+  },
   // Expose logging to renderer
   log: {
     info: (message: string, ...args: unknown[]) => log.info(message, ...args),
