@@ -227,17 +227,17 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     }
 
     // Show confirmation dialog
-    const confirmed = window.confirm(
-      `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
-      `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
-      `Acta: ${actaNumber}\n` +
-      `Total de votos: ${entries.length}\n` +
-      `Una vez finalizada, no podrá realizar más cambios.`
-    );
+    // const confirmed = window.confirm(
+    //   `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
+    //   `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
+    //   `Acta: ${actaNumber}\n` +
+    //   `Total de votos: ${entries.length}\n` +
+    //   `Una vez finalizada, no podrá realizar más cambios.`
+    // );
 
-    if (!confirmed) {
-      return;
-    }
+    // if (!confirmed) {
+    //   return;
+    // }
 
     console.log("Finalizando formulario...");
     const now = new Date();

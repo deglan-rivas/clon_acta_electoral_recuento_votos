@@ -13,9 +13,6 @@ import { LocalStorageAdapter } from '../repositories/adapters/LocalStorageAdapte
 const storageAdapter = new LocalStorageAdapter();
 const actaRepository = new ActaRepository(storageAdapter);
 
-// Alert Configuration Type
-export type AlertType = 'with-button' | 'auto-dismiss';
-
 // Store State Interface
 interface ElectoralState {
   // Active Category
@@ -30,7 +27,6 @@ interface ElectoralState {
   // UI State
   currentTime: Date;
   isSettingsOpen: boolean;
-  alertType: AlertType;
 
   // Computed/Derived values
   getCurrentActa: () => ActaData;
@@ -70,7 +66,6 @@ interface ElectoralState {
 
   // Actions - UI
   setSettingsOpen: (open: boolean) => void;
-  setAlertType: (alertType: AlertType) => void;
 
   // Utility - Check if mesa is finalized
   isMesaFinalized: (mesaNumber: number, category: string) => boolean;
@@ -100,23 +95,17 @@ const initializeStoreFromRepository = async (set: any) => {
       currentActaIndex[category] = await actaRepository.getActiveActaIndex(category);
     }
 
-    // Load alert type from localStorage
-    const savedAlertType = localStorage.getItem('alertType') as AlertType | null;
-    const alertType: AlertType = savedAlertType || 'with-button';
-
     // Only update store if we have valid data
     if (Object.keys(categoryActas).length > 0) {
       set({
         activeCategory,
         categoryActas,
         currentActaIndex,
-        alertType,
       });
 
       console.log('[ElectoralStore] Initialized from repository:', {
         activeCategory,
         categoriesLoaded: Object.keys(categoryActas),
-        alertType,
       });
     }
   } catch (error) {
@@ -139,7 +128,6 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
     },
     currentTime: new Date(),
     isSettingsOpen: false,
-    alertType: 'with-button',
 
     // Computed Values
     getCurrentActa: () => {
@@ -351,11 +339,6 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
     // UI
     setSettingsOpen: (open: boolean) => {
       set({ isSettingsOpen: open });
-    },
-
-    setAlertType: (alertType: AlertType) => {
-      set({ alertType });
-      localStorage.setItem('alertType', alertType);
     },
 
     // Utilities

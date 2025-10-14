@@ -3,16 +3,19 @@
 
 import { useEffect, useRef } from 'react';
 import { Button } from './button';
-import type { AlertType } from '../../store/electoralStore';
+
+type AlertType = 'with-button' | 'auto-dismiss';
+type AlertPosition = 'center' | 'top';
 
 interface VoteAlertProps {
   isOpen: boolean;
   voteCount: number;
   alertType: AlertType;
+  position?: AlertPosition;
   onClose: () => void;
 }
 
-export function VoteAlert({ isOpen, voteCount, alertType, onClose }: VoteAlertProps) {
+export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', onClose }: VoteAlertProps) {
   const onCloseRef = useRef(onClose);
 
   // Keep the ref updated
@@ -33,8 +36,12 @@ export function VoteAlert({ isOpen, voteCount, alertType, onClose }: VoteAlertPr
 
   if (!isOpen) return null;
 
+  const containerClass = position === 'top'
+    ? 'fixed inset-0 z-50 flex items-start justify-center pt-8 pointer-events-none'
+    : 'fixed inset-0 z-50 flex items-center justify-center pointer-events-none';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+    <div className={containerClass}>
       <div
         className="bg-white rounded-lg shadow-xl p-6 w-[400px] border-4 pointer-events-auto"
         style={{ borderColor: 'oklch(0.5200 0.2100 15)' }}

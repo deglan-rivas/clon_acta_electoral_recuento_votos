@@ -13,7 +13,6 @@ import type { VoteEntry, VoteLimits, PreferentialConfig, CategoryColors } from "
 import type { PoliticalOrganization } from "../../types/organization.types";
 import { ToastService } from "../../services/ui/toastService";
 import { VoteAlert } from "../ui/VoteAlert";
-import { useElectoralStore } from "../../store/electoralStore";
 
 interface VoteEntryTableProps {
   entries: VoteEntry[];
@@ -48,7 +47,6 @@ export function VoteEntryTable({
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
 
   // Alert state
-  const { alertType } = useElectoralStore();
   const [showAlert, setShowAlert] = useState(false);
 
   // Calculate next table number
@@ -228,7 +226,8 @@ export function VoteEntryTable({
       <VoteAlert
         isOpen={showAlert}
         voteCount={entries.length}
-        alertType={alertType}
+        alertType="with-button"
+        position="top"
         onClose={() => setShowAlert(false)}
       />
 
