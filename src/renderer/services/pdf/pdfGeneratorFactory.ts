@@ -6,13 +6,18 @@ import type {
   PdfGeneratorConfig
 } from './types/pdfTypes';
 import {
-  PDF_TEMPLATES,
-  PDF_TEMPLATES_EXTRANJERO,
   PRESIDENCIAL_LAYOUT,
   SENADORES_NACIONAL_LAYOUT,
-  SENATORS_COUNT,
-  DEPUTIES_COUNT
+  SENADORES_REGIONAL_2_PREFERENCIALES_LAYOUT,
+  SENADORES_REGIONAL_4_PREFERENCIALES_LAYOUT,
+  DIPUTADOS_4_PREFERENCIALES_LAYOUT,
+  DIPUTADOS_6_PREFERENCIALES_LAYOUT,
+  DIPUTADOS_8_PREFERENCIALES_LAYOUT,
+  DIPUTADOS_32_PREFERENCIALES_LAYOUT,
+  PARLAMENTO_ANDINO_LAYOUT,
 } from './pdfTemplateConstants';
+import { selectPdfTemplate } from './utils/pdfTemplateSelector';
+import { getVoteLimitsForCategory } from '../../utils/voteLimits';
 import { validatePdfGeneratorConfig } from './validation/configValidator';
 import { generateElectoralPdf } from './basePdfGenerator';
 import { calculateVoteCount, calculateVoteDataWithPreferential } from '../calculations/voteCalculationService';
@@ -24,75 +29,94 @@ import {
 } from './rendering/renderPhases';
 
 /**
- * Gets the appropriate PDF template path based on election type and location
- *
- * @param electionType - Type of election
- * @param isInternational - Whether the acta is for international (EXTRANJERO) location
- * @returns Template path for the PDF
+ * Gets the appropriate layout configuration based on election type and limite_voto_preferencial
  */
-function getTemplatePath(electionType: ElectionType, isInternational: boolean = false): string {
-  const templates = isInternational ? PDF_TEMPLATES_EXTRANJERO : PDF_TEMPLATES;
-  const templatePath = templates[electionType];
+async function getLayoutConfig(
+  electionType: ElectionType,
+  circunscripcionElectoral?: string
+): Promise<any> {
+  switch (electionType) {
+    case 'presidencial':
+      return PRESIDENCIAL_LAYOUT;
 
-  console.log('[getTemplatePath] Election Type:', electionType);
-  console.log('[getTemplatePath] Is International:', isInternational);
-  console.log('[getTemplatePath] Selected Template:', templatePath);
+    case 'senadoresNacional':
+      return SENADORES_NACIONAL_LAYOUT;
 
-  return templatePath;
+    case 'senadoresRegional': {
+      // Get limite from CSV based on circunscripcion
+      const voteLimits = await getVoteLimitsForCategory('senadoresRegional', circunscripcionElectoral);
+      const limite = voteLimits.preferential1;
+
+      switch (limite) {
+        case 2:
+          return SENADORES_REGIONAL_2_PREFERENCIALES_LAYOUT;
+        case 4:
+          return SENADORES_REGIONAL_4_PREFERENCIALES_LAYOUT;
+        default:
+          console.warn(`[getLayoutConfig] Unknown limite ${limite} for senadoresRegional, defaulting to 2`);
+          return SENADORES_REGIONAL_2_PREFERENCIALES_LAYOUT;
+      }
+    }
+
+    case 'diputados': {
+      // Get limite from CSV based on circunscripcion
+      const voteLimits = await getVoteLimitsForCategory('diputados', circunscripcionElectoral);
+      const limite = voteLimits.preferential1;
+
+      switch (limite) {
+        case 4:
+          return DIPUTADOS_4_PREFERENCIALES_LAYOUT;
+        case 6:
+          return DIPUTADOS_6_PREFERENCIALES_LAYOUT;
+        case 8:
+          return DIPUTADOS_8_PREFERENCIALES_LAYOUT;
+        case 32:
+          return DIPUTADOS_32_PREFERENCIALES_LAYOUT;
+        default:
+          console.warn(`[getLayoutConfig] Unknown limite ${limite} for diputados, defaulting to 4`);
+          return DIPUTADOS_4_PREFERENCIALES_LAYOUT;
+      }
+    }
+
+    case 'parlamentoAndino':
+      return PARLAMENTO_ANDINO_LAYOUT;
+
+    default:
+      throw new Error(`Unknown election type: ${electionType}`);
+  }
 }
 
 /**
- * Registry of election type configurations
+ * Determines if an election type has preferential voting
  */
-const ELECTION_CONFIGS: Record<ElectionType, Omit<PdfGeneratorConfig, 'layoutConfig'> & { layoutConfig?: any }> = {
-  presidencial: {
-    templatePath: PDF_TEMPLATES.presidencial,
-    layoutConfig: PRESIDENCIAL_LAYOUT,
-    electionType: 'presidencial',
-    hasPreferentialVoting: false
-  },
-  senadoresNacional: {
-    templatePath: PDF_TEMPLATES.senadoresNacional,
-    layoutConfig: SENADORES_NACIONAL_LAYOUT,
-    electionType: 'senadoresNacional',
-    hasPreferentialVoting: true,
-    preferentialCount: SENATORS_COUNT
-  },
-  senadoresRegional: {
-    templatePath: PDF_TEMPLATES.senadoresRegional,
-    layoutConfig: undefined, // TODO: Add layout config when available
-    electionType: 'senadoresRegional',
-    hasPreferentialVoting: true,
-    preferentialCount: SENATORS_COUNT
-  },
-  diputados: {
-    templatePath: PDF_TEMPLATES.diputados,
-    layoutConfig: undefined, // TODO: Add layout config when available
-    electionType: 'diputados',
-    hasPreferentialVoting: true,
-    preferentialCount: DEPUTIES_COUNT
-  },
-  parlamentoAndino: {
-    templatePath: PDF_TEMPLATES.parlamentoAndino,
-    layoutConfig: undefined, // TODO: Add layout config when available
-    electionType: 'parlamentoAndino',
-    hasPreferentialVoting: false
+function hasPreferentialVoting(electionType: ElectionType): boolean {
+  switch (electionType) {
+    case 'presidencial':
+      return false;
+    case 'senadoresNacional':
+    case 'senadoresRegional':
+    case 'diputados':
+    case 'parlamentoAndino':
+      return true;
+    default:
+      return false;
   }
-};
+}
 
 /**
- * Creates a vote calculation function based on election type
+ * Creates a vote calculation function based on election type and preferential count
  */
-function createVoteCalculationFn(electionType: ElectionType) {
-  const config = ELECTION_CONFIGS[electionType];
-
-  if (config.hasPreferentialVoting && config.preferentialCount) {
+function createVoteCalculationFn(
+  electionType: ElectionType,
+  preferentialCount: number
+) {
+  if (hasPreferentialVoting(electionType) && preferentialCount > 0) {
     return (data: BaseElectoralPdfData) => {
       return calculateVoteDataWithPreferential(
         data.entries,
         data.politicalOrganizations,
         data.selectedOrganizationKeys,
-        config.preferentialCount!
+        preferentialCount
       );
     };
   } else {
@@ -103,17 +127,19 @@ function createVoteCalculationFn(electionType: ElectionType) {
 }
 
 /**
- * Creates a rendering pipeline based on election type
+ * Creates a rendering pipeline based on election type and preferential count
  */
-function createRenderingPipeline(electionType: ElectionType): PdfRenderingPipeline {
-  const config = ELECTION_CONFIGS[electionType];
+function createRenderingPipeline(
+  electionType: ElectionType,
+  preferentialCount: number
+): PdfRenderingPipeline {
   const pipeline = new PdfRenderingPipeline()
     .addPhase(new CommonFieldsRenderer())
     .addPhase(new PartyVotesRenderer());
 
   // Add preferential table renderer if election has preferential voting
-  if (config.hasPreferentialVoting && config.preferentialCount) {
-    pipeline.addPhase(new PreferentialTableRenderer(config.preferentialCount));
+  if (hasPreferentialVoting(electionType) && preferentialCount > 0) {
+    pipeline.addPhase(new PreferentialTableRenderer(preferentialCount));
   }
 
   return pipeline;
@@ -132,36 +158,47 @@ export async function generatePdfByElectionType(
 ): Promise<void> {
   console.log('[generatePdfByElectionType] Starting PDF generation');
   console.log('[generatePdfByElectionType] Election Type:', electionType);
-  console.log('[generatePdfByElectionType] isInternationalLocation from data:', data.isInternationalLocation);
+  console.log('[generatePdfByElectionType] isInternationalLocation:', data.isInternationalLocation);
+  console.log('[generatePdfByElectionType] circunscripcionElectoral:', data.selectedLocation?.circunscripcionElectoral);
 
-  const baseConfig = ELECTION_CONFIGS[electionType];
+  // Extract circunscripcion electoral from data
+  const circunscripcionElectoral = data.selectedLocation?.circunscripcionElectoral;
 
-  if (!baseConfig.layoutConfig) {
-    throw new Error(
-      `Layout configuration not yet implemented for election type: ${electionType}. ` +
-      `Please add the layout configuration in pdfTemplateConstants.ts`
-    );
-  }
+  // Get vote limits to determine preferential count and template
+  const voteLimits = await getVoteLimitsForCategory(electionType, circunscripcionElectoral);
+  const limiteVotoPreferencial = voteLimits.preferential1;
 
-  // Determine which template to use based on location type
+  console.log('[generatePdfByElectionType] limiteVotoPreferencial:', limiteVotoPreferencial);
+
+  // Select template path based on election type, limite, and location
   const isInternational = data.isInternationalLocation || false;
-  console.log('[generatePdfByElectionType] isInternational (after default):', isInternational);
+  const templatePath = selectPdfTemplate({
+    electionType,
+    limiteVotoPreferencial,
+    isInternational,
+  });
 
-  const templatePath = getTemplatePath(electionType, isInternational);
+  console.log('[generatePdfByElectionType] Selected template:', templatePath);
 
-  // Create config with appropriate template path
+  // Get layout configuration
+  const layoutConfig = await getLayoutConfig(electionType, circunscripcionElectoral);
+
+  console.log('[generatePdfByElectionType] Layout config obtained');
+
+  // Create full configuration
   const config: PdfGeneratorConfig = {
-    ...baseConfig,
     templatePath,
-  } as PdfGeneratorConfig;
-
-  console.log('[generatePdfByElectionType] Final config templatePath:', config.templatePath);
+    layoutConfig,
+    electionType,
+    hasPreferentialVoting: hasPreferentialVoting(electionType),
+    preferentialCount: limiteVotoPreferencial,
+  };
 
   // Validate configuration (throws if invalid)
   validatePdfGeneratorConfig(config);
 
-  const voteCalculationFn = createVoteCalculationFn(electionType);
-  const pipeline = createRenderingPipeline(electionType);
+  const voteCalculationFn = createVoteCalculationFn(electionType, limiteVotoPreferencial);
+  const pipeline = createRenderingPipeline(electionType, limiteVotoPreferencial);
 
   await generateElectoralPdf(data, config, voteCalculationFn, pipeline);
 }
@@ -170,24 +207,20 @@ export async function generatePdfByElectionType(
  * Helper function to check if an election type is supported
  */
 export function isElectionTypeSupported(electionType: ElectionType): boolean {
-  const config = ELECTION_CONFIGS[electionType];
-  return config !== undefined && config.layoutConfig !== undefined;
+  // All election types are now supported
+  return ['presidencial', 'senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'].includes(electionType);
 }
 
 /**
  * Gets list of all supported election types
  */
 export function getSupportedElectionTypes(): ElectionType[] {
-  return Object.entries(ELECTION_CONFIGS)
-    .filter(([_, config]) => config.layoutConfig !== undefined)
-    .map(([type, _]) => type as ElectionType);
+  return ['presidencial', 'senadoresNacional', 'senadoresRegional', 'diputados', 'parlamentoAndino'];
 }
 
 /**
  * Gets list of election types pending implementation
  */
 export function getPendingElectionTypes(): ElectionType[] {
-  return Object.entries(ELECTION_CONFIGS)
-    .filter(([_, config]) => config.layoutConfig === undefined)
-    .map(([type, _]) => type as ElectionType);
+  return []; // All types are now supported
 }

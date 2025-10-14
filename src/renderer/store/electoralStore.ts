@@ -49,6 +49,7 @@ interface ElectoralState {
 
   // Actions - Location Updates
   updateLocation: (location: Partial<SelectedLocation>) => void;
+  updateVoteLimits: () => Promise<void>;
 
   // Actions - Mesa Data
   setMesaNumber: (mesaNumber: number) => void;
@@ -175,7 +176,11 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       const { categoryActas, currentActaIndex } = get();
 
       if (!categoryActas[category]) {
-        const limits = await getVoteLimitsForCategory(category);
+        // Get circunscripcionElectoral from current acta if available
+        const currentActa = get().getCurrentActa();
+        const circunscripcionElectoral = currentActa?.selectedLocation?.circunscripcionElectoral;
+
+        const limits = await getVoteLimitsForCategory(category, circunscripcionElectoral);
         const newCategoryActas = {
           ...categoryActas,
           [category]: [{ ...DEFAULT_ACTA_DATA, voteLimits: limits }],
@@ -227,7 +232,11 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       const { activeCategory, categoryActas, currentActaIndex } = get();
       const actas = [...(categoryActas[activeCategory] || [])];
 
-      const limits = await getVoteLimitsForCategory(activeCategory);
+      // Get circunscripcionElectoral from current acta if available
+      const currentActa = get().getCurrentActa();
+      const circunscripcionElectoral = currentActa?.selectedLocation?.circunscripcionElectoral;
+
+      const limits = await getVoteLimitsForCategory(activeCategory, circunscripcionElectoral);
       const newActa = { ...DEFAULT_ACTA_DATA, voteLimits: limits };
 
       actas.push(newActa);
@@ -278,6 +287,18 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
           ...location,
         },
       });
+    },
+
+    // Update vote limits based on current category and circunscripcion electoral
+    updateVoteLimits: async () => {
+      const { activeCategory } = get();
+      const currentActa = get().getCurrentActa();
+      const circunscripcionElectoral = currentActa?.selectedLocation?.circunscripcionElectoral;
+
+      if (circunscripcionElectoral) {
+        const limits = await getVoteLimitsForCategory(activeCategory, circunscripcionElectoral);
+        get().updateActaData({ voteLimits: limits });
+      }
     },
 
     // Mesa Data

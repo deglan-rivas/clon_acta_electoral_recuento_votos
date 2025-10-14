@@ -41,8 +41,9 @@ export function useCategoryManager() {
       await repository.saveActiveCategory(activeCategory);
       const actaData = await repository.getActiveActa(activeCategory);
 
-      // Load vote limits for the category
-      const limits = await getVoteLimitsForCategory(activeCategory);
+      // Load vote limits for the category and circunscripcion electoral
+      const circunscripcionElectoral = actaData?.selectedLocation?.circunscripcionElectoral;
+      const limits = await getVoteLimitsForCategory(activeCategory, circunscripcionElectoral);
 
       // Set data with limits
       setCurrentActaData({ ...actaData, voteLimits: limits });

@@ -69,6 +69,7 @@ interface VoteEntryPageProps {
   categoryActas?: any[];
   currentActaIndex?: number;
   politicalOrganizations: PoliticalOrganization[];
+  settingsReloadTrigger?: number;
   isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
   onSaveActa?: () => Promise<void>;
 }
@@ -117,6 +118,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     categoryActas = [],
     currentActaIndex = 0,
     politicalOrganizations,
+    settingsReloadTrigger = 0,
     isMesaAlreadyFinalized,
     onSaveActa,
   } = props;
@@ -144,7 +146,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       setSelectedOrganizationKeys(orgKeys);
     };
     loadOrganizations();
-  }, [circunscripcionElectoral, repository]);
+  }, [circunscripcionElectoral, repository, settingsReloadTrigger]);
 
   const availableOrganizations = (politicalOrganizations || []).filter(org =>
     selectedOrganizationKeys.includes(org.key)

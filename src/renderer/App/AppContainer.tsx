@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { VoteSummaryPage } from "../pages/VoteSummaryPage";
 import { VoteEntryPage } from "../pages/VoteEntryPage";
 import { mockElectoralData } from "../mocks/electoralData";
@@ -52,6 +52,7 @@ function AppLayoutContent() {
     setCurrentTime,
     setSettingsOpen,
     isMesaFinalized,
+    updateVoteLimits,
   } = useElectoralActions();
 
   // Memoize the location update callback to prevent recreation
@@ -70,6 +71,9 @@ function AppLayoutContent() {
   // Track which category we've auto-set circunscripción for to prevent loops
   const autoSetCircunscripcionRef = useRef<string | null>(null);
 
+  // Reload trigger to force re-loading organizations when settings modal closes
+  const [settingsReloadTrigger, setSettingsReloadTrigger] = useState(0);
+
   // Time tracking interval - update currentTime every second
   // Only depend on specific values, not the whole currentActa object
   const startTimeStr = currentActa?.startTime;
@@ -87,6 +91,14 @@ function AppLayoutContent() {
       return () => clearInterval(interval);
     }
   }, [startTimeStr, endTimeStr, setCurrentTime]);
+
+  // Update vote limits when circunscripcion electoral changes
+  const circunscripcionElectoral = currentActa?.selectedLocation?.circunscripcionElectoral;
+  useEffect(() => {
+    if (circunscripcionElectoral) {
+      updateVoteLimits();
+    }
+  }, [circunscripcionElectoral, activeCategory, updateVoteLimits]);
 
   // Auto-set circunscripción electoral when category changes and data is available
   useEffect(() => {
@@ -231,6 +243,7 @@ function AppLayoutContent() {
       isInternationalLocation={isInternationalLocation}
       jeeOptions={jeeData}
       politicalOrganizations={politicalOrganizations}
+      settingsReloadTrigger={settingsReloadTrigger}
       onLoadMesaInfo={async (mesa) => {
         await MesaDataHandler.loadMesaInfo({
           mesa,
@@ -311,7 +324,13 @@ function AppLayoutContent() {
 
       <SettingsModal
         open={isSettingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={(open) => {
+          setSettingsOpen(open);
+          // When settings modal closes, trigger a reload of organizations
+          if (!open) {
+            setSettingsReloadTrigger(prev => prev + 1);
+          }
+        }}
         category={activeCategory}
         currentCircunscripcionElectoral={location.selectedCircunscripcionElectoral}
         politicalOrganizations={politicalOrganizations}

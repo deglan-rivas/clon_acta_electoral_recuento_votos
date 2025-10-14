@@ -27,6 +27,7 @@ export function useElectoralActions() {
 
     // Location
     updateLocation: store.updateLocation,
+    updateVoteLimits: store.updateVoteLimits,
 
     // Mesa data
     setMesaNumber: store.setMesaNumber,

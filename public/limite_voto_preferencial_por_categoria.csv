@@ -1,5 +1,57 @@
-category;limite_voto_preferencial
-senadoresNacional;30
-senadoresRegional;04
-diputados;32
-parlamentoAndino;16
+category;CIRCUNSCRIPCION_ELECTORAL;limite_voto_preferencial
+senadoresNacional;UNICO NACIONAL;30
+parlamentoAndino;UNICO NACIONAL;16
+senadoresRegional;AMAZONAS;2
+senadoresRegional;ANCASH;2
+senadoresRegional;APURIMAC;2
+senadoresRegional;AREQUIPA;2
+senadoresRegional;AYACUCHO;2
+senadoresRegional;CAJAMARCA;2
+senadoresRegional;CALLAO;2
+senadoresRegional;CUSCO;2
+senadoresRegional;HUANCAVELICA;2
+senadoresRegional;HUANUCO;2
+senadoresRegional;ICA;2
+senadoresRegional;JUNIN;2
+senadoresRegional;LA LIBERTAD;2
+senadoresRegional;LAMBAYEQUE;2
+senadoresRegional;LIMA METROPOLITANA;4
+senadoresRegional;LIMA PROVINCIAS;2
+senadoresRegional;PERUANOS RESIDENTES EN EL EXTRANJERO;2
+senadoresRegional;LORETO;2
+senadoresRegional;MADRE DE DIOS;2
+senadoresRegional;MOQUEGUA;2
+senadoresRegional;PASCO;2
+senadoresRegional;PIURA;2
+senadoresRegional;PUNO;2
+senadoresRegional;SAN MARTIN;2
+senadoresRegional;TACNA;2
+senadoresRegional;TUMBES;2
+senadoresRegional;UCAYALI;2
+diputados;AMAZONAS;4
+diputados;ANCASH;6
+diputados;APURIMAC;4
+diputados;AREQUIPA;6
+diputados;AYACUCHO;4
+diputados;CAJAMARCA;6
+diputados;CALLAO;4
+diputados;CUSCO;6
+diputados;HUANCAVELICA;4
+diputados;HUANUCO;4
+diputados;ICA;4
+diputados;JUNIN;6
+diputados;LA LIBERTAD;8
+diputados;LAMBAYEQUE;6
+diputados;LIMA METROPOLITANA;32
+diputados;LIMA PROVINCIAS;4
+diputados;PERUANOS RESIDENTES EN EL EXTRANJERO;4
+diputados;LORETO;4
+diputados;MADRE DE DIOS;4
+diputados;MOQUEGUA;4
+diputados;PASCO;4
+diputados;PIURA;8
+diputados;PUNO;6
+diputados;SAN MARTIN;4
+diputados;TACNA;4
+diputados;TUMBES;4
+diputados;UCAYALI;4
