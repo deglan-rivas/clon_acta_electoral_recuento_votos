@@ -1,10 +1,14 @@
 import { app, shell, BrowserWindow, Menu, dialog, ipcMain } from 'electron'
 import { join } from 'path'
-import { writeFile } from 'fs/promises'
+import { writeFile, unlink, readFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import log from 'electron-log'
 import icon from '../../resources/icon.ico?asset'
 import { getExpirationChecker, getExpirationStatus, ExpirationStatus } from './utils/expiration-checker'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execPromise = promisify(exec)
 
 // Initialize electron-log immediately - MUST be done before any other operations
 log.initialize({ preload: true })
@@ -352,6 +356,161 @@ ipcMain.handle('open-pdf', async (_event, filePath: string) => {
     return { success: true }
   } catch (error) {
     log.error('Error opening PDF:', error)
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+// IPC handler for converting DOCX to PDF using Microsoft Word COM automation
+ipcMain.handle('convert-docx-to-pdf', async (_event, docxBytes: Uint8Array, filename: string) => {
+  let tempDocxPath: string | null = null;
+  let outputPdfPath: string | null = null;
+
+  try {
+    log.info(`Starting DOCX to PDF conversion using MS Word for: ${filename}`)
+
+    // Create temp directory path
+    const tempDir = app.getPath('temp')
+    const timestamp = Date.now()
+    const baseName = filename.replace(/\.docx$/i, '')
+
+    // Create temporary DOCX file
+    tempDocxPath = join(tempDir, `${baseName}_${timestamp}.docx`)
+    await writeFile(tempDocxPath, Buffer.from(docxBytes))
+    log.info(`Temporary DOCX file created: ${tempDocxPath}`)
+
+    // Output PDF path
+    outputPdfPath = join(tempDir, `${baseName}_${timestamp}.pdf`)
+
+    // PowerShell script to convert DOCX to PDF using Word COM
+    // Using separate script file approach for better error handling
+    const psScriptPath = join(tempDir, `convert_${timestamp}.ps1`)
+    const psScript = `
+$ErrorActionPreference = "Stop"
+$word = $null
+try {
+    Write-Host "Creating Word COM object..."
+    $word = New-Object -ComObject Word.Application
+    $word.Visible = $false
+    Write-Host "Word application created"
+
+    Write-Host "Opening DOCX file: ${tempDocxPath.replace(/\\/g, '\\\\')}"
+    $doc = $word.Documents.Open("${tempDocxPath.replace(/\\/g, '\\\\')}")
+    Write-Host "Document opened successfully"
+
+    Write-Host "Saving as PDF: ${outputPdfPath.replace(/\\/g, '\\\\')}"
+    # Format 17 = wdFormatPDF
+    $pdfFormat = 17
+    $doc.SaveAs([ref]"${outputPdfPath.replace(/\\/g, '\\\\')}", [ref]$pdfFormat)
+    Write-Host "SaveAs completed"
+
+    Write-Host "Closing document..."
+    $doc.Close([ref]$false)
+    Write-Host "Document closed"
+
+    Write-Host "Quitting Word..."
+    $word.Quit([ref]$false)
+    Write-Host "Word quit"
+
+    # Wait for file system to sync
+    Start-Sleep -Milliseconds 1000
+
+    Write-Host "Verifying PDF exists..."
+    if (Test-Path "${outputPdfPath.replace(/\\/g, '\\\\')}") {
+        $fileSize = (Get-Item "${outputPdfPath.replace(/\\/g, '\\\\')}").Length
+        Write-Host "PDF created successfully, size: $fileSize bytes"
+        Write-Output "SUCCESS"
+    } else {
+        throw "PDF file was not created at expected location"
+    }
+} catch {
+    $errorMsg = $_.Exception.Message
+    $errorDetails = $_.Exception | Format-List -Force | Out-String
+    Write-Host "ERROR: $errorMsg"
+    Write-Host "Details: $errorDetails"
+    throw $errorMsg
+} finally {
+    if ($word -ne $null) {
+        try {
+            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null
+        } catch {
+            Write-Host "Warning: Could not release COM object"
+        }
+    }
+    [System.GC]::Collect()
+    [System.GC]::WaitForPendingFinalizers()
+    Write-Host "Cleanup completed"
+}
+`
+
+    // Write PowerShell script to file for better error handling
+    await writeFile(psScriptPath, psScript, 'utf8')
+    log.info(`PowerShell script written to: ${psScriptPath}`)
+
+    // Execute PowerShell script from file
+    log.info('Executing PowerShell script for Word COM automation...')
+    const { stdout, stderr } = await execPromise(
+      `powershell.exe -ExecutionPolicy Bypass -File "${psScriptPath}"`,
+      { timeout: 60000 } // Increased timeout to 60 seconds
+    )
+
+    log.info(`PowerShell stdout:\n${stdout}`)
+    if (stderr) {
+      log.error(`PowerShell stderr:\n${stderr}`)
+    }
+
+    // Clean up script file
+    try {
+      await unlink(psScriptPath)
+    } catch (e) {
+      log.warn('Could not delete PowerShell script file:', e)
+    }
+
+    if (stderr) {
+      throw new Error(`PowerShell error: ${stderr}`)
+    }
+
+    if (!stdout.includes('SUCCESS')) {
+      throw new Error(`PDF conversion did not complete successfully. Output: ${stdout}`)
+    }
+
+    log.info(`DOCX converted to PDF using MS Word: ${outputPdfPath}`)
+
+    // Verify the file exists before reading
+    try {
+      const fs = await import('fs/promises')
+      await fs.access(outputPdfPath)
+      log.info('PDF file verified to exist')
+    } catch (accessError) {
+      log.error('PDF file does not exist after conversion:', accessError)
+      throw new Error(`PDF file was not created at: ${outputPdfPath}`)
+    }
+
+    // Read the PDF file
+    const pdfBuffer = await readFile(outputPdfPath)
+    log.info(`PDF file read successfully, size: ${pdfBuffer.length} bytes`)
+
+    // Clean up temporary files
+    try {
+      if (tempDocxPath) await unlink(tempDocxPath)
+      if (outputPdfPath) await unlink(outputPdfPath)
+      log.info('Temporary files cleaned up')
+    } catch (cleanupError) {
+      log.warn('Error cleaning up temporary files:', cleanupError)
+    }
+
+    log.info(`DOCX to PDF conversion successful for: ${filename}`)
+    return { success: true, pdfBytes: Array.from(pdfBuffer) }
+  } catch (error) {
+    log.error('Error converting DOCX to PDF:', error)
+
+    // Clean up temporary files on error
+    try {
+      if (tempDocxPath) await unlink(tempDocxPath).catch(() => {})
+      if (outputPdfPath) await unlink(outputPdfPath).catch(() => {})
+    } catch (cleanupError) {
+      log.warn('Error during error cleanup:', cleanupError)
+    }
+
     return { success: false, error: (error as Error).message }
   }
 })

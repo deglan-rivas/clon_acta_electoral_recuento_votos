@@ -6,10 +6,11 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ChevronDown, RefreshCw, FileCheck } from "lucide-react";
+import { ChevronDown, RefreshCw, FileCheck, Download } from "lucide-react";
 import type { CategoryColors, JeeRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
 import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
+import { ConformidadDocumentService } from "../../services/documents/conformidadDocumentService";
 
 interface ActaHeaderPanelProps {
   // Mesa data
@@ -276,6 +277,62 @@ export function ActaHeaderPanel({
     onSaveMesaData();
   };
 
+  const handleDownloadConformidad = async () => {
+    try {
+      // Validate required fields before download
+      if (!localMesaNumber || localMesaNumber.length !== 6) {
+        ToastService.error("Debe ingresar un número de mesa válido (6 dígitos)");
+        return;
+      }
+
+      if (!selectedLocation.jee) {
+        ToastService.error("Debe seleccionar el JEE");
+        return;
+      }
+
+      if (!selectedLocation.departamento || !selectedLocation.provincia || !selectedLocation.distrito) {
+        ToastService.error("Debe seleccionar la ubicación completa (Departamento, Provincia, Distrito)");
+        return;
+      }
+
+      // Find the ciudad from the selected JEE
+      const selectedJeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
+      const ciudad = selectedJeeRecord?.ciudad || '';
+
+      if (!ciudad) {
+        ToastService.error("No se pudo obtener la ciudad del JEE seleccionado");
+        return;
+      }
+
+      // Prepare data for the document
+      const data = {
+        jee: selectedLocation.jee,
+        mesaNumber: localMesaNumber,
+        departamento: selectedLocation.departamento,
+        provincia: selectedLocation.provincia,
+        distrito: selectedLocation.distrito,
+        ciudad: ciudad
+      };
+
+      // Generate and download the document
+      const filename = `Conformidad_Mesa_${localMesaNumber}_${selectedLocation.jee.replace(/\s+/g, '_')}.docx`;
+      await ConformidadDocumentService.generateAndDownload(data, filename);
+
+      ToastService.success("Documento de conformidad descargado exitosamente");
+    } catch (error) {
+      console.error('Error downloading conformidad document:', error);
+      ToastService.error("Error al generar el documento de conformidad");
+    }
+  };
+
+  // Check if conformidad button should be enabled
+  const isConformidadEnabled =
+    localMesaNumber.length === 6 &&
+    selectedLocation.jee !== '' &&
+    selectedLocation.departamento !== '' &&
+    selectedLocation.provincia !== '' &&
+    selectedLocation.distrito !== '';
+
   return (
     <div className="space-y-4">
       {/* First Row: Mesa info and action buttons */}
@@ -477,6 +534,20 @@ export function ActaHeaderPanel({
                   className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
                 />
               </div>
+
+              {/* Conformidad Download Button */}
+              <Button
+                onClick={handleDownloadConformidad}
+                disabled={!isConformidadEnabled}
+                className={`px-4 py-2 rounded font-medium flex items-center gap-2 ${
+                  !isConformidadEnabled ? "cursor-not-allowed bg-gray-300 text-gray-500" : "text-gray-800 hover:opacity-90"
+                }`}
+                style={!isConformidadEnabled ? {} : { backgroundColor: categoryColors.dark }}
+                title="Descargar formato de conformidad de sobre lacrado"
+              >
+                <Download className="h-4 w-4" />
+                Conformidad
+              </Button>
             </>
           )}
 

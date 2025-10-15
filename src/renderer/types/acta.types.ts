@@ -88,6 +88,7 @@ export interface CircunscripcionRecord {
 export interface JeeRecord {
   id: string;
   jee: string;
+  ciudad: string;
 }
 
 export interface MesaElectoralRecord {

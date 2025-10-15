@@ -67,7 +67,7 @@ export class CsvDataService {
 
   /**
    * Load JEE (Jurados Electorales Especiales) data
-   * CSV format: id;jee
+   * CSV format: id;jee;ciudad
    */
   static async loadJeeData(): Promise<JeeRecord[]> {
     try {
@@ -77,10 +77,11 @@ export class CsvDataService {
       const jeeRecords: JeeRecord[] = lines
         .filter(line => line.trim())
         .map(line => {
-          const [id, jee] = line.split(';');
+          const [id, jee, ciudad] = line.split(';');
           return {
             id: id?.trim() || '',
-            jee: jee?.trim() || ''
+            jee: jee?.trim() || '',
+            ciudad: ciudad?.trim() || ''
           };
         })
         .filter(record => record.id && record.jee); // Remove entries with missing id or jee

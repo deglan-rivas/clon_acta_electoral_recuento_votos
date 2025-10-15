@@ -132,7 +132,7 @@ class MesaElectoralGenerator {
 
     console.log(`Loaded ${this.ubigeoData.length} ubigeo records`);
     console.log(`Loaded ${this.circunscripcionData.length} circunscripcion records`);
-    console.log(`Found ${this.domesticCircunscripciones.length} domestic circunscripciones for random assignment`);
+    console.log(`Found ${this.domesticCircunscripciones.length} domestic circunscripciones`);
   }
 
   // Generate unique mesa number
@@ -149,10 +149,19 @@ class MesaElectoralGenerator {
     return mesaNumber.toString().padStart(6, '0');
   }
 
-  // Randomly select a domestic circunscripcion electoral
-  getRandomDomesticCircunscripcion() {
-    const randomIndex = Math.floor(Math.random() * this.domesticCircunscripciones.length);
-    return this.domesticCircunscripciones[randomIndex];
+  // Get circunscripcion electoral based on departamento
+  // Rule: circunscripcion_electoral should equal departamento except for LIMA
+  // LIMA departamento can have either "LIMA METROPOLITANA" or "LIMA PROVINCIAS"
+  getCircunscripcionForDepartamento(departamento) {
+    const deptUpper = departamento.toUpperCase();
+
+    if (deptUpper === 'LIMA') {
+      // Randomly assign either LIMA METROPOLITANA or LIMA PROVINCIAS
+      return Math.random() < 0.5 ? 'LIMA METROPOLITANA' : 'LIMA PROVINCIAS';
+    }
+
+    // For all other departamentos, circunscripcion equals departamento
+    return deptUpper;
   }
 
   // Generate domestic mesas
@@ -179,8 +188,9 @@ class MesaElectoralGenerator {
       );
 
       for (let i = 0; i < numMesas; i++) {
-        // Randomly assign circunscripcion electoral (independent of departamento)
-        const circunscripcionElectoral = this.getRandomDomesticCircunscripcion();
+        // Assign circunscripcion electoral based on departamento
+        // (equals departamento, except LIMA can be LIMA METROPOLITANA or LIMA PROVINCIAS)
+        const circunscripcionElectoral = this.getCircunscripcionForDepartamento(location.departamento);
 
         this.mesaData.push({
           mesa_number: this.generateMesaNumber(),
@@ -291,7 +301,7 @@ class MesaElectoralGenerator {
       circunscripcionStats[circ] = (circunscripcionStats[circ] || 0) + 1;
     });
 
-    console.log('\n🗳️ Mesas by Circunscripción Electoral (Random Assignment):');
+    console.log('\n🗳️ Mesas by Circunscripción Electoral (Based on Departamento):');
     Object.entries(circunscripcionStats)
       .sort(([,a], [,b]) => b - a)
       .forEach(([circ, count]) => {
@@ -365,7 +375,7 @@ try {
   console.log('   - Domestic: departamento/provincia/distrito');
   console.log('   - International: continente/pais/ciudad (using same columns)');
   console.log('   - Only mesa identification and location data included');
-  console.log('   - Circunscripción Electoral randomly assigned (independent of departamento)');
+  console.log('   - Circunscripción Electoral based on departamento (LIMA → LIMA METROPOLITANA/PROVINCIAS)');
 
 } catch (error) {
   console.error('❌ Error generating Mesa Electoral data:', error);

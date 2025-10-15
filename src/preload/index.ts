@@ -28,6 +28,9 @@ const api = {
   openPdf: (filePath: string): Promise<{ success: boolean; error?: string }> => {
     return ipcRenderer.invoke('open-pdf', filePath)
   },
+  convertDocxToPdf: (docxBytes: Uint8Array, filename: string): Promise<{ success: boolean; pdfBytes?: number[]; error?: string }> => {
+    return ipcRenderer.invoke('convert-docx-to-pdf', docxBytes, filename)
+  },
   // Trial expiration APIs
   checkExpiration: (): Promise<{
     success: boolean;

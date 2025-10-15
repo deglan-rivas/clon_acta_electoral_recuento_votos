@@ -343,6 +343,12 @@ export function VoteEntryTable({
                         }
                       }
                     }}
+                    onKeyDown={(e) => {
+                      // Block: e, E, +, -, . (only allow natural numbers)
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     disabled={isBlankOrNull(newEntry.party || "") || !isBloque2Enabled}
                     className={`h-12 text-center text-lg font-semibold ${
                       isBlankOrNull(newEntry.party || "") || !isBloque2Enabled
@@ -365,6 +371,12 @@ export function VoteEntryTable({
                         if (value <= voteLimits.preferential2) {
                           setNewEntry({ ...newEntry, preferentialVote2: value });
                         }
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      // Block: e, E, +, -, . (only allow natural numbers)
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                        e.preventDefault();
                       }
                     }}
                     disabled={isBlankOrNull(newEntry.party || "") || !isBloque2Enabled}
