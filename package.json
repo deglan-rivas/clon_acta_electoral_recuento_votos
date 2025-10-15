@@ -44,12 +44,15 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",
+    "docx-pdf": "^0.0.1",
+    "docxtemplater": "^3.66.7",
     "electron-log": "^5.4.3",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.487.0",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
+    "pizzip": "^3.2.0",
     "react": "^19.1.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.1.1",
@@ -88,7 +91,7 @@
       "output": "dist"
     },
     "files": [
-      "out"
+      "out/**/*"
     ],
     "win": {
       "icon": "public/ico-jne.ico",
