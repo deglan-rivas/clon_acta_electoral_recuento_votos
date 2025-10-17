@@ -3,8 +3,8 @@
 import { rgb } from 'pdf-lib';
 
 // Common constants
-export const SENATORS_COUNT = 30;
-export const DEPUTIES_COUNT = 130;
+// export const SENATORS_COUNT = 30;
+// export const DEPUTIES_COUNT = 130;
 
 // Font sizes
 export const FONT_SIZES = {
@@ -22,22 +22,22 @@ export const PDF_COLORS = {
 } as const;
 
 // PDF Templates paths - National versions
-export const PDF_TEMPLATES = {
-  presidencial: './actas/ACTA_RECUENTO_PRESIDENCIAL.pdf',
-  senadoresNacional: './actas/ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
-  senadoresRegional: './actas/ACTA_RECUENTO_SENADORES_REGIONAL.pdf',
-  diputados: './actas/ACTA_RECUENTO_DIPUTADOS.pdf',
-  parlamentoAndino: './actas/ACTA_RECUENTO_PARLAMENTO_ANDINO.pdf',
-} as const;
+// export const PDF_TEMPLATES = {
+//   presidencial: './actas/ACTA_RECUENTO_PRESIDENCIAL.pdf',
+//   senadoresNacional: './actas/ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
+//   senadoresRegional: './actas/ACTA_RECUENTO_SENADORES_REGIONAL.pdf',
+//   diputados: './actas/ACTA_RECUENTO_DIPUTADOS.pdf',
+//   parlamentoAndino: './actas/ACTA_RECUENTO_PARLAMENTO_ANDINO.pdf',
+// } as const;
 
 // PDF Templates paths - International versions (EXTRANJERO)
-export const PDF_TEMPLATES_EXTRANJERO = {
-  presidencial: './actas/EXTRANJERO_ACTA_RECUENTO_PRESIDENCIAL.pdf',
-  senadoresNacional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
-  senadoresRegional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_MULTIPLE.pdf',
-  diputados: './actas/EXTRANJERO_ACTA_RECUENTO_DIPUTADOS.pdf',
-  parlamentoAndino: './actas/EXTRANJERO_ACTA_RECUENTO_REPRESENTANTES.pdf',
-} as const;
+// export const PDF_TEMPLATES_EXTRANJERO = {
+//   presidencial: './actas/EXTRANJERO_ACTA_RECUENTO_PRESIDENCIAL.pdf',
+//   senadoresNacional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_UNICO.pdf',
+//   senadoresRegional: './actas/EXTRANJERO_ACTA_RECUENTO_SENADORES_DISTRITO_MULTIPLE.pdf',
+//   diputados: './actas/EXTRANJERO_ACTA_RECUENTO_DIPUTADOS.pdf',
+//   parlamentoAndino: './actas/EXTRANJERO_ACTA_RECUENTO_REPRESENTANTES.pdf',
+// } as const;
 
 // Presidencial Template Configuration
 export const PRESIDENCIAL_LAYOUT = {
@@ -67,6 +67,10 @@ export const PRESIDENCIAL_LAYOUT = {
     blanco: { x: 234.6, yOffset: 1092, size: FONT_SIZES.xxlarge },
     nulo: { x: 234.6, yOffset: 1115, size: FONT_SIZES.xxlarge },
   },
+  personas: [   
+     { x: 510, yOffset: 248.5, size: FONT_SIZES.small, lineHeight: 11.1, cargo: 'PRESIDENTE' },
+     { x: 510, yOffset: 448.5, size: FONT_SIZES.small, lineHeight: 11.1, cargo: 'SEGUNDO MIEMBRO' },   
+  ],
 } as const;
 
 // Senadores Nacional Template Configuration (also used for Diputados 32)
