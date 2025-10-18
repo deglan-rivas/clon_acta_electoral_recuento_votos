@@ -228,6 +228,13 @@ function createWindow(): BrowserWindow {
             const logPath = log.transports.file.getFile().path
             shell.showItemInFolder(logPath)
           }
+        },
+        {
+          label: 'Abrir DevTools (Debug)',
+          accelerator: 'F12',
+          click: () => {
+            mainWindow.webContents.openDevTools()
+          }
         }
       ]
     }
@@ -511,7 +518,18 @@ try {
       log.warn('Error during error cleanup:', cleanupError)
     }
 
-    return { success: false, error: (error as Error).message }
+    // Check for specific error types to provide better error messages
+    const errorMessage = (error as Error).message || ''
+    let userMessage = errorMessage
+
+    // Detect MS Office not installed errors
+    if (errorMessage.includes('0x80040154') ||
+        errorMessage.includes('REGDB_E_CLASSNOTREG') ||
+        errorMessage.includes('Clase no registrada')) {
+      userMessage = 'OFFICE_NOT_INSTALLED'
+    }
+
+    return { success: false, error: userMessage }
   }
 })
 

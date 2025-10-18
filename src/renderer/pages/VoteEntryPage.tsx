@@ -13,7 +13,8 @@ import {
   type PreferentialConfig,
   type SelectedLocation,
   type MesaElectoralInfo,
-  type JeeRecord
+  type JeeRecord,
+  type JeeMiembroRecord
 } from "../types";
 import { type PoliticalOrganization } from "../types";
 import { useActaRepository } from "../hooks/useActaRepository";
@@ -51,11 +52,14 @@ interface VoteEntryPageProps {
   getDistritos: (departamento: string, provincia: string) => string[];
   isInternationalLocation: boolean;
   jeeOptions: JeeRecord[];
+  jeeMiembrosData: JeeMiembroRecord[];
   mesaElectoralInfo?: MesaElectoralInfo | null;
   isFormFinalized?: boolean;
   onFormFinalizedChange?: (isFinalized: boolean) => void;
   isMesaDataSaved?: boolean;
   onMesaDataSavedChange?: (isSaved: boolean) => void;
+  isConformidadDownloaded?: boolean;
+  onConformidadDownloadedChange?: (isDownloaded: boolean) => void;
   areMesaFieldsLocked?: boolean;
   startTime: Date | null;
   endTime: Date | null;
@@ -102,10 +106,13 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     getDistritos,
     isInternationalLocation,
     jeeOptions,
+    jeeMiembrosData,
     isFormFinalized: externalIsFormFinalized,
     onFormFinalizedChange,
     isMesaDataSaved: externalIsMesaDataSaved,
     onMesaDataSavedChange,
+    isConformidadDownloaded: externalIsConformidadDownloaded,
+    onConformidadDownloadedChange,
     areMesaFieldsLocked = false,
     startTime,
     endTime,
@@ -132,10 +139,12 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const [entries, setEntries] = useState<VoteEntry[]>(existingEntries);
   const [localIsFormFinalized, setLocalIsFormFinalized] = useState<boolean>(false);
   const [localIsMesaDataSaved, setLocalIsMesaDataSaved] = useState<boolean>(false);
+  const [localIsConformidadDownloaded, setLocalIsConformidadDownloaded] = useState<boolean>(false);
   const [selectedOrganizationKeys, setSelectedOrganizationKeys] = useState<string[]>([]);
 
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
   const isMesaDataSaved = externalIsMesaDataSaved !== undefined ? externalIsMesaDataSaved : localIsMesaDataSaved;
+  const isConformidadDownloaded = externalIsConformidadDownloaded !== undefined ? externalIsConformidadDownloaded : localIsConformidadDownloaded;
 
   // Load selected organizations from repository
   useEffect(() => {
@@ -272,6 +281,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const handleVerActa = async () => {
     const finalizationTime = endTime || new Date();
 
+    // Get JEE ID from jeeOptions by matching the JEE name
+    const jeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
+    const jeeId = jeeRecord?.id || '';
+
     const pdfData = {
       entries,
       politicalOrganizations,
@@ -284,10 +297,13 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       startTime,
       endTime: finalizationTime,
       isInternationalLocation, // Pass international location flag to PDF generator
+      jeeMiembrosData, // Pass JEE members data
+      jeeId, // Pass JEE ID for filtering members
     };
 
     console.log('[VoteEntryPage] PDF Generation - isInternationalLocation:', isInternationalLocation);
     console.log('[VoteEntryPage] PDF Generation - Category:', category);
+    console.log('[VoteEntryPage] PDF Generation - JEE ID:', jeeId);
     console.log('[VoteEntryPage] PDF Data:', pdfData);
 
     try {
@@ -325,11 +341,13 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 areMesaFieldsLocked={areMesaFieldsLocked}
                 isMesaDataSaved={isMesaDataSaved}
                 isFormFinalized={isFormFinalized}
+                isConformidadDownloaded={isConformidadDownloaded}
                 categoryActas={categoryActas}
                 currentActaIndex={currentActaIndex}
                 activeCategory={category}
                 categoryColors={categoryColors}
                 jeeOptions={jeeOptions}
+                jeeMiembrosData={jeeMiembrosData}
                 getDepartamentos={getDepartamentos}
                 getProvincias={getProvincias}
                 getDistritos={getDistritos}
@@ -345,6 +363,13 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 onCreateNewActa={onCreateNewActa}
                 onSwitchToActa={onSwitchToActa}
                 isMesaAlreadyFinalized={isMesaAlreadyFinalized}
+                onConformidadDownloaded={() => {
+                  if (onConformidadDownloadedChange) {
+                    onConformidadDownloadedChange(true);
+                  } else {
+                    setLocalIsConformidadDownloaded(true);
+                  }
+                }}
               />
 
               {/* Timer Display */}

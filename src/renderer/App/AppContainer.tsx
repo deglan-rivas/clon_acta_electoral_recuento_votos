@@ -22,7 +22,8 @@ function AppLayoutContent() {
     circunscripcionData,
     jeeData,
     mesaElectoralData,
-    politicalOrganizations
+    politicalOrganizations,
+    jeeMiembrosData
   } = useAppData();
 
   // Repository for accessing stored actas
@@ -47,6 +48,7 @@ function AppLayoutContent() {
     setMesaDataSaved,
     setFormFinalized,
     setMesaFieldsLocked,
+    setConformidadDownloaded,
     setStartTime,
     setEndTime,
     setCurrentTime,
@@ -165,6 +167,7 @@ function AppLayoutContent() {
   const tcv = currentActa?.tcv;
   const isFormFinalized = currentActa?.isFormFinalized || false;
   const isMesaDataSaved = currentActa?.isMesaDataSaved || false;
+  const isConformidadDownloaded = currentActa?.isConformidadDownloaded || false;
   const startTime = currentActa?.startTime ? new Date(currentActa.startTime) : null;
   const endTime = currentActa?.endTime ? new Date(currentActa.endTime) : null;
 
@@ -242,6 +245,7 @@ function AppLayoutContent() {
       getDistritos={getDistritos}
       isInternationalLocation={isInternationalLocation}
       jeeOptions={jeeData}
+      jeeMiembrosData={jeeMiembrosData}
       politicalOrganizations={politicalOrganizations}
       settingsReloadTrigger={settingsReloadTrigger}
       onLoadMesaInfo={async (mesa) => {
@@ -279,6 +283,8 @@ function AppLayoutContent() {
       onFormFinalizedChange={setFormFinalized}
       isMesaDataSaved={isMesaDataSaved}
       onMesaDataSavedChange={setMesaDataSaved}
+      isConformidadDownloaded={isConformidadDownloaded}
+      onConformidadDownloadedChange={setConformidadDownloaded}
       areMesaFieldsLocked={areMesaFieldsLocked}
       startTime={startTime}
       endTime={endTime}

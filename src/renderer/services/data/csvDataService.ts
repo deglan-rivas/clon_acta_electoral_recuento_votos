@@ -1,5 +1,5 @@
 // Service for loading CSV data files
-import type { UbigeoRecord, CircunscripcionRecord, JeeRecord, MesaElectoralRecord } from '../../types/acta.types';
+import type { UbigeoRecord, CircunscripcionRecord, JeeRecord, MesaElectoralRecord, JeeMiembroRecord } from '../../types/acta.types';
 import type { PoliticalOrganization } from '../../types';
 
 // CSV file imports
@@ -8,6 +8,7 @@ import circunscripcionCsvFile from '/circunscripcion_electoral_por_categoria.csv
 import jeeCsvFile from '/jee.csv?url';
 import mesaElectoralCsvFile from '/mesa_electoral_data.csv?url';
 import politicalOrgsCsvFile from '/organizaciones_politicas.csv?url';
+import jeeMiembrosCsvFile from '/jee-miembros.csv?url';
 
 export class CsvDataService {
   /**
@@ -153,15 +154,48 @@ export class CsvDataService {
   }
 
   /**
+   * Load JEE Miembros data (JEE members information)
+   * CSV format: jee_id,JURADOELECTORAL,TXDOCUMENTOIDENTIDAD,NOMBRES,APELLIDOPATERNO,APELLIDOMATERNO,CARGO
+   */
+  static async loadJeeMiembrosData(): Promise<JeeMiembroRecord[]> {
+    try {
+      const response = await fetch(jeeMiembrosCsvFile);
+      const text = await response.text();
+      const lines = text.split('\n').slice(1); // Skip header
+      const jeeMiembrosRecords: JeeMiembroRecord[] = lines
+        .filter(line => line.trim())
+        .map(line => {
+          const [jee_id, JURADOELECTORAL, TXDOCUMENTOIDENTIDAD, NOMBRES, APELLIDOPATERNO, APELLIDOMATERNO, CARGO] = line.split(',');
+          return {
+            jee_id: jee_id?.trim() || '',
+            JURADOELECTORAL: JURADOELECTORAL?.trim() || '',
+            TXDOCUMENTOIDENTIDAD: TXDOCUMENTOIDENTIDAD?.trim() || '',
+            NOMBRES: NOMBRES?.trim() || '',
+            APELLIDOPATERNO: APELLIDOPATERNO?.trim() || '',
+            APELLIDOMATERNO: APELLIDOMATERNO?.trim() || '',
+            CARGO: CARGO?.trim() || ''
+          };
+        })
+        .filter(record => record.jee_id && record.CARGO); // Remove entries with missing jee_id or CARGO
+
+      return jeeMiembrosRecords;
+    } catch (error) {
+      console.error('Error loading JEE Miembros data:', error);
+      return [];
+    }
+  }
+
+  /**
    * Load all CSV data at once
    */
   static async loadAllData() {
-    const [ubigeo, circunscripcion, jee, mesaElectoral, politicalOrgs] = await Promise.all([
+    const [ubigeo, circunscripcion, jee, mesaElectoral, politicalOrgs, jeeMiembros] = await Promise.all([
       this.loadUbigeoData(),
       this.loadCircunscripcionData(),
       this.loadJeeData(),
       this.loadMesaElectoralData(),
-      this.loadPoliticalOrganizations()
+      this.loadPoliticalOrganizations(),
+      this.loadJeeMiembrosData()
     ]);
 
     return {
@@ -169,7 +203,8 @@ export class CsvDataService {
       circunscripcionData: circunscripcion,
       jeeData: jee,
       mesaElectoralData: mesaElectoral,
-      politicalOrganizations: politicalOrgs
+      politicalOrganizations: politicalOrgs,
+      jeeMiembrosData: jeeMiembros
     };
   }
 }

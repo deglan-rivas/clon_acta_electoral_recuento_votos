@@ -1,6 +1,6 @@
 // Shared PDF generation types
 
-import type { VoteEntry, PoliticalOrganization } from "../../../types";
+import type { VoteEntry, PoliticalOrganization, JeeMiembroRecord } from "../../../types";
 
 /**
  * Geographic location information for electoral mesa
@@ -27,6 +27,8 @@ export interface BaseElectoralPdfData {
   startTime: Date | null;
   endTime: Date;
   isInternationalLocation?: boolean; // Flag to determine if using EXTRANJERO templates
+  jeeMiembrosData: JeeMiembroRecord[]; // JEE members information
+  jeeId: string; // JEE ID to filter members
 }
 
 /**
@@ -102,6 +104,29 @@ export interface PreferentialTableConfig {
 }
 
 /**
+ * Configuration for individual JEE member position
+ */
+export interface PersonaConfig {
+  x: number;
+  yOffset: number;
+  size: number;
+  lineHeight: number;
+  cargo: string;
+}
+
+/**
+ * Configuration for JEE members section
+ */
+export interface JeeMembersConfig {
+  labelOffsets: {
+    nombres: number;
+    apellidos: number;
+    dni: number;
+  };
+  personas: PersonaConfig[];
+}
+
+/**
  * Complete layout configuration for a PDF template
  */
 export interface LayoutConfig {
@@ -126,6 +151,7 @@ export interface LayoutConfig {
   partyVotes: PartyVotesConfig;
   specialVotes: SpecialVotesConfig;
   preferentialTable?: PreferentialTableConfig;
+  jeeMembers?: JeeMembersConfig;
 }
 
 /**

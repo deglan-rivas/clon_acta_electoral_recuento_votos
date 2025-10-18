@@ -5,7 +5,8 @@ import type {
   UbigeoRecord,
   CircunscripcionRecord,
   JeeRecord,
-  MesaElectoralRecord
+  MesaElectoralRecord,
+  JeeMiembroRecord
 } from "../types/acta.types";
 import type { PoliticalOrganization } from "../types";
 
@@ -15,6 +16,7 @@ interface AppDataContextType {
   jeeData: JeeRecord[];
   mesaElectoralData: MesaElectoralRecord[];
   politicalOrganizations: PoliticalOrganization[];
+  jeeMiembrosData: JeeMiembroRecord[];
   isLoading: boolean;
 }
 
@@ -26,6 +28,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [jeeData, setJeeData] = useState<JeeRecord[]>([]);
   const [mesaElectoralData, setMesaElectoralData] = useState<MesaElectoralRecord[]>([]);
   const [politicalOrganizations, setPoliticalOrganizations] = useState<PoliticalOrganization[]>([]);
+  const [jeeMiembrosData, setJeeMiembrosData] = useState<JeeMiembroRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setJeeData(data.jeeData);
       setMesaElectoralData(data.mesaElectoralData);
       setPoliticalOrganizations(data.politicalOrganizations);
+      setJeeMiembrosData(data.jeeMiembrosData);
       setIsLoading(false);
     };
 
@@ -51,6 +55,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         jeeData,
         mesaElectoralData,
         politicalOrganizations,
+        jeeMiembrosData,
         isLoading,
       }}
     >

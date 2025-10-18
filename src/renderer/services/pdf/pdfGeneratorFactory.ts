@@ -25,7 +25,8 @@ import {
   PdfRenderingPipeline,
   CommonFieldsRenderer,
   PartyVotesRenderer,
-  PreferentialTableRenderer
+  PreferentialTableRenderer,
+  JeeMembersRenderer
 } from './rendering/renderPhases';
 
 /**
@@ -131,7 +132,8 @@ function createVoteCalculationFn(
  */
 function createRenderingPipeline(
   electionType: ElectionType,
-  preferentialCount: number
+  preferentialCount: number,
+  layoutConfig: any
 ): PdfRenderingPipeline {
   const pipeline = new PdfRenderingPipeline()
     .addPhase(new CommonFieldsRenderer())
@@ -140,6 +142,11 @@ function createRenderingPipeline(
   // Add preferential table renderer if election has preferential voting
   if (hasPreferentialVoting(electionType) && preferentialCount > 0) {
     pipeline.addPhase(new PreferentialTableRenderer(preferentialCount));
+  }
+
+  // Add JEE members renderer if layout config has jeeMembers section
+  if (layoutConfig.jeeMembers) {
+    pipeline.addPhase(new JeeMembersRenderer());
   }
 
   return pipeline;
@@ -198,7 +205,7 @@ export async function generatePdfByElectionType(
   validatePdfGeneratorConfig(config);
 
   const voteCalculationFn = createVoteCalculationFn(electionType, limiteVotoPreferencial);
-  const pipeline = createRenderingPipeline(electionType, limiteVotoPreferencial);
+  const pipeline = createRenderingPipeline(electionType, limiteVotoPreferencial, layoutConfig);
 
   await generateElectoralPdf(data, config, voteCalculationFn, pipeline);
 }

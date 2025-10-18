@@ -8,6 +8,7 @@ import { rgb } from 'pdf-lib';
 
 // Font sizes
 export const FONT_SIZES = {
+  xsmall: 8,
   small: 9,
   medium: 10,
   large: 13,
@@ -67,10 +68,17 @@ export const PRESIDENCIAL_LAYOUT = {
     blanco: { x: 234.6, yOffset: 1092, size: FONT_SIZES.xxlarge },
     nulo: { x: 234.6, yOffset: 1115, size: FONT_SIZES.xxlarge },
   },
-  personas: [   
-     { x: 510, yOffset: 248.5, size: FONT_SIZES.small, lineHeight: 11.1, cargo: 'PRESIDENTE' },
-     { x: 510, yOffset: 448.5, size: FONT_SIZES.small, lineHeight: 11.1, cargo: 'SEGUNDO MIEMBRO' },   
-  ],
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 50,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 50,    // Offset from 'APELLIDOS' label to value position 
+     dni: 50,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 550, yOffset: 246.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 550, yOffset: 356.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },   
+   ]
+  },
 } as const;
 
 // Senadores Nacional Template Configuration (also used for Diputados 32)
@@ -89,7 +97,7 @@ export const SENADORES_NACIONAL_LAYOUT = {
     endTime: { x: 95, yOffset: 816, size: FONT_SIZES.medium },
     endDate: { x: 205, yOffset: 816, size: FONT_SIZES.medium },
     tcvTopRight: { x: 1120, yOffset: 114, size: FONT_SIZES.xxlarge },
-    totalElectores: { x: 1120, yOffset: 91, size: FONT_SIZES.xxlarge },
+    totalElectores: { x: 1122, yOffset: 91.5, size: FONT_SIZES.xxlarge },
     cedulasExcedentes: { x: 525.6, yOffset: 753.8, size: FONT_SIZES.xxlarge },
     tcvBottom: { x: 245.6, yOffset: 793.4, size: FONT_SIZES.xxlarge },
   },
@@ -107,6 +115,19 @@ export const SENADORES_NACIONAL_LAYOUT = {
     cellWidth: 22.95,
     fontSize: 11.5,
     lineHeight: 15.132,
+  },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 50,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 50,    // Offset from 'APELLIDOS' label to value position 
+     dni: 50,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 985, yOffset: 198.5, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'PRESIDENTE' },
+     { x: 985, yOffset: 296.0, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 985, yOffset: 393.5, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'TERCER MIEMBRO' },
+     { x: 985, yOffset: 491.0, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'SECRETARIO (A)' },   
+   ]
   },
 } as const;
 

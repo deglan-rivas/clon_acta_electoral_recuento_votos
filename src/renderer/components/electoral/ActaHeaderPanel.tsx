@@ -6,8 +6,8 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ChevronDown, RefreshCw, FileCheck, Download } from "lucide-react";
-import type { CategoryColors, JeeRecord } from "../../types/acta.types";
+import { ChevronDown, RefreshCw, FileCheck, Download, Loader2 } from "lucide-react";
+import type { CategoryColors, JeeRecord, JeeMiembroRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
 import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
 import { ConformidadDocumentService } from "../../services/documents/conformidadDocumentService";
@@ -33,6 +33,7 @@ interface ActaHeaderPanelProps {
   // State flags
   isMesaDataSaved: boolean;
   isFormFinalized: boolean;
+  isConformidadDownloaded: boolean;
 
   // Acta navigation
   categoryActas?: any[];
@@ -44,6 +45,7 @@ interface ActaHeaderPanelProps {
 
   // Location options
   jeeOptions: JeeRecord[];
+  jeeMiembrosData: JeeMiembroRecord[];
   getDepartamentos: () => string[];
   getProvincias: (departamento: string) => string[];
   getDistritos: (departamento: string, provincia: string) => string[];
@@ -61,6 +63,7 @@ interface ActaHeaderPanelProps {
   onCreateNewActa?: () => void;
   onSwitchToActa?: (index: number) => void;
   isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
+  onConformidadDownloaded?: () => void;
 }
 
 export function ActaHeaderPanel({
@@ -74,11 +77,13 @@ export function ActaHeaderPanel({
   areMesaFieldsLocked,
   isMesaDataSaved,
   isFormFinalized,
+  isConformidadDownloaded,
   categoryActas = [],
   currentActaIndex = 0,
   activeCategory,
   categoryColors,
   jeeOptions,
+  jeeMiembrosData,
   getDepartamentos,
   getProvincias,
   getDistritos,
@@ -94,6 +99,7 @@ export function ActaHeaderPanel({
   onCreateNewActa,
   onSwitchToActa,
   isMesaAlreadyFinalized,
+  onConformidadDownloaded,
 }: ActaHeaderPanelProps) {
   // Local state for inputs before saving
   const [localMesaNumber, setLocalMesaNumber] = useState<string>('');
@@ -104,6 +110,9 @@ export function ActaHeaderPanel({
   const [showActaDropdown, setShowActaDropdown] = useState<boolean>(false);
   const actaDropdownRef = useRef<HTMLDivElement>(null);
   const actaInputRef = useRef<HTMLInputElement>(null);
+
+  // Loading state for Conformidad generation
+  const [isGeneratingConformidad, setIsGeneratingConformidad] = useState<boolean>(false);
 
   // Acta number input handlers - COMMENTED OUT: Acta number is now auto-generated
   // const actaInputHandlers = useActaNumberInput({
@@ -119,6 +128,9 @@ export function ActaHeaderPanel({
   // Block control logic
   const isBloque1Enabled = !isMesaDataSaved && !isFormFinalized;
 
+  // Iniciar button should require Conformidad to be downloaded first
+  const canIniciar = isBloque1Enabled && isConformidadDownloaded;
+
   // Update local state when parent values change
   useEffect(() => {
     const prevMesaNumber = prevMesaNumberRef.current;
@@ -126,78 +138,36 @@ export function ActaHeaderPanel({
     const newMesaNumber = mesaNumber > 0 ? mesaNumber.toString().padStart(6, '0') : '';
     const currentJee = selectedLocation.jee;
 
-    console.log('[ActaHeaderPanel useEffect] Debug info:', {
-      prevMesaNumber,
-      newMesaNumber,
-      mesaNumber,
-      actaNumber,
-      localActaNumber,
-      prevJee,
-      currentJee,
-      jeeChanged: currentJee !== prevJee,
-      mesaChanged: newMesaNumber !== prevMesaNumber
-    });
-
     setLocalMesaNumber(newMesaNumber);
     setLocalTotalElectores(totalElectores);
 
     // Auto-generate acta number when:
     // 1. Mesa number is valid (6 digits)
-    // 2. Either mesa number OR JEE changed
-    // 3. Acta number is not already set
+    // 2. JEE is selected
+    // 3. Either (mesa changed OR JEE changed OR localActaNumber is empty AND actaNumber is empty)
     const shouldGenerateActa = newMesaNumber.length === 6 &&
-                              (newMesaNumber !== prevMesaNumber || currentJee !== prevJee) &&
-                              !actaNumber;
-
-    console.log('[ActaHeaderPanel] Acta number generation check:', {
-      newMesaNumberLength: newMesaNumber.length,
-      prevMesaNumber,
-      newMesaNumber,
-      prevJee,
-      currentJee,
-      actaNumber,
-      selectedJee: selectedLocation.jee,
-      activeCategory,
-      jeeOptionsCount: jeeOptions.length,
-      shouldGenerateActa
-    });
+                              currentJee &&
+                              (newMesaNumber !== prevMesaNumber ||
+                               currentJee !== prevJee ||
+                               (!localActaNumber && !actaNumber));
 
     if (shouldGenerateActa) {
       // Find the JEE ID from the selected JEE name
       const selectedJeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
       const jeeId = selectedJeeRecord?.id || '';
 
-      console.log('[ActaHeaderPanel] Finding JEE:', {
-        searchingFor: selectedLocation.jee,
-        foundRecord: selectedJeeRecord,
-        jeeId,
-        allJeeOptions: jeeOptions
-      });
-
       // Find the category ID
       const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
       const categoryId = categoryRecord?.id || '';
 
-      console.log('[ActaHeaderPanel] Finding Category:', {
-        searchingFor: activeCategory,
-        foundRecord: categoryRecord,
-        categoryId,
-        allCategories: ELECTORAL_CATEGORIES
-      });
-
       // Generate acta number: mesaNumber-jeeId-categoryId
       const newActaNumber = `${newMesaNumber}-${jeeId}-${categoryId}`;
-      console.log('[ActaHeaderPanel] Auto-generating acta number:', {
-        newActaNumber,
-        parts: { mesaNumber: newMesaNumber, jeeId, categoryId }
-      });
       setLocalActaNumber(newActaNumber);
 
       // Update refs
       prevJeeRef.current = currentJee;
     } else {
       // Only sync from parent if we're not auto-generating
-      console.log('[ActaHeaderPanel] Syncing from parent actaNumber:', actaNumber);
       setLocalActaNumber(actaNumber);
     }
 
@@ -278,7 +248,14 @@ export function ActaHeaderPanel({
   };
 
   const handleDownloadConformidad = async () => {
+    // Prevent multiple clicks
+    if (isGeneratingConformidad) {
+      return;
+    }
+
     try {
+      setIsGeneratingConformidad(true);
+
       // Validate required fields before download
       if (!localMesaNumber || localMesaNumber.length !== 6) {
         ToastService.error("Debe ingresar un número de mesa válido (6 dígitos)");
@@ -295,14 +272,20 @@ export function ActaHeaderPanel({
         return;
       }
 
-      // Find the ciudad from the selected JEE
+      // Find the ciudad and ID from the selected JEE
       const selectedJeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
       const ciudad = selectedJeeRecord?.ciudad || '';
+      const jeeId = selectedJeeRecord?.id || '';
 
       if (!ciudad) {
         ToastService.error("No se pudo obtener la ciudad del JEE seleccionado");
         return;
       }
+
+      // Find JEE members by jeeId
+      const presidente = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'PRESIDENTE');
+      const segundoMiembro = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'SEGUNDO MIEMBRO');
+      const tercerMiembro = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'TERCER MIEMBRO');
 
       // Prepare data for the document
       const data = {
@@ -311,17 +294,50 @@ export function ActaHeaderPanel({
         departamento: selectedLocation.departamento,
         provincia: selectedLocation.provincia,
         distrito: selectedLocation.distrito,
-        ciudad: ciudad
+        ciudad: ciudad,
+        // Presidente fields
+        PRESIDENTE_NOMBRES: presidente?.NOMBRES || '',
+        PRESIDENTE_APELLIDOPATERNO: presidente?.APELLIDOPATERNO || '',
+        PRESIDENTE_APELLIDOMATERNO: presidente?.APELLIDOMATERNO || '',
+        // Segundo Miembro fields
+        SEGUNDO_MIEMBRO_NOMBRES: segundoMiembro?.NOMBRES || '',
+        SEGUNDO_MIEMBRO_APELLIDOPATERNO: segundoMiembro?.APELLIDOPATERNO || '',
+        SEGUNDO_MIEMBRO_APELLIDOMATERNO: segundoMiembro?.APELLIDOMATERNO || '',
+        // Tercer Miembro fields
+        TERCER_MIEMBRO_NOMBRES: tercerMiembro?.NOMBRES || '',
+        TERCER_MIEMBRO_APELLIDOPATERNO: tercerMiembro?.APELLIDOPATERNO || '',
+        TERCER_MIEMBRO_APELLIDOMATERNO: tercerMiembro?.APELLIDOMATERNO || '',
       };
 
-      // Generate and download the document
-      const filename = `Conformidad_Mesa_${localMesaNumber}_${selectedLocation.jee.replace(/\s+/g, '_')}.docx`;
+      // Get category label for filename
+      const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
+      const categoryLabel = categoryRecord?.label || activeCategory;
+
+      // Generate filename with category label
+      const filename = `Conformidad_${categoryLabel.replace(/\s+/g, '_')}_Mesa_${localMesaNumber}_${selectedLocation.jee.replace(/\s+/g, '_')}.docx`;
+
       await ConformidadDocumentService.generateAndDownload(data, filename);
 
-      ToastService.success("Documento de conformidad descargado exitosamente");
+      // Mark conformidad as downloaded
+      if (onConformidadDownloaded) {
+        onConformidadDownloaded();
+      }
+
+      ToastService.success("Formato de conformidad generado y abierto exitosamente");
     } catch (error) {
       console.error('Error downloading conformidad document:', error);
-      ToastService.error("Error al generar el documento de conformidad");
+
+      // Display the error message from the service
+      const errorMessage = error instanceof Error ? error.message : "Error al generar el documento de conformidad";
+
+      // Use a longer toast width and duration for Office installation error
+      if (errorMessage.includes('Microsoft Office Word no está instalado')) {
+        ToastService.error(errorMessage, '550px', 6000);
+      } else {
+        ToastService.error(errorMessage);
+      }
+    } finally {
+      setIsGeneratingConformidad(false);
     }
   };
 
@@ -538,15 +554,24 @@ export function ActaHeaderPanel({
               {/* Conformidad Download Button */}
               <Button
                 onClick={handleDownloadConformidad}
-                disabled={!isConformidadEnabled}
+                disabled={!isConformidadEnabled || isGeneratingConformidad}
                 className={`px-4 py-2 rounded font-medium flex items-center gap-2 ${
-                  !isConformidadEnabled ? "cursor-not-allowed bg-gray-300 text-gray-500" : "text-gray-800 hover:opacity-90"
+                  (!isConformidadEnabled || isGeneratingConformidad) ? "cursor-not-allowed bg-gray-300 text-gray-500" : "text-gray-800 hover:opacity-90"
                 }`}
-                style={!isConformidadEnabled ? {} : { backgroundColor: categoryColors.dark }}
-                title="Descargar formato de conformidad de sobre lacrado"
+                style={(!isConformidadEnabled || isGeneratingConformidad) ? {} : { backgroundColor: categoryColors.dark }}
+                title={isGeneratingConformidad ? "Generando documento..." : "Descargar formato de conformidad de sobre lacrado"}
               >
-                <Download className="h-4 w-4" />
-                Conformidad
+                {isGeneratingConformidad ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    Conformidad
+                  </>
+                )}
               </Button>
             </>
           )}
@@ -555,11 +580,12 @@ export function ActaHeaderPanel({
           {!isMesaDataSaved ? (
             <Button
               onClick={handleSaveMesaData}
-              disabled={!isBloque1Enabled}
+              disabled={!canIniciar}
               className={`px-6 py-2 rounded font-medium ${
-                !isBloque1Enabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "text-gray-800"
+                !canIniciar ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "text-gray-800"
               }`}
-              style={!isBloque1Enabled ? {} : { backgroundColor: categoryColors.dark }}
+              style={!canIniciar ? {} : { backgroundColor: categoryColors.dark }}
+              title={!isConformidadDownloaded && isBloque1Enabled ? "Debe descargar el formato de conformidad antes de iniciar el recuento" : ""}
             >
               Iniciar
             </Button>

@@ -15,6 +15,18 @@ export interface ConformidadData {
   currentTime: string;
   currentDay: string;
   currentMonth: string;
+  // JEE Presidente fields
+  PRESIDENTE_NOMBRES: string;
+  PRESIDENTE_APELLIDOPATERNO: string;
+  PRESIDENTE_APELLIDOMATERNO: string;
+  // JEE Segundo Miembro fields
+  SEGUNDO_MIEMBRO_NOMBRES: string;
+  SEGUNDO_MIEMBRO_APELLIDOPATERNO: string;
+  SEGUNDO_MIEMBRO_APELLIDOMATERNO: string;
+  // JEE Tercer Miembro fields
+  TERCER_MIEMBRO_NOMBRES: string;
+  TERCER_MIEMBRO_APELLIDOPATERNO: string;
+  TERCER_MIEMBRO_APELLIDOMATERNO: string;
 }
 
 export class ConformidadDocumentService {
@@ -102,32 +114,64 @@ export class ConformidadDocumentService {
   }
 
   /**
-   * Download PDF
+   * Open PDF directly using Electron API or browser fallback
+   * Similar to how "Ver Acta" opens PDFs
    */
-  static downloadPdf(pdfBytes: Uint8Array, filename: string = 'Conformidad_sobre_lacrado.pdf'): void {
+  static async openPdf(pdfBytes: Uint8Array, filename: string = 'Conformidad_sobre_lacrado.pdf'): Promise<void> {
     try {
-      // Create a blob from PDF bytes
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
+      // Check if Electron API is available
+      if (window.api && typeof window.api.savePdf === 'function') {
+        // Use Electron API to save PDF to desktop
+        const saveResult = await window.api.savePdf(pdfBytes, filename);
 
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
+        if (saveResult.success && saveResult.filePath) {
+          console.log('[ConformidadDocumentService] PDF guardado exitosamente en:', saveResult.filePath);
 
-      // Cleanup
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+          // Automatically open the PDF
+          const openResult = await window.api.openPdf(saveResult.filePath);
+
+          if (openResult.success) {
+            console.log('[ConformidadDocumentService] PDF abierto exitosamente');
+          } else {
+            console.error('[ConformidadDocumentService] Error al abrir PDF:', openResult.error);
+            throw new Error('PDF guardado pero no se pudo abrir automáticamente');
+          }
+        } else {
+          console.error('[ConformidadDocumentService] Error al guardar PDF:', saveResult.error);
+          throw new Error(saveResult.error || 'Error al guardar el PDF');
+        }
+      } else {
+        // Fallback to browser - open in new tab instead of download
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        // Open in new tab
+        const newWindow = window.open(url, '_blank');
+
+        if (!newWindow) {
+          console.warn('[ConformidadDocumentService] Could not open new window, falling back to download');
+          // Fallback to download if popup was blocked
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        // Cleanup URL after a delay to ensure it's been loaded
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        console.log('[ConformidadDocumentService] PDF abierto en nueva pestaña (modo web)');
+      }
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      console.error('[ConformidadDocumentService] Error opening PDF:', error);
       throw error;
     }
   }
 
   /**
-   * Generate and download conformidad PDF in one step
+   * Generate and open conformidad PDF directly (like "Ver Acta" button)
    */
   static async generateAndDownload(
     data: Omit<ConformidadData, 'currentTime' | 'currentDay' | 'currentMonth'>,
@@ -157,6 +201,10 @@ export class ConformidadDocumentService {
       console.log('[ConformidadDocumentService] Conversion result:', result.success ? 'Success' : 'Failed', result.error || '');
 
       if (!result.success || !result.pdfBytes) {
+        // Check for specific error types to show user-friendly messages
+        if (result.error === 'OFFICE_NOT_INSTALLED') {
+          throw new Error('Microsoft Office Word no está instalado en este equipo. Por favor, instale Microsoft Office para generar el formato de conformidad en PDF.');
+        }
         throw new Error(result.error || 'Failed to convert DOCX to PDF');
       }
 
@@ -164,10 +212,10 @@ export class ConformidadDocumentService {
       const pdfBytes = new Uint8Array(result.pdfBytes);
       console.log('[ConformidadDocumentService] PDF bytes received, size:', pdfBytes.length);
 
-      // Download the PDF
-      console.log('[ConformidadDocumentService] Downloading PDF...');
-      this.downloadPdf(pdfBytes, pdfFilename);
-      console.log('[ConformidadDocumentService] Download complete');
+      // Open the PDF directly (like "Ver Acta")
+      console.log('[ConformidadDocumentService] Opening PDF...');
+      await this.openPdf(pdfBytes, pdfFilename);
+      console.log('[ConformidadDocumentService] PDF opened successfully');
     } catch (error) {
       console.error('[ConformidadDocumentService] Error in generateAndDownload:', error);
       throw error;

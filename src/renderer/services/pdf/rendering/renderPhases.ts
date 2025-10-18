@@ -150,6 +150,76 @@ export class PreferentialTableRenderer implements RenderPhase {
 }
 
 /**
+ * Phase 4: Render JEE members information (for elections that display JEE members)
+ */
+export class JeeMembersRenderer implements RenderPhase {
+  name = 'JeeMembers';
+
+  render(context: RenderContext): void {
+    const { renderer, data, layoutConfig, pageHeight } = context;
+    const { jeeMiembrosData, jeeId } = data;
+    const { jeeMembers } = layoutConfig;
+
+    if (!jeeMembers) {
+      console.warn('JeeMembersRenderer called but no jeeMembers config found');
+      return;
+    }
+
+    if (!jeeMiembrosData || jeeMiembrosData.length === 0) {
+      console.warn('JeeMembersRenderer called but no jeeMiembrosData available');
+      return;
+    }
+
+    const { labelOffsets, personas } = jeeMembers;
+
+    // Iterate through each persona position configuration
+    personas.forEach(personaConfig => {
+      const { x, yOffset, size, lineHeight, cargo } = personaConfig;
+
+      // Filter JEE members by jeeId and cargo
+      const member = jeeMiembrosData.find(
+        m => m.jee_id === jeeId && m.CARGO === cargo
+      );
+
+      if (!member) {
+        console.warn(`No JEE member found for jeeId: ${jeeId}, cargo: ${cargo}`);
+        return;
+      }
+
+      // Calculate Y position
+      let currentY = pageHeight - yOffset;
+
+      // Render NOMBRES
+      renderer.drawText({
+        texto: member.NOMBRES.toUpperCase(),
+        x: x + labelOffsets.nombres,
+        y: currentY,
+        size: size
+      }, PDF_COLORS.black);
+
+      // Move to next line for APELLIDOS
+      currentY -= lineHeight;
+      const apellidos = `${member.APELLIDOPATERNO} ${member.APELLIDOMATERNO}`.toUpperCase();
+      renderer.drawText({
+        texto: apellidos,
+        x: x + labelOffsets.apellidos,
+        y: currentY,
+        size: size
+      }, PDF_COLORS.black);
+
+      // Move to next line for DNI
+      currentY -= lineHeight;
+      renderer.drawText({
+        texto: member.TXDOCUMENTOIDENTIDAD,
+        x: x + labelOffsets.dni,
+        y: currentY,
+        size: size
+      }, PDF_COLORS.black);
+    });
+  }
+}
+
+/**
  * Rendering Pipeline - Orchestrates multiple rendering phases
  */
 export class PdfRenderingPipeline {

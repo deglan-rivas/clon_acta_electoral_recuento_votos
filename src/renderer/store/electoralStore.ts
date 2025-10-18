@@ -58,6 +58,7 @@ interface ElectoralState {
   setMesaDataSaved: (saved: boolean) => void;
   setFormFinalized: (finalized: boolean) => void;
   setMesaFieldsLocked: (locked: boolean) => void;
+  setConformidadDownloaded: (downloaded: boolean) => void;
 
   // Actions - Time Management
   setStartTime: (time: Date | null) => void;
@@ -321,6 +322,10 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
 
     setMesaFieldsLocked: (locked: boolean) => {
       get().updateActaData({ areMesaFieldsLocked: locked });
+    },
+
+    setConformidadDownloaded: (downloaded: boolean) => {
+      get().updateActaData({ isConformidadDownloaded: downloaded });
     },
 
     // Time Management

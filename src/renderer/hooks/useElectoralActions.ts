@@ -40,6 +40,7 @@ export function useElectoralActions() {
     setMesaDataSaved: store.setMesaDataSaved,
     setFormFinalized: store.setFormFinalized,
     setMesaFieldsLocked: store.setMesaFieldsLocked,
+    setConformidadDownloaded: store.setConformidadDownloaded,
 
     // Time
     setStartTime: store.setStartTime,

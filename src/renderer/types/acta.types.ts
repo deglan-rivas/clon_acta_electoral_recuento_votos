@@ -15,6 +15,7 @@ export interface ActaData {
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   areMesaFieldsLocked: boolean; // Track if location and TEH fields are locked after auto-fill
+  isConformidadDownloaded: boolean; // Track if Conformidad document has been downloaded
   startTime: string | null; // Store as ISO string
   endTime: string | null; // Store as ISO string
   selectedLocation: {
@@ -111,6 +112,16 @@ export interface MesaElectoralInfo {
   teh: string;
 }
 
+export interface JeeMiembroRecord {
+  jee_id: string;
+  JURADOELECTORAL: string;
+  TXDOCUMENTOIDENTIDAD: string;
+  NOMBRES: string;
+  APELLIDOPATERNO: string;
+  APELLIDOMATERNO: string;
+  CARGO: string;
+}
+
 // Default values
 export const DEFAULT_ACTA_DATA: ActaData = {
   voteLimits: { preferential1: 30, preferential2: 30 },
@@ -124,6 +135,7 @@ export const DEFAULT_ACTA_DATA: ActaData = {
   isFormFinalized: false,
   isMesaDataSaved: false,
   areMesaFieldsLocked: false,
+  isConformidadDownloaded: false,
   startTime: null,
   endTime: null,
   selectedLocation: {
