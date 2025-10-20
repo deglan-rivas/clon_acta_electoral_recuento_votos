@@ -11,8 +11,8 @@ export interface ElectoralCategory {
 
 export const ELECTORAL_CATEGORIES: ElectoralCategory[] = [
   { id: "A", key: "presidencial", label: "Presidencial", icon: Crown },
-  { id: "B", key: "senadoresNacional", label: "Senadores Nacional", icon: Building2 },
-  { id: "C", key: "senadoresRegional", label: "Senadores Regional", icon: Users },
+  { id: "B", key: "senadoresNacional", label: "Senadores D. Único", icon: Building2 },
+  { id: "C", key: "senadoresRegional", label: "Senadores D. Múltiple", icon: Users },
   { id: "D", key: "diputados", label: "Diputados", icon: Vote },
   { id: "E", key: "parlamentoAndino", label: "Parlamento Andino", icon: Globe },
 ];

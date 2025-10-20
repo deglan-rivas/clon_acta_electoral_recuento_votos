@@ -84,18 +84,10 @@ export function OrganizationsTable({
               return (
                 <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                   <TableCell className="text-center w-16">
-                    {isSpecial ? (
-                      <Checkbox
-                        checked={true}
-                        disabled={true}
-                        className="opacity-50"
-                      />
-                    ) : (
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => onToggle(org.key)}
-                      />
-                    )}
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onToggle(org.key)}
+                    />
                   </TableCell>
                   <TableCell className="text-center font-medium w-20">{org.order}</TableCell>
                   <TableCell className="py-3">{org.name}</TableCell>

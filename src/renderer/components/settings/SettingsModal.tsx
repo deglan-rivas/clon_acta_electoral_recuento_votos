@@ -6,7 +6,6 @@ import { type PoliticalOrganization } from "../../types";
 import { useActaRepository } from "../../hooks/useActaRepository";
 import { useCircunscripcionData } from "../../hooks/useCircunscripcionData";
 import { useOrganizationLoader } from "../../hooks/useOrganizationLoader";
-import { useEnforceBlancoNulo } from "../../hooks/useEnforceBlancoNulo";
 import { getUniqueCircunscripcionesByCategory } from "../../utils/circunscripcionUtils";
 import {
   filterOrganizations,
@@ -67,22 +66,18 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Filtered organizations based on search
   const filtered = filterOrganizations(politicalOrganizations || [], organizationFilter);
 
-  // Enforce BLANCO and NULO are always selected
-  useEnforceBlancoNulo(selectedOrganizations, setSelectedOrganizations, politicalOrganizations);
-
   // Handle individual organization selection
   const handleOrganizationToggle = (orgKey: string) => {
     const org = (politicalOrganizations || []).find(o => o.key === orgKey);
-    if (org && isSpecialOrganization(org)) {
-      return;
-    }
+    console.log('[OrganizationToggle] Toggling:', orgKey, 'isSpecial:', org && isSpecialOrganization(org));
 
+    // Removed the early return for special organizations to allow toggling
     setSelectedOrganizations(prev => {
-      if (prev.includes(orgKey)) {
-        return prev.filter(key => key !== orgKey);
-      } else {
-        return [...prev, orgKey];
-      }
+      const newSelection = prev.includes(orgKey)
+        ? prev.filter(key => key !== orgKey)
+        : [...prev, orgKey];
+      console.log('[OrganizationToggle] Previous:', prev, 'New:', newSelection);
+      return newSelection;
     });
   };
 
