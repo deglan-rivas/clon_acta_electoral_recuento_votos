@@ -4,15 +4,17 @@
  * Provides functions to check trial expiration status with multiple layers of validation
  */
 
-import { TRIAL_CONFIG, TrialConfig } from '../config/trial-config';
+import { TRIAL_CONFIG, type TrialConfig } from '../config/trial-config';
 import log from 'electron-log';
 
-export enum ExpirationStatus {
-  VALID = 'valid',
-  WARNING = 'warning',
-  EXPIRED = 'expired',
-  DISABLED = 'disabled'
-}
+export const ExpirationStatus = {
+  VALID: 'valid',
+  WARNING: 'warning',
+  EXPIRED: 'expired',
+  DISABLED: 'disabled'
+} as const;
+
+export type ExpirationStatus = typeof ExpirationStatus[keyof typeof ExpirationStatus];
 
 export interface ExpirationCheckResult {
   status: ExpirationStatus;
