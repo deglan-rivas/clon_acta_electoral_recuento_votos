@@ -76,7 +76,9 @@ export const PRESIDENCIAL_LAYOUT = {
    },
    personas: [   
      { x: 550, yOffset: 246.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
-     { x: 550, yOffset: 356.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },   
+     { x: 550, yOffset: 356.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 550, yOffset: 466.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 550, yOffset: 576.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
    ]
   },
 } as const;
@@ -168,6 +170,19 @@ export const SENADORES_REGIONAL_2_PREFERENCIALES_LAYOUT = {
     fontSize: FONT_SIZES.xxlarge,
     lineHeight: 21.1,
   },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 550, yOffset: 285.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 550, yOffset: 395.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 550, yOffset: 505.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 550, yOffset: 615.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
+  },
 } as const;
 
 export const SENADORES_REGIONAL_4_PREFERENCIALES_LAYOUT = {
@@ -203,6 +218,19 @@ export const SENADORES_REGIONAL_4_PREFERENCIALES_LAYOUT = {
     cellWidth: 31.55,
     fontSize: 11.5,
     lineHeight: 21.1,
+  },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 550, yOffset: 285.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 550, yOffset: 395.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 550, yOffset: 505.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 550, yOffset: 615.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
   },
 } as const;
 
@@ -243,6 +271,19 @@ export const DIPUTADOS_4_PREFERENCIALES_LAYOUT = {
     fontSize: 11.5,
     lineHeight: 21.1,
   },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 550, yOffset: 285.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 550, yOffset: 395.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 550, yOffset: 505.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 550, yOffset: 615.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
+  },
 } as const;
 
 export const DIPUTADOS_6_PREFERENCIALES_LAYOUT = {
@@ -278,6 +319,19 @@ export const DIPUTADOS_6_PREFERENCIALES_LAYOUT = {
     cellWidth: 31.75,
     fontSize: 11.5,
     lineHeight: 21.1,
+  },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 605, yOffset: 275.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 605, yOffset: 365.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 605, yOffset: 455.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 605, yOffset: 545.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
   },
 } as const;
 
@@ -315,6 +369,19 @@ export const DIPUTADOS_8_PREFERENCIALES_LAYOUT = {
     fontSize: 11.5,
     lineHeight: 21.1,
   },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 615, yOffset: 275.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 615, yOffset: 365.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 615, yOffset: 455.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 615, yOffset: 545.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
+  },
 } as const;
 
 export const DIPUTADOS_32_PREFERENCIALES_LAYOUT = {
@@ -350,6 +417,19 @@ export const DIPUTADOS_32_PREFERENCIALES_LAYOUT = {
     cellWidth: 22.90,
     fontSize: 11.5,
     lineHeight: 15.132,
+  },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 50,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 50,    // Offset from 'APELLIDOS' label to value position 
+     dni: 50,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 995, yOffset: 198.5, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'PRESIDENTE' },
+     { x: 995, yOffset: 296.0, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 995, yOffset: 393.5, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'TERCER MIEMBRO' },
+     { x: 995, yOffset: 491.0, size: FONT_SIZES.xsmall, lineHeight: 10.5, cargo: 'SECRETARIO (A)' },   
+   ]
   },
 } as const;
 
@@ -387,6 +467,19 @@ export const PARLAMENTO_ANDINO_LAYOUT = {
     cellWidth: 19.55,
     fontSize: 11.5,
     lineHeight: 21.1,
+  },
+  jeeMembers: {
+   labelOffsets: { 
+     nombres: 48,      // Offset from 'NOMBRES' label to value position 
+     apellidos: 48,    // Offset from 'APELLIDOS' label to value position 
+     dni: 48,          // Offset from 'DNI' label to value position 
+   },
+   personas: [   
+     { x: 650, yOffset: 265.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'PRESIDENTE' },
+     { x: 650, yOffset: 359.5, size: FONT_SIZES.small, lineHeight: 13.5, cargo: 'SEGUNDO MIEMBRO' },
+     { x: 650, yOffset: 453.5, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'TERCER MIEMBRO' },
+     { x: 650, yOffset: 547.0, size: FONT_SIZES.xsmall, lineHeight: 13.5, cargo: 'SECRETARIO (A)' },
+   ]
   },
 } as const;
 
