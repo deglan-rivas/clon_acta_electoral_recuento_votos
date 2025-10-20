@@ -4,7 +4,7 @@
  * Provides functions to check trial expiration status with multiple layers of validation
  */
 
-import { TRIAL_CONFIG, TrialConfig } from '../config/trial-config';
+import { TRIAL_CONFIG, type TrialConfig } from '../config/trial-config';
 import log from 'electron-log';
 
 export enum ExpirationStatus {
