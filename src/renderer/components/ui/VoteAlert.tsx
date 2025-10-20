@@ -12,10 +12,11 @@ interface VoteAlertProps {
   voteCount: number;
   alertType: AlertType;
   position?: AlertPosition;
+  message?: string;
   onClose: () => void;
 }
 
-export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', onClose }: VoteAlertProps) {
+export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', message = 'Voto ingresado correctamente.', onClose }: VoteAlertProps) {
   const onCloseRef = useRef(onClose);
 
   // Keep the ref updated
@@ -43,20 +44,18 @@ export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', o
   return (
     <div className={containerClass}>
       <div
-        className="bg-white rounded-lg shadow-xl p-6 w-[400px] border-4 pointer-events-auto"
-        style={{ borderColor: 'oklch(0.5200 0.2100 15)' }}
+        className="bg-white rounded-lg shadow-xl p-6 w-[400px] border-4 pointer-events-auto border-red-800"
       >
         {/* Header */}
         <div
-          className="text-white text-center py-3 px-4 rounded-t-md mb-4 font-bold text-lg"
-          style={{ backgroundColor: 'oklch(0.5200 0.2100 15)' }}
+          className="text-white text-center py-3 px-4 rounded-t-md mb-4 font-bold text-lg bg-red-800"
         >
           Recuento de Votos JNE
         </div>
 
         {/* Message */}
         <div className="text-center text-gray-800 mb-6 text-base">
-          <p className="font-semibold">Voto ingresado correctamente.</p>
+          <p className="font-semibold">{message}</p>
           <p className="mt-2">
             <span className="font-bold text-lg">{voteCount}</span> votos registrados
           </p>
@@ -67,8 +66,7 @@ export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', o
           <div className="flex justify-center">
             <Button
               onClick={onClose}
-              className="text-white font-semibold px-6 py-2 hover:opacity-90"
-              style={{ backgroundColor: 'oklch(0.5200 0.2100 15)' }}
+              className="text-white font-semibold px-6 py-2 hover:bg-red-800 bg-red-800"
             >
               ACEPTAR
             </Button>

@@ -48,6 +48,7 @@ export function VoteEntryTable({
 
   // Alert state
   const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('Voto ingresado correctamente.');
 
   // Calculate next table number
   const getNextTableNumber = () => {
@@ -140,6 +141,7 @@ export function VoteEntryTable({
     }
 
     // Show alert instead of toast
+    setAlertMessage('Voto ingresado correctamente.');
     setShowAlert(true);
   };
 
@@ -165,7 +167,7 @@ export function VoteEntryTable({
     });
   };
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = async () => {
     if (!newEntry.party) {
       ToastService.error("Por favor seleccione una organización política");
       return;
@@ -217,7 +219,14 @@ export function VoteEntryTable({
       preferentialVote2: 0,
     });
 
-    ToastService.success("Voto actualizado exitosamente");
+    // Save to repository
+    if (onSaveActa) {
+      await onSaveActa();
+    }
+
+    // Show alert instead of toast
+    setAlertMessage('Voto actualizado correctamente.');
+    setShowAlert(true);
   };
 
   return (
@@ -228,6 +237,7 @@ export function VoteEntryTable({
         voteCount={entries.length}
         alertType="with-button"
         position="top"
+        message={alertMessage}
         onClose={() => setShowAlert(false)}
       />
 
