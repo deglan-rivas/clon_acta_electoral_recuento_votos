@@ -143,6 +143,24 @@ function AppLayoutContent() {
       return;
     }
 
+    // categoryActas is already the array for the active category (from useElectoralActions)
+    const actas = categoryActas || [];
+
+    const emptyActaIndex = actas.findIndex(acta =>
+      acta.mesaNumber === 0 &&
+      acta.actaNumber === '' &&
+      (!acta.voteEntries || acta.voteEntries.length === 0)
+    );
+
+    // If there's already an empty acta, switch to it instead of creating a new one
+    if (emptyActaIndex !== -1) {
+      switchToActa(emptyActaIndex);
+      // Don't modify the empty acta - it should already be in the correct empty state
+      ToastService.info('Cambiado a acta vacía existente');
+      return;
+    }
+
+    // Otherwise, create a new acta
     await createNewActaAction();
     location.setSelectedCircunscripcionElectoral('');
     updateActaData({ areMesaFieldsLocked: false });
@@ -153,7 +171,8 @@ function AppLayoutContent() {
   // Handler to switch to a specific acta by index
   const handleSwitchToActa = async (index: number) => {
     switchToActa(index);
-    const newActa = categoryActas[index];
+    // categoryActas is already the array for the active category
+    const newActa = categoryActas?.[index];
     ToastService.actaSwitched(newActa?.actaNumber || '');
   };
 

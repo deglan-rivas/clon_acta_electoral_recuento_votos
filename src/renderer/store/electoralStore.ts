@@ -252,6 +252,7 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
 
     switchToActa: (index: number) => {
       const { activeCategory, currentActaIndex } = get();
+
       const newCurrentActaIndex = {
         ...currentActaIndex,
         [activeCategory]: index,
