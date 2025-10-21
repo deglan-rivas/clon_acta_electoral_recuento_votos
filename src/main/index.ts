@@ -7,6 +7,7 @@ import icon from '../../resources/icon.ico?asset'
 import { getExpirationChecker, getExpirationStatus, ExpirationStatus } from './utils/expiration-checker'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { ELECTORAL_CATEGORIES } from '../renderer/config/electoralCategories'
 
 const execPromise = promisify(exec)
 
@@ -105,38 +106,29 @@ function createWindow(): BrowserWindow {
                   const activeCategory = localStorage.getItem('electoral_active_category');
                   const categoryData = localStorage.getItem('electoral_category_data');
                   let parsedData = null;
-                  let categoryLabel = 'actual';
-                  
+
                   try {
                     parsedData = categoryData ? JSON.parse(categoryData) : {};
-                    // Clean the activeCategory of any quotes before using it
-                    const cleanActiveCategory = activeCategory ? activeCategory.replace(/^["']|["']$/g, '') : '';
-                    const categoryLabels = {
-                      'presidencial': 'Presidencial',
-                      'senadoresNacional': 'Senadores Nacional',
-                      'senadoresRegional': 'Senadores Regional',
-                      'diputados': 'Diputados',
-                      'parlamentoAndino': 'Parlamento Andino'
-                    };
-                    categoryLabel = categoryLabels[cleanActiveCategory] || cleanActiveCategory || 'actual';
                   } catch (e) {
                     console.error('Error parsing category data:', e);
-                    categoryLabel = 'actual';
                   }
-                  
-                  return { activeCategory, categoryData: parsedData, categoryLabel };
+
+                  return { activeCategory, categoryData: parsedData };
                 })()
               `);
-              
+
               activeCategory = result.activeCategory;
               categoryData = result.categoryData;
-              categoryLabel = result.categoryLabel;
-              
+
               // Remove any quotes from the category name
               if (activeCategory && typeof activeCategory === 'string') {
                 activeCategory = activeCategory.replace(/^["']|["']$/g, '');
               }
-              
+
+              // Find the category label from ELECTORAL_CATEGORIES
+              const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
+              categoryLabel = categoryRecord?.label || activeCategory || 'actual';
+
             } catch (error) {
               log.error('Error getting category info:', error);
               dialog.showErrorBox('Error', 'Error al obtener información de la categoría.');

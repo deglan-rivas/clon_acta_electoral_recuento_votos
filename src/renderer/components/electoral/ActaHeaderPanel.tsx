@@ -313,8 +313,19 @@ export function ActaHeaderPanel({
       const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
       const categoryLabel = categoryRecord?.label || activeCategory;
 
-      // Generate filename with category label
-      const filename = `Conformidad_${categoryLabel.replace(/\s+/g, '_')}_Mesa_${localMesaNumber}_${selectedLocation.jee.replace(/\s+/g, '_')}.docx`;
+      // Sanitize filename by removing special characters (tildes, dots, etc.)
+      // to prevent encoding issues in PowerShell
+      const sanitizeFilename = (text: string): string => {
+        return text
+          .normalize('NFD') // Decompose accented characters
+          .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (tildes)
+          .replace(/\./g, '') // Remove dots
+          .replace(/\s+/g, '_') // Replace spaces with underscores
+          .replace(/[^\w-]/g, ''); // Remove any remaining special characters except underscore and dash
+      };
+
+      // Generate filename with sanitized category label
+      const filename = `Conformidad_${sanitizeFilename(categoryLabel)}_Mesa_${localMesaNumber}_${sanitizeFilename(selectedLocation.jee)}.docx`;
 
       await ConformidadDocumentService.generateAndDownload(data, filename);
 
@@ -372,12 +383,12 @@ export function ActaHeaderPanel({
                 <span className="font-semibold text-gray-800 ml-1">{selectedLocation.jee || "-"}</span>
               </div>
 
-              <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+              <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE ELECTORES HÁBILES">
                 <span className="text-sm font-medium text-gray-700">TEH:</span>
                 <span className="font-semibold text-gray-800 ml-1">{localTotalElectores || "-"}</span>
               </div>
 
-              <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }}>
+              <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
                 <span className="text-sm font-medium text-gray-700">TCV:</span>
                 <span className="font-semibold text-gray-800 ml-1">{tcv !== null ? tcv : entriesLength}</span>
               </div>
@@ -459,15 +470,10 @@ export function ActaHeaderPanel({
                     <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
                       <div className="py-1">
                         {categoryActas
-                          .filter((_acta, index) => {
-                            // Exclude the currently active/editing acta
-                            if (index === currentActaIndex) {
-                              return false;
-                            }
-                            return true;
-                          })
-                          .map((acta) => {
-                            const index = categoryActas.indexOf(acta);
+                          .map((acta, index) => ({ acta, index })) // Keep track of original index
+                          .filter(({ index }) => index !== currentActaIndex) // Exclude currently active acta
+                          .sort((a, b) => b.index - a.index) // Sort in descending order (newest first)
+                          .map(({ acta, index }) => {
                             return (
                               <button
                                 key={index}

@@ -1,10 +1,20 @@
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Button } from "../components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, Crown, Building2, Users, Vote, Globe } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import { ELECTORAL_CATEGORIES } from "../config/electoralCategories";
 import { SECTIONS } from "../config/sections";
+
+// Map category keys to their icons
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  presidencial: Crown,
+  senadoresNacional: Building2,
+  senadoresRegional: Users,
+  diputados: Vote,
+  parlamentoAndino: Globe,
+};
 
 interface AppHeaderProps {
   activeCategory: string;
@@ -53,11 +63,11 @@ export function AppHeader({
               </SelectTrigger>
               <SelectContent>
                 {ELECTORAL_CATEGORIES.map((category) => {
-                  const Icon = category.icon;
+                  const Icon = CATEGORY_ICONS[category.key];
                   return (
                     <SelectItem key={category.key} value={category.key}>
                       <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4" />
+                        {Icon && <Icon className="h-4 w-4" />}
                         <span>{category.label}</span>
                       </div>
                     </SelectItem>
