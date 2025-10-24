@@ -7,13 +7,13 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "pack": "electron-builder",
     "dist": "electron-vite build && electron-builder",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "main": "out/main/index.js",
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -42,6 +42,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@radix-ui/react-visually-hidden": "^1.2.3",
     "@tailwindcss/vite": "^4.1.12",
+    "better-sqlite3-multiple-ciphers": "^12.4.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",
