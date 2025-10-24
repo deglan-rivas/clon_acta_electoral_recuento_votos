@@ -215,6 +215,43 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     ToastService.success("Datos de mesa guardados exitosamente");
   };
 
+  // Handle reinicializar - clear all vote entries while keeping mesa data
+  const handleReinicializar = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `¿Está seguro que desea reinicializar el recuento?\n\n` +
+      `Esta acción eliminará todos los ${entries.length} votos ingresados y reiniciará el temporizador.\n` +
+      `Los datos de la mesa (N° Mesa, N° Acta, JEE, TEH, TCV, Ubicación) se mantendrán.\n\n` +
+      `Esta operación NO se puede deshacer.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    console.log("Reinicializando formulario...");
+    const now = new Date();
+
+    // Clear all vote entries
+    updateEntries([]);
+
+    // Reset start time and restart timer
+    console.log('[VoteEntryPage.handleReinicializar] Resetting start time to:', now);
+    onStartTimeChange(now);
+    onCurrentTimeChange(now);
+
+    // Clear end time (since we're restarting)
+    console.log('[VoteEntryPage.handleReinicializar] Clearing end time');
+    onEndTimeChange(null);
+
+    // Save the cleared state
+    if (onSaveActa) {
+      await onSaveActa();
+    }
+
+    ToastService.success("Recuento reinicializado exitosamente. Puede ingresar votos nuevamente.", '550px', 3000);
+  };
+
   // Handle finalize form - disable all inputs permanently
   const handleFinalizeForm = async () => {
     // Validate that there are entries
@@ -359,6 +396,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 onDistritoChange={onDistritoChange}
                 onSaveMesaData={handleSaveMesaData}
                 onFinalizeForm={handleFinalizeForm}
+                onReinicializar={handleReinicializar}
                 onVerActa={handleVerActa}
                 onCreateNewActa={onCreateNewActa}
                 onSwitchToActa={onSwitchToActa}
@@ -403,6 +441,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
           preferentialConfig={preferentialConfig}
           totalElectores={totalElectores}
           cedulasExcedentes={cedulasExcedentes}
+          tcv={tcv}
           isFormFinalized={isFormFinalized}
           isMesaDataSaved={isMesaDataSaved}
           categoryColors={categoryColors}

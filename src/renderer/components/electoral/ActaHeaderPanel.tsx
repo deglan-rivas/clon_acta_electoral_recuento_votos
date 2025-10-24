@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ChevronDown, RefreshCw, FileCheck, Download, Loader2 } from "lucide-react";
+import { ChevronDown, RefreshCw, FileCheck, Download, Loader2, RotateCcw } from "lucide-react";
 import type { CategoryColors, JeeRecord, JeeMiembroRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
 import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
@@ -59,6 +59,7 @@ interface ActaHeaderPanelProps {
   onDistritoChange: (value: string) => void;
   onSaveMesaData: () => void;
   onFinalizeForm: () => void;
+  onReinicializar?: () => void;
   onVerActa: () => void;
   onCreateNewActa?: () => void;
   onSwitchToActa?: (index: number) => void;
@@ -95,6 +96,7 @@ export function ActaHeaderPanel({
   onDistritoChange,
   onSaveMesaData,
   onFinalizeForm,
+  onReinicializar,
   onVerActa,
   onCreateNewActa,
   onSwitchToActa,
@@ -605,16 +607,32 @@ export function ActaHeaderPanel({
           ) : null}
 
           {!isFormFinalized ? (
-            <Button
-              onClick={onFinalizeForm}
-              disabled={!isMesaDataSaved}
-              className={`px-6 py-2 rounded font-medium ${
-                !isMesaDataSaved ? "cursor-not-allowed text-gray-400" : "text-gray-800"
-              }`}
-              style={!isMesaDataSaved ? { backgroundColor: '#e5e7eb' } : { backgroundColor: categoryColors.dark }}
-            >
-              Finalizar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={!isMesaDataSaved}
+                  className={`px-6 py-2 rounded font-medium ${
+                    !isMesaDataSaved ? "cursor-not-allowed text-gray-400" : "text-gray-800"
+                  }`}
+                  style={!isMesaDataSaved ? { backgroundColor: '#e5e7eb' } : { backgroundColor: categoryColors.dark }}
+                >
+                  Opciones
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onFinalizeForm}>
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  Finalizar
+                </DropdownMenuItem>
+                {entriesLength > 0 && onReinicializar && (
+                  <DropdownMenuItem onClick={onReinicializar}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reinicializar
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="flex items-center gap-1 px-2 py-1 rounded font-medium text-center text-gray-800" style={{ backgroundColor: categoryColors.light }}>
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
