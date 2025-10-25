@@ -11,11 +11,13 @@ export interface ActaData {
   actaNumber: string;
   totalElectores: number;
   cedulasExcedentes: number;
-  tcv: number | null; // Total de Ciudadanos que Votaron (null means use entries.length)
+  tcv: number | null; // Total de Ciudadanos que Votaron (null means use entries.length, or partial recount)
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   areMesaFieldsLocked: boolean; // Track if location and TEH fields are locked after auto-fill
   isConformidadDownloaded: boolean; // Track if Conformidad document has been downloaded
+  isPartialRecount: boolean; // Track if this is a partial recount (only for categories with preferential votes)
+  partialRecountOrgs: string[]; // Selected organizations for partial recount (organization keys)
   startTime: string | null; // Store as ISO string
   endTime: string | null; // Store as ISO string
   selectedLocation: {
@@ -136,6 +138,8 @@ export const DEFAULT_ACTA_DATA: ActaData = {
   isMesaDataSaved: false,
   areMesaFieldsLocked: false,
   isConformidadDownloaded: false,
+  isPartialRecount: false,
+  partialRecountOrgs: [],
   startTime: null,
   endTime: null,
   selectedLocation: {

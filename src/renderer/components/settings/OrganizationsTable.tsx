@@ -14,6 +14,7 @@ interface OrganizationsTableProps {
   selectedKeys: string[];
   allToggleableSelected: boolean;
   searchValue: string;
+  isPartialRecountMode?: boolean;
   onToggle: (orgKey: string) => void;
   onSelectAll: () => void;
   onSearchChange: (value: string) => void;
@@ -25,6 +26,7 @@ export function OrganizationsTable({
   selectedKeys,
   allToggleableSelected,
   searchValue,
+  isPartialRecountMode = false,
   onToggle,
   onSelectAll,
   onSearchChange,
@@ -36,18 +38,20 @@ export function OrganizationsTable({
       <Table>
         <TableHeader>
           <TableRow className="text-white" style={{ backgroundColor: SETTINGS_THEME.headerColor }}>
-            <TableHead className="text-white w-16 text-center font-semibold">
-              <Checkbox
-                checked={allToggleableSelected}
-                onCheckedChange={onSelectAll}
-                className="border-white data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
-              />
-            </TableHead>
+            {isPartialRecountMode && (
+              <TableHead className="text-white w-16 text-center font-semibold">
+                <Checkbox
+                  checked={allToggleableSelected}
+                  onCheckedChange={onSelectAll}
+                  className="border-white data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
+                />
+              </TableHead>
+            )}
             <TableHead className="text-white w-20 text-center font-semibold">ORDEN</TableHead>
             <TableHead className="text-white font-semibold">ORGANIZACIÓN POLÍTICA</TableHead>
           </TableRow>
           <TableRow className="bg-gray-50">
-            <TableHead className="p-2"></TableHead>
+            {isPartialRecountMode && <TableHead className="p-2"></TableHead>}
             <TableHead className="p-2"></TableHead>
             <TableHead className="p-2">
               <div className="flex items-center space-x-1">
@@ -79,16 +83,22 @@ export function OrganizationsTable({
           <TableBody>
             {organizations.map((org, index) => {
               const isSpecial = isSpecialOrganization(org);
+              const isBlancoNulo = org.name === 'BLANCO' || org.name === 'NULO';
               const isSelected = selectedKeys.includes(org.key);
+              const showCheckbox = isPartialRecountMode && !isBlancoNulo;
 
               return (
                 <TableRow key={org.key} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
-                  <TableCell className="text-center w-16">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onToggle(org.key)}
-                    />
-                  </TableCell>
+                  {isPartialRecountMode && (
+                    <TableCell className="text-center w-16">
+                      {showCheckbox ? (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => onToggle(org.key)}
+                        />
+                      ) : null}
+                    </TableCell>
+                  )}
                   <TableCell className="text-center font-medium w-20">{org.order}</TableCell>
                   <TableCell className="py-3">{org.name}</TableCell>
                 </TableRow>

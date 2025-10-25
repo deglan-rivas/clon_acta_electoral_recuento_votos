@@ -141,6 +141,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const [localIsMesaDataSaved, setLocalIsMesaDataSaved] = useState<boolean>(false);
   const [localIsConformidadDownloaded, setLocalIsConformidadDownloaded] = useState<boolean>(false);
   const [selectedOrganizationKeys, setSelectedOrganizationKeys] = useState<string[]>([]);
+  const [isPartialRecount, setIsPartialRecount] = useState<boolean>(false);
 
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
   const isMesaDataSaved = externalIsMesaDataSaved !== undefined ? externalIsMesaDataSaved : localIsMesaDataSaved;
@@ -149,13 +150,46 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   // Load selected organizations from repository
   useEffect(() => {
     const loadOrganizations = async () => {
-      const orgKeys = circunscripcionElectoral
-        ? await repository.getCircunscripcionOrganizations(circunscripcionElectoral)
-        : await repository.getSelectedOrganizations();
+      let orgKeys: string[] = [];
+
+      if (circunscripcionElectoral) {
+        // Check if partial recount mode is enabled
+        const isPartial = await repository.getIsPartialRecount(circunscripcionElectoral);
+
+        if (isPartial) {
+          // Load from partial recount organizations key
+          orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral);
+        } else {
+          // Load from full circunscripcion organizations key (CSV data)
+          orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral);
+        }
+      } else {
+        orgKeys = await repository.getSelectedOrganizations();
+      }
+
       setSelectedOrganizationKeys(orgKeys);
     };
     loadOrganizations();
   }, [circunscripcionElectoral, repository, settingsReloadTrigger]);
+
+  // Load partial recount mode from repository and reset TCV if needed
+  useEffect(() => {
+    const loadPartialRecountMode = async () => {
+      if (circunscripcionElectoral) {
+        const isPartial = await repository.getIsPartialRecount(circunscripcionElectoral);
+        setIsPartialRecount(isPartial);
+
+        // Reset TCV to null when partial recount is enabled
+        if (isPartial && tcv !== null) {
+          console.log('[VoteEntryPage] Partial recount enabled - resetting TCV to null');
+          onTcvChange(null);
+        }
+      } else {
+        setIsPartialRecount(false);
+      }
+    };
+    loadPartialRecountMode();
+  }, [circunscripcionElectoral, repository, settingsReloadTrigger, tcv, onTcvChange]);
 
   const availableOrganizations = (politicalOrganizations || []).filter(org =>
     selectedOrganizationKeys.includes(org.key)
@@ -261,9 +295,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     }
 
     // Validate TCV matches entries when TCV is loaded from repository
+    // Skip validation for partial recounts (isPartialRecount = true)
     // If TCV is null, it's bound to entries.length (no validation needed)
     // If TCV has a value, it was loaded from another category, so entries must match
-    if (tcv !== null && entries.length !== tcv) {
+    if (!isPartialRecount && tcv !== null && entries.length !== tcv) {
       ToastService.error(
         `El número de votos ingresados ${entries.length} no coincide con el TCV esperado ${tcv}.`,
         '550px',
@@ -292,7 +327,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     onEndTimeChange(now); // Capture end time (instant with Zustand)
 
     // If TCV is null (linked to entries.length), save the actual value for auto-loading
-    if (tcv === null) {
+    // EXCEPT for partial recounts - TCV must remain null
+    if (tcv === null && !isPartialRecount) {
       onTcvChange(entries.length); // Instant with Zustand
     }
 
@@ -329,11 +365,13 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       mesaNumber,
       actaNumber,
       totalElectores,
+      tcv,
       cedulasExcedentes,
       selectedLocation,
       startTime,
       endTime: finalizationTime,
       isInternationalLocation, // Pass international location flag to PDF generator
+      isPartialRecount, // Pass partial recount flag to PDF generator
       jeeMiembrosData, // Pass JEE members data
       jeeId, // Pass JEE ID for filtering members
     };
@@ -373,6 +411,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 totalElectores={totalElectores}
                 tcv={tcv}
                 entriesLength={entries.length}
+                isPartialRecount={isPartialRecount}
                 selectedLocation={selectedLocation}
                 isInternationalLocation={isInternationalLocation}
                 areMesaFieldsLocked={areMesaFieldsLocked}

@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
 import { type PoliticalOrganization } from "../../types";
 import { useActaRepository } from "../../hooks/useActaRepository";
 import { useCircunscripcionData } from "../../hooks/useCircunscripcionData";
 import { useOrganizationLoader } from "../../hooks/useOrganizationLoader";
 import { getUniqueCircunscripcionesByCategory } from "../../utils/circunscripcionUtils";
+import { PREFERENTIAL_VOTE_CONFIG } from "../../config/electoralCategories";
 import {
   filterOrganizations,
   isSpecialOrganization,
@@ -35,6 +37,12 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Get unique circunscripciones filtered by category
   const uniqueCircunscripciones = getUniqueCircunscripcionesByCategory(circunscripcionData, category);
 
+  // Check if category has preferential votes (all except presidencial)
+  const hasPreferentialVotes = PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential1 || PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential2;
+
+  // Partial recount mode state
+  const [isPartialRecountMode, setIsPartialRecountMode] = useState<boolean>(false);
+
   // Load organizations with custom hook
   const { selectedOrganizations, setSelectedOrganizations } = useOrganizationLoader(
     open,
@@ -44,6 +52,19 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
   // Store original state for cancel functionality
   const [originalSelectedOrganizations, setOriginalSelectedOrganizations] = useState<string[]>([]);
+  const [originalIsPartialRecount, setOriginalIsPartialRecount] = useState<boolean>(false);
+
+  // Load partial recount mode from repository
+  useEffect(() => {
+    if (open && selectedCircunscripcion) {
+      const loadPartialRecountMode = async () => {
+        const isPartial = await repository.getIsPartialRecount(selectedCircunscripcion);
+        setIsPartialRecountMode(isPartial);
+        setOriginalIsPartialRecount(isPartial);
+      };
+      loadPartialRecountMode();
+    }
+  }, [open, selectedCircunscripcion, repository]);
 
   // Update original when modal opens or selection loads
   useEffect(() => {
@@ -71,7 +92,19 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
     const org = (politicalOrganizations || []).find(o => o.key === orgKey);
     console.log('[OrganizationToggle] Toggling:', orgKey, 'isSpecial:', org && isSpecialOrganization(org));
 
-    // Removed the early return for special organizations to allow toggling
+    // In partial recount mode, prevent toggling BLANCO and NULO
+    if (isPartialRecountMode && org && (org.name === 'BLANCO' || org.name === 'NULO')) {
+      console.log('[OrganizationToggle] Cannot toggle BLANCO/NULO in partial recount mode');
+      return;
+    }
+
+    // Full recount mode: organizations are read-only (loaded from CSV)
+    // Partial recount mode: allow toggling
+    if (!isPartialRecountMode) {
+      console.log('[OrganizationToggle] Organizations are read-only in full recount mode');
+      return;
+    }
+
     setSelectedOrganizations(prev => {
       const newSelection = prev.includes(orgKey)
         ? prev.filter(key => key !== orgKey)
@@ -83,18 +116,28 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
   // Handle select all/none (works with filtered results)
   const handleSelectAll = () => {
+    // Only allow select all in partial recount mode
+    if (!isPartialRecountMode) {
+      console.log('[SelectAll] Cannot select all in full recount mode (read-only)');
+      return;
+    }
+
     const blancoNuloKeys = getBlancoNuloKeys(politicalOrganizations || []);
     const toggleableOrgs = getToggleableOrganizations(filtered);
-    const allToggleableSelected = toggleableOrgs.every(org => selectedOrganizations.includes(org.key));
 
-    if (allToggleableSelected) {
+    // Filter out BLANCO and NULO from toggleable orgs in partial recount mode
+    const selectableOrgs = toggleableOrgs.filter(org => org.name !== 'BLANCO' && org.name !== 'NULO');
+
+    const allSelectableSelected = selectableOrgs.every(org => selectedOrganizations.includes(org.key));
+
+    if (allSelectableSelected) {
       // Deselect all filtered organizations except BLANCO and NULO
       setSelectedOrganizations(prev => prev.filter(key =>
-        blancoNuloKeys.includes(key) || !toggleableOrgs.some(org => org.key === key)
+        blancoNuloKeys.includes(key) || !selectableOrgs.some(org => org.key === key)
       ));
     } else {
-      // Select all filtered organizations including BLANCO and NULO
-      const newSelections = filtered.map(org => org.key);
+      // Select all filtered organizations excluding BLANCO and NULO
+      const newSelections = selectableOrgs.map(org => org.key);
       setSelectedOrganizations(prev => [...new Set([...prev, ...newSelections])]);
     }
   };
@@ -102,7 +145,27 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Save changes to repository and parent
   const handleSave = async () => {
     if (selectedCircunscripcion) {
-      await repository.saveCircunscripcionOrganizations(selectedCircunscripcion, selectedOrganizations);
+      // Save partial recount mode
+      await repository.saveIsPartialRecount(selectedCircunscripcion, isPartialRecountMode);
+
+      if (isPartialRecountMode) {
+        // Filter out BLANCO and NULO from selected organizations for partial recount
+        const filteredOrganizations = selectedOrganizations.filter(orgKey => {
+          const org = (politicalOrganizations || []).find(o => o.key === orgKey);
+          return org && org.name !== 'BLANCO' && org.name !== 'NULO';
+        });
+
+        // Save selected organizations for partial recount in separate key (without BLANCO/NULO)
+        await repository.savePartialRecountOrganizations(selectedCircunscripcion, filteredOrganizations);
+
+        console.log('[SettingsModal.handleSave] Partial recount organizations saved:', {
+          circunscripcion: selectedCircunscripcion,
+          total: filteredOrganizations.length,
+          organizations: filteredOrganizations
+        });
+      }
+      // In full recount mode, organizations are already loaded from CSV (read-only)
+      // No need to save anything - just use the pre-loaded data
     } else {
       await repository.saveSelectedOrganizations(selectedOrganizations);
     }
@@ -113,6 +176,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Cancel changes and revert to original state
   const handleCancel = () => {
     setSelectedOrganizations(originalSelectedOrganizations);
+    setIsPartialRecountMode(originalIsPartialRecount);
     setOrganizationFilter("");
     onOpenChange(false);
   };
@@ -144,17 +208,50 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
             </div>
           )}
 
+          {selectedCircunscripcion && hasPreferentialVotes && (
+            <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex-1">
+                <label htmlFor="partial-recount-mode" className="font-medium text-gray-900 cursor-pointer">
+                  Modo Recuento Parcial
+                </label>
+                <p className="text-sm text-gray-600 mt-1">
+                  Activa esta opción para realizar un recuento parcial seleccionando organizaciones políticas específicas.
+                  {isPartialRecountMode && <span className="block mt-1 text-amber-700 font-medium">⚠️ TCV no será validado en recuento parcial</span>}
+                </p>
+              </div>
+              <Switch
+                id="partial-recount-mode"
+                checked={isPartialRecountMode}
+                onCheckedChange={setIsPartialRecountMode}
+                className="ml-4"
+              />
+            </div>
+          )}
+
           {selectedCircunscripcion && (
-            <OrganizationsTable
-              organizations={filtered}
-              selectedKeys={selectedOrganizations}
-              allToggleableSelected={areAllToggleableSelected(filtered, selectedOrganizations)}
-              searchValue={organizationFilter}
-              onToggle={handleOrganizationToggle}
-              onSelectAll={handleSelectAll}
-              onSearchChange={setOrganizationFilter}
-              onClearSearch={() => setOrganizationFilter("")}
-            />
+            <>
+              {!isPartialRecountMode && (
+                <div className="p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
+                  ℹ️ Organizaciones políticas cargadas desde circunscripción electoral (solo lectura)
+                </div>
+              )}
+              {isPartialRecountMode && (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800">
+                  ⚠️ Seleccione las organizaciones políticas para el recuento parcial (BLANCO y NULO no permitidos)
+                </div>
+              )}
+              <OrganizationsTable
+                organizations={filtered}
+                selectedKeys={selectedOrganizations}
+                allToggleableSelected={areAllToggleableSelected(filtered, selectedOrganizations)}
+                searchValue={organizationFilter}
+                isPartialRecountMode={isPartialRecountMode}
+                onToggle={handleOrganizationToggle}
+                onSelectAll={handleSelectAll}
+                onSearchChange={setOrganizationFilter}
+                onClearSearch={() => setOrganizationFilter("")}
+              />
+            </>
           )}
         </div>
 

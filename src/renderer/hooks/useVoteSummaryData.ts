@@ -33,10 +33,24 @@ export function useVoteSummaryData({
         const actaData = await repository.getActiveActa(category);
         setVoteEntries(actaData.voteEntries || []);
 
-        // Get selected organizations (try circunscripción-specific first, fallback to global)
-        const orgKeys = circunscripcionElectoral
-          ? await repository.getCircunscripcionOrganizations(circunscripcionElectoral)
-          : await repository.getSelectedOrganizations();
+        // Get selected organizations based on partial recount mode
+        let orgKeys: string[] = [];
+        if (circunscripcionElectoral) {
+          // Check if partial recount mode is enabled
+          const isPartialRecount = await repository.getIsPartialRecount(circunscripcionElectoral);
+
+          if (isPartialRecount) {
+            // Load selected organizations for partial recount
+            orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral);
+          } else {
+            // Load all organizations from CSV (full recount)
+            orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral);
+          }
+        } else {
+          // Fallback to global organizations
+          orgKeys = await repository.getSelectedOrganizations();
+        }
+
         setSelectedOrganizationKeys(orgKeys);
       } finally {
         setIsLoading(false);

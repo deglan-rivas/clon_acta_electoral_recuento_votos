@@ -22,11 +22,13 @@ export interface BaseElectoralPdfData {
   mesaNumber: number;
   actaNumber: string;
   totalElectores: number;
+  tcv: number | null;
   cedulasExcedentes: number;
   selectedLocation: SelectedLocation;
   startTime: Date | null;
   endTime: Date;
   isInternationalLocation?: boolean; // Flag to determine if using EXTRANJERO templates
+  isPartialRecount?: boolean; // Flag for partial recount mode (TCV shows "-")
   jeeMiembrosData: JeeMiembroRecord[]; // JEE members information
   jeeId: string; // JEE ID to filter members
 }

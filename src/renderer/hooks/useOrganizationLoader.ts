@@ -36,16 +36,33 @@ export function useOrganizationLoader(
         return;
       }
 
-      // Load organizations for the selected circunscripcion
-      const orgKeys = await repository.getCircunscripcionOrganizations(circunscripcion);
+      // Check if partial recount mode is enabled for this circunscripcion
+      const isPartialRecount = await repository.getIsPartialRecount(circunscripcion);
 
-      // Default to BLANCO and NULO if no organizations saved
+      let orgKeys: string[] = [];
+
+      if (isPartialRecount) {
+        // Load selected organizations for partial recount from separate key
+        orgKeys = await repository.getPartialRecountOrganizations(circunscripcion);
+      } else {
+        // Load all organizations from CSV (full recount mode)
+        orgKeys = await repository.getCircunscripcionOrganizations(circunscripcion);
+      }
+
+      // Default to BLANCO and NULO if no organizations loaded
       if (orgKeys.length === 0) {
         const blancoNuloKeys = getBlancoNuloKeys(politicalOrganizations);
         setSelectedOrganizations(blancoNuloKeys);
       } else {
         setSelectedOrganizations(orgKeys);
       }
+
+      console.log('[useOrganizationLoader] Loaded organizations:', {
+        circunscripcion,
+        isPartialRecount,
+        orgCount: orgKeys.length,
+        source: isPartialRecount ? 'PARTIAL_RECOUNT_ORGANIZATIONS' : 'CIRCUNSCRIPCION_ORGANIZATIONS'
+      });
     };
 
     loadOrganizations();

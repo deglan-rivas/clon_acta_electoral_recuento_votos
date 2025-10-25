@@ -19,6 +19,7 @@ interface ActaHeaderPanelProps {
   totalElectores: number;
   tcv: number | null;
   entriesLength: number;
+  isPartialRecount?: boolean;
 
   // Location
   selectedLocation: {
@@ -73,6 +74,7 @@ export function ActaHeaderPanel({
   totalElectores,
   tcv,
   entriesLength,
+  isPartialRecount = false,
   selectedLocation,
   isInternationalLocation,
   areMesaFieldsLocked,
@@ -231,9 +233,9 @@ export function ActaHeaderPanel({
       return;
     }
 
-    // Check if mesa is already finalized
-    if (isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
-      ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada en esta categoría`, '450px', 4000);
+    // Check if mesa is already finalized (skip for partial recounts)
+    if (!isPartialRecount && isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
+      ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada para este tipo de elección`, '450px', 4000);
       return;
     }
 
@@ -392,7 +394,9 @@ export function ActaHeaderPanel({
 
               <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
                 <span className="text-sm font-medium text-gray-700">TCV:</span>
-                <span className="font-semibold text-gray-800 ml-1">{tcv !== null ? tcv : entriesLength}</span>
+                <span className="font-semibold text-gray-800 ml-1">
+                  {isPartialRecount ? "-" : (tcv !== null ? tcv : entriesLength)}
+                </span>
               </div>
             </>
           ) : (
@@ -551,8 +555,8 @@ export function ActaHeaderPanel({
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                 <Input
-                  type="number"
-                  value={tcv !== null ? tcv : entriesLength}
+                  type={isPartialRecount ? "text" : "number"}
+                  value={isPartialRecount ? "" : (tcv !== null ? tcv : entriesLength)}
                   readOnly
                   disabled
                   className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"

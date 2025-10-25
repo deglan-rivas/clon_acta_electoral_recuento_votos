@@ -34,6 +34,12 @@ export interface IActaRepository {
   saveCircunscripcionOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void>;
   getAllCircunscripcionOrganizations(): Promise<Record<string, string[]>>;
 
+  // Partial recount management
+  getIsPartialRecount(circunscripcion: string): Promise<boolean>;
+  saveIsPartialRecount(circunscripcion: string, isPartial: boolean): Promise<void>;
+  getPartialRecountOrganizations(circunscripcion: string): Promise<string[]>;
+  savePartialRecountOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void>;
+
   // Utility
   clearAll(): Promise<void>;
 }
