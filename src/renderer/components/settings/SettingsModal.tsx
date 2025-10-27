@@ -212,11 +212,11 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
             <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex-1">
                 <label htmlFor="partial-recount-mode" className="font-medium text-gray-900 cursor-pointer">
-                  Modo Recuento Parcial
+                  Modo Recuento Selectivo
                 </label>
                 <p className="text-sm text-gray-600 mt-1">
-                  Activa esta opción para realizar un recuento parcial seleccionando organizaciones políticas específicas.
-                  {isPartialRecountMode && <span className="block mt-1 text-amber-700 font-medium">⚠️ TCV no será validado en recuento parcial</span>}
+                  Activa esta opción para realizar un recuento selectivo de organizaciones políticas específicas.
+                  {isPartialRecountMode && <span className="block mt-1 text-amber-700 font-medium">⚠️ TCV no será validado en recuento selectivo</span>}
                 </p>
               </div>
               <Switch
@@ -237,7 +237,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
               )}
               {isPartialRecountMode && (
                 <div className="p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800">
-                  ⚠️ Seleccione las organizaciones políticas para el recuento parcial (BLANCO y NULO no permitidos)
+                  ⚠️ Seleccione las organizaciones políticas para el recuento selectivo (BLANCO y NULO no permitidos)
                 </div>
               )}
               <OrganizationsTable

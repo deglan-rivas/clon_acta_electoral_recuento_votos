@@ -10,6 +10,7 @@ interface UseVoteSummaryDataParams {
 interface UseVoteSummaryDataReturn {
   voteEntries: VoteEntry[];
   selectedOrganizationKeys: string[];
+  tcv: number | null;
   isLoading: boolean;
 }
 
@@ -23,6 +24,7 @@ export function useVoteSummaryData({
   const repository = useActaRepository();
   const [voteEntries, setVoteEntries] = useState<VoteEntry[]>([]);
   const [selectedOrganizationKeys, setSelectedOrganizationKeys] = useState<string[]>([]);
+  const [tcv, setTcv] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export function useVoteSummaryData({
         // Get vote entries for the currently active acta
         const actaData = await repository.getActiveActa(category);
         setVoteEntries(actaData.voteEntries || []);
+        setTcv(actaData.tcv ?? null);
 
         // Get selected organizations based on partial recount mode
         let orgKeys: string[] = [];
@@ -63,6 +66,7 @@ export function useVoteSummaryData({
   return {
     voteEntries,
     selectedOrganizationKeys,
+    tcv,
     isLoading
   };
 }

@@ -34,7 +34,7 @@ export function VoteSummaryPage({
   voteLimits,
 }: VoteSummaryPageProps) {
   // Load vote summary data from repository
-  const { voteEntries, selectedOrganizationKeys } = useVoteSummaryData({
+  const { voteEntries, selectedOrganizationKeys, tcv } = useVoteSummaryData({
     category,
     circunscripcionElectoral
   });
@@ -75,7 +75,7 @@ export function VoteSummaryPage({
             />
             <StatCard
               label="TCV"
-              value={stats.totalVotersWhoVoted}
+              value={tcv !== null ? tcv : "-"}
               colorScheme="blue"
             />
 
