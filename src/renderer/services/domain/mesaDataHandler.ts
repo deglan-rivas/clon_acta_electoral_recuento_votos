@@ -20,6 +20,7 @@ export interface LoadMesaInfoParams {
   mesaElectoralData: MesaElectoralRecord[];
   circunscripcionData: any[];
   selectedJee: string;
+  circunscripcionElectoral?: string; // Current circunscripcion electoral for partial recount check
   onLocationUpdate: (location: SelectedLocation) => void;
   onMesaFieldsLocked: (locked: boolean) => void;
   onMesaNumberUpdate: (mesa: number) => void;
@@ -41,6 +42,7 @@ export class MesaDataHandler {
       mesaElectoralData,
       circunscripcionData,
       selectedJee,
+      circunscripcionElectoral,
       onLocationUpdate,
       onMesaFieldsLocked,
       onMesaNumberUpdate,
@@ -109,17 +111,31 @@ export class MesaDataHandler {
       // CSV is not bounded to entries size, but if mesa is not in repository, TCV will be null (bound to entries.length)
       if (actaRepository) {
         try {
-          const tcvFromRepository = await actaRepository.findTcvByMesa(mesa, activeCategory);
-          console.log('[MesaDataHandler.loadMesaInfo] TCV from repository:', tcvFromRepository);
+          // Check if partial recount mode is enabled for this circunscripcion
+          let isPartialRecount = false;
+          if (circunscripcionElectoral) {
+            isPartialRecount = await actaRepository.getIsPartialRecount(circunscripcionElectoral);
+            console.log('[MesaDataHandler.loadMesaInfo] Partial recount mode:', isPartialRecount);
+          }
 
-          if (tcvFromRepository !== null) {
-            // Mesa found in another category - use that TCV value
-            console.log('[MesaDataHandler.loadMesaInfo] Setting TCV from repository:', tcvFromRepository);
-            onTcvUpdate(tcvFromRepository);
-          } else {
-            // Mesa not found in repository - TCV will remain null (bound to entries.length)
-            console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, TCV will be bound to entries.length');
+          if (isPartialRecount) {
+            // Force TCV to null for partial recounts
+            console.log('[MesaDataHandler.loadMesaInfo] Partial recount mode - TCV forced to null');
             onTcvUpdate(null);
+          } else {
+            // Normal logic - load TCV from repository if exists
+            const tcvFromRepository = await actaRepository.findTcvByMesa(mesa, activeCategory);
+            console.log('[MesaDataHandler.loadMesaInfo] TCV from repository:', tcvFromRepository);
+
+            if (tcvFromRepository !== null) {
+              // Mesa found in another category - use that TCV value
+              console.log('[MesaDataHandler.loadMesaInfo] Setting TCV from repository:', tcvFromRepository);
+              onTcvUpdate(tcvFromRepository);
+            } else {
+              // Mesa not found in repository - TCV will remain null (bound to entries.length)
+              console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, TCV will be bound to entries.length');
+              onTcvUpdate(null);
+            }
           }
         } catch (error) {
           console.error('[MesaDataHandler.loadMesaInfo] Error loading TCV from repository:', error);

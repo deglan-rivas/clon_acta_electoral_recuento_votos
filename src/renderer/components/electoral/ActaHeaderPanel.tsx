@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ChevronDown, RefreshCw, FileCheck, Download, Loader2 } from "lucide-react";
+import { ChevronDown, RefreshCw, FileCheck, Download, Loader2, RotateCcw } from "lucide-react";
 import type { CategoryColors, JeeRecord, JeeMiembroRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
 import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
@@ -19,6 +19,7 @@ interface ActaHeaderPanelProps {
   totalElectores: number;
   tcv: number | null;
   entriesLength: number;
+  isPartialRecount?: boolean;
 
   // Location
   selectedLocation: {
@@ -59,6 +60,7 @@ interface ActaHeaderPanelProps {
   onDistritoChange: (value: string) => void;
   onSaveMesaData: () => void;
   onFinalizeForm: () => void;
+  onReinicializar?: () => void;
   onVerActa: () => void;
   onCreateNewActa?: () => void;
   onSwitchToActa?: (index: number) => void;
@@ -72,6 +74,7 @@ export function ActaHeaderPanel({
   totalElectores,
   tcv,
   entriesLength,
+  isPartialRecount = false,
   selectedLocation,
   isInternationalLocation,
   areMesaFieldsLocked,
@@ -95,6 +98,7 @@ export function ActaHeaderPanel({
   onDistritoChange,
   onSaveMesaData,
   onFinalizeForm,
+  onReinicializar,
   onVerActa,
   onCreateNewActa,
   onSwitchToActa,
@@ -229,9 +233,9 @@ export function ActaHeaderPanel({
       return;
     }
 
-    // Check if mesa is already finalized
-    if (isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
-      ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada en esta categoría`, '450px', 4000);
+    // Check if mesa is already finalized (skip for partial recounts)
+    if (!isPartialRecount && isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
+      ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada para este tipo de elección`, '450px', 4000);
       return;
     }
 
@@ -390,7 +394,9 @@ export function ActaHeaderPanel({
 
               <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
                 <span className="text-sm font-medium text-gray-700">TCV:</span>
-                <span className="font-semibold text-gray-800 ml-1">{tcv !== null ? tcv : entriesLength}</span>
+                <span className="font-semibold text-gray-800 ml-1">
+                  {isPartialRecount ? "-" : (tcv !== null ? tcv : entriesLength)}
+                </span>
               </div>
             </>
           ) : (
@@ -549,8 +555,8 @@ export function ActaHeaderPanel({
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                 <Input
-                  type="number"
-                  value={tcv !== null ? tcv : entriesLength}
+                  type={isPartialRecount ? "text" : "number"}
+                  value={isPartialRecount ? "" : (tcv !== null ? tcv : entriesLength)}
                   readOnly
                   disabled
                   className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
@@ -605,16 +611,32 @@ export function ActaHeaderPanel({
           ) : null}
 
           {!isFormFinalized ? (
-            <Button
-              onClick={onFinalizeForm}
-              disabled={!isMesaDataSaved}
-              className={`px-6 py-2 rounded font-medium ${
-                !isMesaDataSaved ? "cursor-not-allowed text-gray-400" : "text-gray-800"
-              }`}
-              style={!isMesaDataSaved ? { backgroundColor: '#e5e7eb' } : { backgroundColor: categoryColors.dark }}
-            >
-              Finalizar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={!isMesaDataSaved}
+                  className={`px-6 py-2 rounded font-medium ${
+                    !isMesaDataSaved ? "cursor-not-allowed text-gray-400" : "text-gray-800"
+                  }`}
+                  style={!isMesaDataSaved ? { backgroundColor: '#e5e7eb' } : { backgroundColor: categoryColors.dark }}
+                >
+                  Opciones
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onFinalizeForm}>
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  Finalizar
+                </DropdownMenuItem>
+                {entriesLength > 0 && onReinicializar && (
+                  <DropdownMenuItem onClick={onReinicializar}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reinicializar
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="flex items-center gap-1 px-2 py-1 rounded font-medium text-center text-gray-800" style={{ backgroundColor: categoryColors.light }}>
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

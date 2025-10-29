@@ -21,6 +21,7 @@ interface VoteEntryTableProps {
   preferentialConfig: PreferentialConfig;
   totalElectores: number;
   cedulasExcedentes: number;
+  tcv: number | null;
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   categoryColors: CategoryColors;
@@ -36,6 +37,7 @@ export function VoteEntryTable({
   preferentialConfig,
   totalElectores,
   cedulasExcedentes,
+  tcv,
   isFormFinalized,
   isMesaDataSaved,
   categoryColors,
@@ -84,6 +86,17 @@ export function VoteEntryTable({
   };
 
   const handleAddEntry = async () => {
+    // Check if adding this entry would exceed TCV when loaded from previous count
+    // If TCV is not null, it means data was loaded from another category
+    if (tcv !== null && entries.length >= tcv) {
+      ToastService.error(
+        `No se pueden agregar más cédulas. El TCV cargado de un recuento previo es ${tcv} votos.`,
+        '550px',
+        4000
+      );
+      return;
+    }
+
     // Check if adding this entry would exceed total electores
     if (entries.length >= totalElectores) {
       ToastService.error(`No se pueden agregar más cédulas. Límite alcanzado: ${totalElectores} electores hábiles`, '450px', 4000);

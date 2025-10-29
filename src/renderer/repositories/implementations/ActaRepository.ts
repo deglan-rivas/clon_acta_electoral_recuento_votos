@@ -11,6 +11,8 @@ const STORAGE_KEYS = {
   ACTIVE_ACTA_INDEX: 'electoral_active_acta_index',
   SELECTED_ORGANIZATIONS: 'electoral_selected_organizations',
   CIRCUNSCRIPCION_ORGANIZATIONS: 'electoral_circunscripcion_organizations',
+  PARTIAL_RECOUNT_ORGANIZATIONS: 'electoral_partial_recount_organizations',
+  PARTIAL_RECOUNT_MODE: 'electoral_partial_recount_mode',
 } as const;
 
 export class ActaRepository implements IActaRepository {
@@ -264,12 +266,36 @@ export class ActaRepository implements IActaRepository {
     return allCircOrgs || {};
   }
 
+  async getIsPartialRecount(circunscripcion: string): Promise<boolean> {
+    const allPartialRecounts = await this.adapter.get<Record<string, boolean>>(STORAGE_KEYS.PARTIAL_RECOUNT_MODE);
+    return allPartialRecounts?.[circunscripcion] || false;
+  }
+
+  async saveIsPartialRecount(circunscripcion: string, isPartial: boolean): Promise<void> {
+    const allPartialRecounts = await this.adapter.get<Record<string, boolean>>(STORAGE_KEYS.PARTIAL_RECOUNT_MODE) || {};
+    allPartialRecounts[circunscripcion] = isPartial;
+    await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_MODE, allPartialRecounts);
+  }
+
+  async getPartialRecountOrganizations(circunscripcion: string): Promise<string[]> {
+    const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS);
+    return allPartialRecountOrgs?.[circunscripcion] || [];
+  }
+
+  async savePartialRecountOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void> {
+    const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS) || {};
+    allPartialRecountOrgs[circunscripcion] = organizationKeys;
+    await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS, allPartialRecountOrgs);
+  }
+
   async clearAll(): Promise<void> {
     await this.adapter.remove(STORAGE_KEYS.ACTIVE_CATEGORY);
     await this.adapter.remove(STORAGE_KEYS.CATEGORY_DATA);
     await this.adapter.remove(STORAGE_KEYS.ACTIVE_ACTA_INDEX);
     await this.adapter.remove(STORAGE_KEYS.SELECTED_ORGANIZATIONS);
     await this.adapter.remove(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS);
+    await this.adapter.remove(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS);
+    await this.adapter.remove(STORAGE_KEYS.PARTIAL_RECOUNT_MODE);
   }
 
   // Private helper methods

@@ -9,6 +9,14 @@ import jeeCsvFile from '/jee.csv?url';
 import mesaElectoralCsvFile from '/mesa_electoral_data.csv?url';
 import politicalOrgsCsvFile from '/organizaciones_politicas.csv?url';
 import jeeMiembrosCsvFile from '/jee-miembros.csv?url';
+import circunscripcionOrgMappingCsvFile from '/circunscripcion_organizacion_mapping.csv?url';
+
+export interface CircunscripcionOrganizacionMapping {
+  circunscripcion_electoral: string;
+  organizacion_key: string;
+  categoria_id: string;
+  orden_visualizacion: number;
+}
 
 export class CsvDataService {
   /**
@@ -186,16 +194,47 @@ export class CsvDataService {
   }
 
   /**
+   * Load Circunscripcion Organizacion Mapping data
+   * CSV format: circunscripcion_electoral;organizacion_key;categoria_id;orden_visualizacion
+   */
+  static async loadCircunscripcionOrganizacionMapping(): Promise<CircunscripcionOrganizacionMapping[]> {
+    try {
+      const response = await fetch(circunscripcionOrgMappingCsvFile);
+      const text = await response.text();
+      const lines = text.split('\n').slice(1); // Skip header
+      const mappings: CircunscripcionOrganizacionMapping[] = lines
+        .filter(line => line.trim())
+        .map(line => {
+          const [circunscripcion_electoral, organizacion_key, categoria_id, orden_visualizacion] = line.split(';');
+          return {
+            circunscripcion_electoral: circunscripcion_electoral?.trim() || '',
+            organizacion_key: organizacion_key?.trim() || '',
+            categoria_id: categoria_id?.trim() || '',
+            orden_visualizacion: parseInt(orden_visualizacion?.trim() || '0', 10)
+          };
+        })
+        .filter(record => record.circunscripcion_electoral && record.organizacion_key);
+
+      console.log('[CsvDataService] Circunscripcion-Organizacion mappings loaded:', mappings.length);
+      return mappings;
+    } catch (error) {
+      console.error('Error loading circunscripcion-organizacion mapping data:', error);
+      return [];
+    }
+  }
+
+  /**
    * Load all CSV data at once
    */
   static async loadAllData() {
-    const [ubigeo, circunscripcion, jee, mesaElectoral, politicalOrgs, jeeMiembros] = await Promise.all([
+    const [ubigeo, circunscripcion, jee, mesaElectoral, politicalOrgs, jeeMiembros, circunscripcionOrgMapping] = await Promise.all([
       this.loadUbigeoData(),
       this.loadCircunscripcionData(),
       this.loadJeeData(),
       this.loadMesaElectoralData(),
       this.loadPoliticalOrganizations(),
-      this.loadJeeMiembrosData()
+      this.loadJeeMiembrosData(),
+      this.loadCircunscripcionOrganizacionMapping()
     ]);
 
     return {
@@ -204,7 +243,8 @@ export class CsvDataService {
       jeeData: jee,
       mesaElectoralData: mesaElectoral,
       politicalOrganizations: politicalOrgs,
-      jeeMiembrosData: jeeMiembros
+      jeeMiembrosData: jeeMiembros,
+      circunscripcionOrgMapping: circunscripcionOrgMapping
     };
   }
 }

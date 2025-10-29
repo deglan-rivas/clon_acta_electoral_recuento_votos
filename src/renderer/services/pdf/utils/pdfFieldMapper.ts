@@ -35,6 +35,7 @@ export class PdfFieldMapper {
       startTime,
       entries,
       totalElectores,
+      tcv,
       cedulasExcedentes
     } = data;
 
@@ -42,9 +43,14 @@ export class PdfFieldMapper {
     const horaFin = formatTime(endTime);
     const fechaFin = formatDate(endTime);
 
-    const entriesStr = `${entries.length}`;
-    // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
-    const xOffsetEntries = entriesStr.length >= 3 ? 10 : entriesStr.length === 2 ? 5 : 0;
+    // TCV Top Right: Show dash "-" when TCV is null (partial recount), otherwise show TCV value
+    const tcvTopRightStr = tcv === null ? "-" : `${tcv}`;
+    // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10 (for "-" treat as 1 digit)
+    const xOffsetTcvTopRight = tcvTopRightStr.length >= 3 ? 10 : tcvTopRightStr.length === 2 ? 5 : 0;
+
+    // TCV Bottom (Total Votos Emitidos): Always show actual count of entries
+    const tcvBottomStr = `${entries.length}`;
+    const xOffsetTcvBottom = tcvBottomStr.length >= 3 ? 10 : tcvBottomStr.length === 2 ? 5 : 0;
 
     const totalElectoresStr = `${totalElectores}`;
     // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10
@@ -104,8 +110,8 @@ export class PdfFieldMapper {
         size: this.layout.fields.endDate.size
       },
       {
-        texto: entriesStr,
-        x: this.layout.fields.tcvTopRight.x - xOffsetEntries,
+        texto: tcvTopRightStr,
+        x: this.layout.fields.tcvTopRight.x - xOffsetTcvTopRight,
         y: this.pageHeight - this.layout.fields.tcvTopRight.yOffset,
         size: this.layout.fields.tcvTopRight.size
       },
@@ -122,8 +128,8 @@ export class PdfFieldMapper {
         size: this.layout.fields.cedulasExcedentes.size
       },
       {
-        texto: entriesStr,
-        x: this.layout.fields.tcvBottom.x - xOffsetEntries,
+        texto: tcvBottomStr,
+        x: this.layout.fields.tcvBottom.x - xOffsetTcvBottom,
         y: this.pageHeight - this.layout.fields.tcvBottom.yOffset,
         size: this.layout.fields.tcvBottom.size
       }

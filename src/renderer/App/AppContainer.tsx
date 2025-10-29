@@ -274,6 +274,7 @@ function AppLayoutContent() {
           mesaElectoralData,
           circunscripcionData,
           selectedJee: location.selectedJee,
+          circunscripcionElectoral: location.circunscripcionElectoral,
           onLocationUpdate: (updatedLocation: SelectedLocation) => {
             // Update all location fields at once to avoid cascading resets - SYNCHRONOUS with Zustand!
             updateActaData({ selectedLocation: updatedLocation });
