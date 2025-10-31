@@ -138,10 +138,10 @@ export function AppHeader({
                       backgroundColor: categoryColors.light,
                       borderColor: categoryColors.dark
                     }}
-                    title="Conteo Selectivo: Solo se contarán las organizaciones políticas seleccionadas en Configuración"
+                    title="Recuento Selectivo: Solo se contarán las organizaciones políticas seleccionadas en Configuración"
                   >
                     <Filter className="h-3 w-3" />
-                    Conteo Selectivo
+                    Recuento Selectivo
                   </Badge>
                 )}
               </div>
