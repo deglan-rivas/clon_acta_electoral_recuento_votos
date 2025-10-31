@@ -27,6 +27,7 @@ export interface LoadMesaInfoParams {
   onTotalElectoresUpdate: (teh: number) => void;
   onTcvUpdate: (tcv: number | null) => void;
   onCedulasExcedentesUpdate: (cedulasExcedentes: number) => void;
+  onCounterMesaUpdate: (counterMesa: number) => void;
   actaRepository?: any; // Repository to check for existing TCV and CedulasExcedentes values
 }
 
@@ -49,6 +50,7 @@ export class MesaDataHandler {
       onTotalElectoresUpdate,
       onTcvUpdate,
       onCedulasExcedentesUpdate,
+      onCounterMesaUpdate,
       actaRepository
     } = params;
 
@@ -122,6 +124,7 @@ export class MesaDataHandler {
             // Force TCV to null for partial recounts
             console.log('[MesaDataHandler.loadMesaInfo] Partial recount mode - TCV forced to null');
             onTcvUpdate(null);
+            // counterMesa can remain at default value (null) for partial recounts - not tracked
           } else {
             // Normal logic - load TCV from repository if exists
             const tcvFromRepository = await actaRepository.findTcvByMesa(mesa, activeCategory);
@@ -131,10 +134,23 @@ export class MesaDataHandler {
               // Mesa found in another category - use that TCV value
               console.log('[MesaDataHandler.loadMesaInfo] Setting TCV from repository:', tcvFromRepository);
               onTcvUpdate(tcvFromRepository);
+
+              // Count how many times "Iniciar" has been clicked for this mesa (isMesaDataSaved = true)
+              const savedCount = await actaRepository.countSavedActasByMesa(mesa);
+              console.log('[MesaDataHandler.loadMesaInfo] Mesa saved count (Iniciar clicked):', savedCount);
+
+              // Set counterMesa to count + 1 (this will be the Nth time clicking Iniciar for this mesa)
+              const newCounterMesa = savedCount + 1;
+              console.log('[MesaDataHandler.loadMesaInfo] Setting counterMesa to:', newCounterMesa);
+              onCounterMesaUpdate(newCounterMesa);
             } else {
               // Mesa not found in repository - TCV will remain null (bound to entries.length)
               console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, TCV will be bound to entries.length');
               onTcvUpdate(null);
+
+              // First time using this mesa - counterMesa = 1
+              console.log('[MesaDataHandler.loadMesaInfo] First time using this mesa - counterMesa = 1');
+              onCounterMesaUpdate(1);
             }
           }
         } catch (error) {

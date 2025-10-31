@@ -240,6 +240,56 @@ export class ActaRepository implements IActaRepository {
     return null;
   }
 
+  async countSavedActasByMesa(
+    mesaNumber: number,
+    excludeCategory?: string,
+    excludeActaIndex?: number
+  ): Promise<number> {
+    if (!mesaNumber || mesaNumber <= 0) return 0;
+
+    const allData = await this.getAllCategoryData();
+    const categories = [
+      'presidencial',
+      'senadoresNacional',
+      'senadoresRegional',
+      'diputados',
+      'parlamentoAndino',
+    ];
+
+    let count = 0;
+
+    for (const category of categories) {
+      const categoryData = allData[category];
+      if (categoryData && categoryData.actas) {
+        for (let i = 0; i < categoryData.actas.length; i++) {
+          const acta = categoryData.actas[i];
+
+          // Skip the current acta if specified
+          if (
+            excludeCategory &&
+            excludeActaIndex !== undefined &&
+            category === excludeCategory &&
+            i === excludeActaIndex
+          ) {
+            continue;
+          }
+
+          // Count actas where this mesa has been saved (Iniciar clicked)
+          // EXCLUDE partial recounts from the count
+          if (
+            acta.mesaNumber === mesaNumber &&
+            acta.isMesaDataSaved === true &&
+            acta.isPartialRecount !== true
+          ) {
+            count++;
+          }
+        }
+      }
+    }
+
+    return count;
+  }
+
   // Organization management methods
   async getSelectedOrganizations(): Promise<string[]> {
     const organizations = await this.adapter.get<string[]>(STORAGE_KEYS.SELECTED_ORGANIZATIONS);

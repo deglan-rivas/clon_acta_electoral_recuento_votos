@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ChevronDown, RefreshCw, FileCheck, Download, Loader2, RotateCcw } from "lucide-react";
+import { ChevronDown, RefreshCw, FileCheck, Download, Loader2, RotateCcw, Pause, Play } from "lucide-react";
 import type { CategoryColors, JeeRecord, JeeMiembroRecord } from "../../types/acta.types";
 import { ToastService } from "../../services/ui/toastService";
 import { ELECTORAL_CATEGORIES } from "../../config/electoralCategories";
@@ -34,6 +34,7 @@ interface ActaHeaderPanelProps {
   // State flags
   isMesaDataSaved: boolean;
   isFormFinalized: boolean;
+  isPaused?: boolean;
   isConformidadDownloaded: boolean;
 
   // Acta navigation
@@ -60,6 +61,8 @@ interface ActaHeaderPanelProps {
   onDistritoChange: (value: string) => void;
   onSaveMesaData: () => void;
   onFinalizeForm: () => void;
+  onPauseCounting?: () => void;
+  onResumeCounting?: () => void;
   onReinicializar?: () => void;
   onVerActa: () => void;
   onCreateNewActa?: () => void;
@@ -80,6 +83,7 @@ export function ActaHeaderPanel({
   areMesaFieldsLocked,
   isMesaDataSaved,
   isFormFinalized,
+  isPaused = false,
   isConformidadDownloaded,
   categoryActas = [],
   currentActaIndex = 0,
@@ -98,6 +102,8 @@ export function ActaHeaderPanel({
   onDistritoChange,
   onSaveMesaData,
   onFinalizeForm,
+  onPauseCounting,
+  onResumeCounting,
   onReinicializar,
   onVerActa,
   onCreateNewActa,
@@ -395,7 +401,7 @@ export function ActaHeaderPanel({
               <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
                 <span className="text-sm font-medium text-gray-700">TCV:</span>
                 <span className="font-semibold text-gray-800 ml-1">
-                  {isPartialRecount ? "-" : (tcv !== null ? tcv : entriesLength)}
+                  {isPartialRecount ? "-" : (tcv ?? 0)}
                 </span>
               </div>
             </>
@@ -556,7 +562,7 @@ export function ActaHeaderPanel({
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                 <Input
                   type={isPartialRecount ? "text" : "number"}
-                  value={isPartialRecount ? "" : (tcv !== null ? tcv : entriesLength)}
+                  value={isPartialRecount ? "" : (tcv ?? 0)}
                   readOnly
                   disabled
                   className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"
@@ -603,10 +609,19 @@ export function ActaHeaderPanel({
             </Button>
           ) : !isFormFinalized ? (
             <div className="flex items-center gap-1 px-2 py-1 rounded font-medium text-center justify-center text-gray-800" style={{ backgroundColor: categoryColors.light }}>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Sesión Iniciada
+              {isPaused ? (
+                <>
+                  <Pause className="w-5 h-5" />
+                  Sesión Pausada
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Sesión Iniciada
+                </>
+              )}
             </div>
           ) : null}
 
@@ -625,15 +640,30 @@ export function ActaHeaderPanel({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onFinalizeForm}>
-                  <FileCheck className="mr-2 h-4 w-4" />
-                  Finalizar
-                </DropdownMenuItem>
-                {entriesLength > 0 && onReinicializar && (
-                  <DropdownMenuItem onClick={onReinicializar}>
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Reinicializar
+                {isPaused ? (
+                  // When paused, only show Reanudar button
+                  <DropdownMenuItem onClick={onResumeCounting}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Reanudar
                   </DropdownMenuItem>
+                ) : (
+                  // When not paused, show all options
+                  <>
+                    <DropdownMenuItem onClick={onPauseCounting}>
+                      <Pause className="mr-2 h-4 w-4" />
+                      Pausar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onFinalizeForm}>
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Finalizar
+                    </DropdownMenuItem>
+                    {entriesLength > 0 && onReinicializar && (
+                      <DropdownMenuItem onClick={onReinicializar}>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Reinicializar
+                      </DropdownMenuItem>
+                    )}
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

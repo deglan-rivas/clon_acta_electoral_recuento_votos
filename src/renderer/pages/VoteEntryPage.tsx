@@ -37,6 +37,7 @@ interface VoteEntryPageProps {
   totalElectores: number;
   cedulasExcedentes: number;
   tcv: number | null;
+  counterMesa: number | null;
   onCedulasExcedentesChange: (value: number) => void;
   onTcvChange: (value: number | null) => void;
   selectedLocation: SelectedLocation;
@@ -64,9 +65,15 @@ interface VoteEntryPageProps {
   startTime: Date | null;
   endTime: Date | null;
   currentTime: Date;
+  isPaused?: boolean;
+  pausedDuration?: number;
+  lastPauseTime?: Date | null;
   onStartTimeChange: (time: Date | null) => void;
   onEndTimeChange: (time: Date | null) => void;
   onCurrentTimeChange: (time: Date) => void;
+  onPausedChange?: (isPaused: boolean) => void;
+  onPausedDurationChange?: (duration: number) => void;
+  onLastPauseTimeChange?: (time: Date | null) => void;
   onViewSummary: () => void;
   onCreateNewActa?: () => void;
   onSwitchToActa?: (index: number) => void;
@@ -91,6 +98,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     totalElectores,
     cedulasExcedentes,
     tcv,
+    counterMesa,
     onCedulasExcedentesChange,
     onTcvChange,
     selectedLocation,
@@ -117,9 +125,15 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     startTime,
     endTime,
     currentTime,
+    isPaused: externalIsPaused,
+    pausedDuration = 0,
+    lastPauseTime,
     onStartTimeChange,
     onEndTimeChange,
     onCurrentTimeChange,
+    onPausedChange,
+    onPausedDurationChange,
+    onLastPauseTimeChange,
     onCreateNewActa,
     onSwitchToActa,
     categoryActas = [],
@@ -140,12 +154,14 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const [localIsFormFinalized, setLocalIsFormFinalized] = useState<boolean>(false);
   const [localIsMesaDataSaved, setLocalIsMesaDataSaved] = useState<boolean>(false);
   const [localIsConformidadDownloaded, setLocalIsConformidadDownloaded] = useState<boolean>(false);
+  const [localIsPaused, setLocalIsPaused] = useState<boolean>(false);
   const [selectedOrganizationKeys, setSelectedOrganizationKeys] = useState<string[]>([]);
   const [isPartialRecount, setIsPartialRecount] = useState<boolean>(false);
 
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
   const isMesaDataSaved = externalIsMesaDataSaved !== undefined ? externalIsMesaDataSaved : localIsMesaDataSaved;
   const isConformidadDownloaded = externalIsConformidadDownloaded !== undefined ? externalIsConformidadDownloaded : localIsConformidadDownloaded;
+  const isPaused = externalIsPaused !== undefined ? externalIsPaused : localIsPaused;
 
   // Load selected organizations from repository
   useEffect(() => {
@@ -204,6 +220,15 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const updateEntries = (newEntries: VoteEntry[]) => {
     setEntries(newEntries);
     onEntriesChange(newEntries);
+
+    // Auto-update TCV in localStorage when entries change
+    // ONLY when this is the FIRST time counting this mesa (counterMesa === 1)
+    // EXCEPT for partial recounts where TCV must remain null
+    // When counterMesa > 1, TCV is loaded from previous count and should NOT update
+    if (isMesaDataSaved && counterMesa === 1 && !isPartialRecount) {
+      console.log('[VoteEntryPage.updateEntries] Auto-updating TCV to:', newEntries.length, '(counterMesa:', counterMesa, ')');
+      onTcvChange(newEntries.length);
+    }
   };
 
   // Handle save mesa data with validations
@@ -231,6 +256,14 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     console.log('[VoteEntryPage.handleSaveMesaData] Setting start time:', now);
     onStartTimeChange(now);
     onCurrentTimeChange(now);
+
+    // Initialize TCV to 0 for first-time counting (counterMesa === 1)
+    // For reused mesas (counterMesa > 1), TCV is already loaded from previous count
+    // For partial recounts, TCV remains null
+    if (counterMesa === 1 && !isPartialRecount && tcv === null) {
+      console.log('[VoteEntryPage.handleSaveMesaData] Initializing TCV to 0 for first-time counting');
+      onTcvChange(0);
+    }
 
     // Update saved state
     console.log('[VoteEntryPage.handleSaveMesaData] Setting isMesaDataSaved to true');
@@ -294,11 +327,11 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
-    // Validate TCV matches entries when TCV is loaded from repository
+    // Validate TCV matches entries when mesa is reused (counterMesa > 1)
     // Skip validation for partial recounts (isPartialRecount = true)
-    // If TCV is null, it's bound to entries.length (no validation needed)
-    // If TCV has a value, it was loaded from another category, so entries must match
-    if (!isPartialRecount && tcv !== null && entries.length !== tcv) {
+    // Skip validation for first-time counting (counterMesa === 1) - TCV auto-updates
+    // If counterMesa > 1, TCV was loaded from previous count, so entries must match
+    if (!isPartialRecount && counterMesa > 1 && tcv !== null && entries.length !== tcv) {
       ToastService.error(
         `El número de votos ingresados ${entries.length} no coincide con el TCV esperado ${tcv}.`,
         '550px',
@@ -308,17 +341,18 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     }
 
     // Show confirmation dialog
-    // const confirmed = window.confirm(
-    //   `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
-    //   `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
-    //   `Acta: ${actaNumber}\n` +
-    //   `Total de votos: ${entries.length}\n` +
-    //   `Una vez finalizada, no podrá realizar más cambios.`
-    // );
+    const confirmed = window.confirm(
+      `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
+      `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
+      `Acta: ${actaNumber}\n` +
+      `Total de votos: ${entries.length}\n\n` +
+      `Una vez finalizada, no podrá realizar más cambios.\n` +
+      `Esta operación NO se puede deshacer.`
+    );
 
-    // if (!confirmed) {
-    //   return;
-    // }
+    if (!confirmed) {
+      return;
+    }
 
     console.log("Finalizando formulario...");
     const now = new Date();
@@ -326,11 +360,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // With Zustand, all updates are SYNCHRONOUS - no delay needed! ✅
     onEndTimeChange(now); // Capture end time (instant with Zustand)
 
-    // If TCV is null (linked to entries.length), save the actual value for auto-loading
-    // EXCEPT for partial recounts - TCV must remain null
-    if (tcv === null && !isPartialRecount) {
-      onTcvChange(entries.length); // Instant with Zustand
-    }
+    // TCV is already being auto-updated in updateEntries() for first-time counting (counterMesa === 1)
+    // For reused mesas (counterMesa > 1), TCV was preloaded and should not change
+    // For partial recounts, TCV must remain null
+    // No need to update TCV here anymore - it's handled automatically!
 
     // Update isFormFinalized in parent state
     if (onFormFinalizedChange) {
@@ -348,6 +381,68 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     }
 
     ToastService.success("Formulario finalizado exitosamente", '400px', 3000);
+  };
+
+  // Handle pause counting
+  const handlePauseCounting = () => {
+    console.log('[VoteEntryPage.handlePauseCounting] Pausing session');
+
+    // Record the pause start time
+    const now = new Date();
+    if (onLastPauseTimeChange) {
+      onLastPauseTimeChange(now);
+    }
+
+    if (onPausedChange) {
+      onPausedChange(true);
+    } else {
+      setLocalIsPaused(true);
+    }
+
+    // Save the paused state
+    if (onSaveActa) {
+      onSaveActa();
+    }
+
+    ToastService.info("Sesión pausada. El temporizador y la entrada de votos están detenidos.", '500px', 3000);
+  };
+
+  // Handle resume counting
+  const handleResumeCounting = () => {
+    console.log('[VoteEntryPage.handleResumeCounting] Resuming session');
+
+    // Calculate how long we were paused and add to cumulative paused duration
+    const now = new Date();
+
+    if (lastPauseTime) {
+      const pauseDuration = now.getTime() - lastPauseTime.getTime();
+      const newPausedDuration = pausedDuration + pauseDuration;
+
+      console.log('[VoteEntryPage.handleResumeCounting] Pause duration:', pauseDuration, 'ms');
+      console.log('[VoteEntryPage.handleResumeCounting] New cumulative paused duration:', newPausedDuration, 'ms');
+
+      if (onPausedDurationChange) {
+        onPausedDurationChange(newPausedDuration);
+      }
+
+      // Clear the pause start time
+      if (onLastPauseTimeChange) {
+        onLastPauseTimeChange(null);
+      }
+    }
+
+    if (onPausedChange) {
+      onPausedChange(false);
+    } else {
+      setLocalIsPaused(false);
+    }
+
+    // Save the resumed state
+    if (onSaveActa) {
+      onSaveActa();
+    }
+
+    ToastService.success("Sesión reanudada. Puede continuar ingresando votos.", '450px', 3000);
   };
 
   // Handle PDF generation based on category
@@ -417,6 +512,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 areMesaFieldsLocked={areMesaFieldsLocked}
                 isMesaDataSaved={isMesaDataSaved}
                 isFormFinalized={isFormFinalized}
+                isPaused={isPaused}
                 isConformidadDownloaded={isConformidadDownloaded}
                 categoryActas={categoryActas}
                 currentActaIndex={currentActaIndex}
@@ -435,6 +531,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 onDistritoChange={onDistritoChange}
                 onSaveMesaData={handleSaveMesaData}
                 onFinalizeForm={handleFinalizeForm}
+                onPauseCounting={handlePauseCounting}
+                onResumeCounting={handleResumeCounting}
                 onReinicializar={handleReinicializar}
                 onVerActa={handleVerActa}
                 onCreateNewActa={onCreateNewActa}
@@ -454,6 +552,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
                 startTime={startTime}
                 endTime={endTime}
                 currentTime={currentTime}
+                isPaused={isPaused}
+                pausedDuration={pausedDuration}
               />
             </div>
           </div>
@@ -481,8 +581,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
           totalElectores={totalElectores}
           cedulasExcedentes={cedulasExcedentes}
           tcv={tcv}
+          counterMesa={counterMesa}
           isFormFinalized={isFormFinalized}
           isMesaDataSaved={isMesaDataSaved}
+          isPaused={isPaused}
           categoryColors={categoryColors}
           onEntriesChange={updateEntries}
           onCedulasExcedentesChange={onCedulasExcedentesChange}

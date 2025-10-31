@@ -22,8 +22,10 @@ interface VoteEntryTableProps {
   totalElectores: number;
   cedulasExcedentes: number;
   tcv: number | null;
+  counterMesa: number | null;
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
+  isPaused?: boolean;
   categoryColors: CategoryColors;
   onEntriesChange: (entries: VoteEntry[]) => void;
   onCedulasExcedentesChange: (value: number) => void;
@@ -38,15 +40,17 @@ export function VoteEntryTable({
   totalElectores,
   cedulasExcedentes,
   tcv,
+  counterMesa,
   isFormFinalized,
   isMesaDataSaved,
+  isPaused = false,
   categoryColors,
   onEntriesChange,
   onCedulasExcedentesChange,
   onSaveActa,
 }: VoteEntryTableProps) {
-  // Block control logic
-  const isBloque2Enabled = isMesaDataSaved && !isFormFinalized;
+  // Block control logic - disable when paused
+  const isBloque2Enabled = isMesaDataSaved && !isFormFinalized && !isPaused;
 
   // Alert state
   const [showAlert, setShowAlert] = useState(false);
@@ -87,8 +91,9 @@ export function VoteEntryTable({
 
   const handleAddEntry = async () => {
     // Check if adding this entry would exceed TCV when loaded from previous count
-    // If TCV is not null, it means data was loaded from another category
-    if (tcv !== null && entries.length >= tcv) {
+    // Only enforce this check when counterMesa > 1 (reused mesa with preloaded TCV)
+    // For first-time counting (counterMesa === 1), TCV auto-updates, so no limit
+    if (counterMesa !== null && counterMesa > 1 && tcv !== null && entries.length >= tcv) {
       ToastService.error(
         `No se pueden agregar más cédulas. El TCV cargado de un recuento previo es ${tcv} votos.`,
         '550px',
@@ -260,6 +265,18 @@ export function VoteEntryTable({
           className="text-lg font-semibold pb-2 flex items-center justify-between gap-4"
           style={{ borderBottom: `2px solid ${categoryColors.dark}` }}
         >
+          
+          <div className="flex items-center gap-4">
+            <span>VOTOS RECONTADOS</span>
+            <Badge
+              variant="default"
+              className="text-xl font-semibold text-gray-800"
+              style={{ backgroundColor: categoryColors.dark }}
+            >
+              {entries.length} cédulas
+            </Badge>
+          </div>
+          
           {/* Cédulas Excedentes Input */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">Cédulas Excedentes:</label>
@@ -283,16 +300,6 @@ export function VoteEntryTable({
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <span>VOTOS RECONTADOS</span>
-            <Badge
-              variant="default"
-              className="text-xl font-semibold text-gray-800"
-              style={{ backgroundColor: categoryColors.dark }}
-            >
-              {entries.length} cédulas
-            </Badge>
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-6 py-0">

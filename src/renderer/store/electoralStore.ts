@@ -57,6 +57,7 @@ interface ElectoralState {
   // Actions - Session State
   setMesaDataSaved: (saved: boolean) => void;
   setFormFinalized: (finalized: boolean) => void;
+  setPaused: (paused: boolean) => void;
   setMesaFieldsLocked: (locked: boolean) => void;
   setConformidadDownloaded: (downloaded: boolean) => void;
 
@@ -64,6 +65,8 @@ interface ElectoralState {
   setStartTime: (time: Date | null) => void;
   setEndTime: (time: Date | null) => void;
   setCurrentTime: (time: Date) => void;
+  setPausedDuration: (duration: number) => void;
+  setLastPauseTime: (time: Date | null) => void;
 
   // Actions - UI
   setSettingsOpen: (open: boolean) => void;
@@ -321,6 +324,10 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       get().updateActaData({ isFormFinalized: finalized });
     },
 
+    setPaused: (paused: boolean) => {
+      get().updateActaData({ isPaused: paused });
+    },
+
     setMesaFieldsLocked: (locked: boolean) => {
       get().updateActaData({ areMesaFieldsLocked: locked });
     },
@@ -340,6 +347,14 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
 
     setCurrentTime: (time: Date) => {
       set({ currentTime: time });
+    },
+
+    setPausedDuration: (duration: number) => {
+      get().updateActaData({ pausedDuration: duration });
+    },
+
+    setLastPauseTime: (time: Date | null) => {
+      get().updateActaData({ lastPauseTime: time?.toISOString() || null });
     },
 
     // UI
