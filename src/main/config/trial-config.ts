@@ -26,7 +26,7 @@
  * - '2026-05-31' for election period (April 12, 2026 + post-election)
  * - '2099-12-31' to disable expiration (production use)
  */
-export const EXPIRATION_DATE = '2025-12-08';
+export const EXPIRATION_DATE = '2025-12-10';
 
 // ┌─────────────────────────────────────────────────────────────────────┐
 // │  ADVANCED SETTINGS (Optional - leave as default if unsure)         │

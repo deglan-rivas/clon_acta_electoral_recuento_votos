@@ -183,7 +183,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[60vw] !max-w-5xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="!w-[60vw] !max-w-5xl max-h-[90vh] flex flex-col gap-0">
         <VisuallyHidden.Root>
           <DialogTitle>Configuración</DialogTitle>
           <DialogDescription>
@@ -191,10 +191,10 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
           </DialogDescription>
         </VisuallyHidden.Root>
 
-        <div className="space-y-3">
-          <div className="text-sm text-gray-600">
+        <div className="space-y-3 overflow-y-auto flex-1 pr-2">
+          {/*<div className="text-sm text-gray-600">
             Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas específicas.
-          </div>
+          </div>*/}
 
           <CircunscripcionSelector
             value={selectedCircunscripcion}
@@ -202,11 +202,11 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
             circunscripciones={uniqueCircunscripciones}
           />
 
-          {!selectedCircunscripcion && (
+          {/*!selectedCircunscripcion && (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas</p>
             </div>
-          )}
+          )*/}
 
           {selectedCircunscripcion && hasPreferentialVotes && (
             <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -256,7 +256,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
         </div>
 
       {/* Save/Cancel Buttons */}
-      <div className="flex justify-end space-x-3 pt-6 border-t">
+      <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0">
         <Button
           variant="outline"
           onClick={handleCancel}
