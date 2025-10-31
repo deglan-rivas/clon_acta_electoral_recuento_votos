@@ -23,6 +23,7 @@ import { ToastService } from "../services/ui/toastService";
 import { validateMesaData } from "../services/domain/mesaValidationService";
 import { generatePdfByElectionType } from "../services/pdf/pdfGeneratorFactory";
 import type { ElectionType } from "../services/pdf/types/pdfTypes";
+import { PREFERENTIAL_VOTE_CONFIG } from "../config/electoralCategories";
 
 // Component Props Interfaces
 interface VoteEntryPageProps {
@@ -177,10 +178,14 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       let orgKeys: string[] = [];
 
       if (circunscripcionElectoral) {
+        // Check if current category supports preferential voting
+        const hasPreferentialVotes = PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential1 || PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential2;
+
         // Check if partial recount mode is enabled
         const isPartial = await repository.getIsPartialRecount(circunscripcionElectoral);
 
-        if (isPartial) {
+        // Only apply partial recount if category supports preferential voting
+        if (isPartial && hasPreferentialVotes) {
           // Load from partial recount organizations key
           orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral);
         } else {
@@ -194,17 +199,23 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       setSelectedOrganizationKeys(orgKeys);
     };
     loadOrganizations();
-  }, [circunscripcionElectoral, repository, settingsReloadTrigger]);
+  }, [circunscripcionElectoral, repository, settingsReloadTrigger, category]);
 
   // Load partial recount mode from repository and reset TCV if needed
   useEffect(() => {
     const loadPartialRecountMode = async () => {
       if (circunscripcionElectoral) {
+        // Check if current category supports preferential voting
+        const hasPreferentialVotes = PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential1 || PREFERENTIAL_VOTE_CONFIG[category]?.hasPreferential2;
+
         const isPartial = await repository.getIsPartialRecount(circunscripcionElectoral);
-        setIsPartialRecount(isPartial);
+
+        // Only set partial recount if category supports preferential voting
+        const effectiveIsPartial = isPartial && hasPreferentialVotes;
+        setIsPartialRecount(effectiveIsPartial);
 
         // Reset TCV to null when partial recount is enabled
-        if (isPartial && tcv !== null) {
+        if (effectiveIsPartial && tcv !== null) {
           console.log('[VoteEntryPage] Partial recount enabled - resetting TCV to null');
           onTcvChange(null);
         }
@@ -213,7 +224,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       }
     };
     loadPartialRecountMode();
-  }, [circunscripcionElectoral, repository, settingsReloadTrigger, tcv, onTcvChange]);
+  }, [circunscripcionElectoral, repository, settingsReloadTrigger, tcv, onTcvChange, category]);
 
   const availableOrganizations = (politicalOrganizations || []).filter(org =>
     selectedOrganizationKeys.includes(org.key)
@@ -232,8 +243,9 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // Auto-update TCV in localStorage when entries change
     // ONLY when this is the FIRST time counting this mesa (counterMesa === 1)
     // EXCEPT for partial recounts where TCV must remain null
-    // When counterMesa > 1, TCV is loaded from previous count and should NOT update
-    if (isMesaDataSaved && counterMesa === 1 && !isPartialRecount) {
+    // When counterMesa > 1, TCV is loaded from previous election type and should NOT update
+    // Also ONLY update when TCV is null (not loaded from repository)
+    if (isMesaDataSaved && counterMesa === 1 && !isPartialRecount && tcv === null) {
       console.log('[VoteEntryPage.updateEntries] Auto-updating TCV to:', newEntries.length, '(counterMesa:', counterMesa, ')');
       onTcvChange(newEntries.length);
     }

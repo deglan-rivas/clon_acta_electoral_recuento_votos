@@ -230,12 +230,12 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
           {selectedCircunscripcion && (
             <>
-              {!isPartialRecountMode && (
+              {(!isPartialRecountMode || !hasPreferentialVotes) && (
                 <div className="p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
                   ℹ️ Organizaciones políticas cargadas desde circunscripción electoral (solo lectura)
                 </div>
               )}
-              {isPartialRecountMode && (
+              {isPartialRecountMode && hasPreferentialVotes && (
                 <div className="p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800">
                   ⚠️ Seleccione las organizaciones políticas para el recuento selectivo (BLANCO y NULO no permitidos)
                 </div>
@@ -245,7 +245,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
                 selectedKeys={selectedOrganizations}
                 allToggleableSelected={areAllToggleableSelected(filtered, selectedOrganizations)}
                 searchValue={organizationFilter}
-                isPartialRecountMode={isPartialRecountMode}
+                isPartialRecountMode={isPartialRecountMode && hasPreferentialVotes}
                 onToggle={handleOrganizationToggle}
                 onSelectAll={handleSelectAll}
                 onSearchChange={setOrganizationFilter}
