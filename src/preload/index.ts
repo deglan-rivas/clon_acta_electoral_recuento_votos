@@ -43,6 +43,14 @@ const api = {
   }> => {
     return ipcRenderer.invoke('check-expiration')
   },
+  // Dialog APIs
+  showConfirmDialog: (title: string, message: string, detail?: string): Promise<{
+    success: boolean;
+    confirmed: boolean;
+    error?: string;
+  }> => {
+    return ipcRenderer.invoke('show-confirm-dialog', title, message, detail)
+  },
   // Expose logging to renderer
   log: {
     info: (message: string, ...args: unknown[]) => log.info(message, ...args),

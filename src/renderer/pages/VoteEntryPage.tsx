@@ -40,6 +40,8 @@ interface VoteEntryPageProps {
   counterMesa: number | null;
   onCedulasExcedentesChange: (value: number) => void;
   onTcvChange: (value: number | null) => void;
+  onCounterMesaChange?: (value: number | null) => void;
+  onAreMesaFieldsLockedChange?: (value: boolean) => void;
   selectedLocation: SelectedLocation;
   circunscripcionElectoral: string;
   onLoadMesaInfo: (mesa: number) => void; // Load mesa data from CSV (no save)
@@ -48,6 +50,8 @@ interface VoteEntryPageProps {
   onDepartamentoChange: (value: string) => void;
   onProvinciaChange: (value: string) => void;
   onDistritoChange: (value: string) => void;
+  onCircunscripcionElectoralChange?: (value: string) => void;
+  onSelectedLocationChange?: (location: SelectedLocation) => void;
   getDepartamentos: () => string[];
   getProvincias: (departamento: string) => string[];
   getDistritos: (departamento: string, provincia: string) => string[];
@@ -101,6 +105,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     counterMesa,
     onCedulasExcedentesChange,
     onTcvChange,
+    onCounterMesaChange,
+    onAreMesaFieldsLockedChange,
     selectedLocation,
     circunscripcionElectoral,
     onLoadMesaInfo,
@@ -109,6 +115,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     onDepartamentoChange,
     onProvinciaChange,
     onDistritoChange,
+    onCircunscripcionElectoralChange,
+    onSelectedLocationChange,
     getDepartamentos,
     getProvincias,
     getDistritos,
@@ -282,41 +290,118 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     ToastService.success("Datos de mesa guardados exitosamente");
   };
 
-  // Handle reinicializar - clear all vote entries while keeping mesa data
+  // Handle reinicializar - clear ALL acta data to start from scratch
   const handleReinicializar = async () => {
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      `¿Está seguro que desea reinicializar el recuento?\n\n` +
-      `Esta acción eliminará todos los ${entries.length} votos ingresados y reiniciará el temporizador.\n` +
-      `Los datos de la mesa (N° Mesa, N° Acta, JEE, TEH, TCV, Ubicación) se mantendrán.\n\n` +
+    // Show confirmation dialog using Electron dialog API
+    const result = await window.api.showConfirmDialog(
+      'Acta Electoral Recuento Votos',
+      '¿Está seguro que desea reinicializar completamente el acta?',
+      `Esta acción eliminará TODOS los datos del acta actual:\n` +
+      `- ${entries.length} votos ingresados\n` +
+      `- Datos de mesa (N° Mesa, N° Acta, JEE, Ubicación)\n` +
+      `El acta volverá a estado inicial completamente limpio.\n` +
       `Esta operación NO se puede deshacer.`
     );
 
-    if (!confirmed) {
+    if (!result.confirmed) {
       return;
     }
 
-    console.log("Reinicializando formulario...");
-    const now = new Date();
+    console.log("Reinicializando acta completamente...");
 
     // Clear all vote entries
     updateEntries([]);
 
-    // Reset start time and restart timer
-    console.log('[VoteEntryPage.handleReinicializar] Resetting start time to:', now);
-    onStartTimeChange(now);
-    onCurrentTimeChange(now);
-
-    // Clear end time (since we're restarting)
-    console.log('[VoteEntryPage.handleReinicializar] Clearing end time');
+    // Clear timer data
+    console.log('[VoteEntryPage.handleReinicializar] Clearing all timer data');
+    onStartTimeChange(null);
     onEndTimeChange(null);
+    onCurrentTimeChange(new Date());
+
+    // Clear pause-related data
+    console.log('[VoteEntryPage.handleReinicializar] Clearing pause data');
+    if (onPausedChange) {
+      onPausedChange(false);
+    } else {
+      setLocalIsPaused(false);
+    }
+
+    if (onPausedDurationChange) {
+      onPausedDurationChange(0);
+    }
+
+    if (onLastPauseTimeChange) {
+      onLastPauseTimeChange(null);
+    }
+
+    // Clear acta-related data (TCV, Cédulas Excedentes)
+    console.log('[VoteEntryPage.handleReinicializar] Clearing acta data');
+    onTcvChange(null);
+    onCedulasExcedentesChange(0);
+
+    // Clear form states
+    console.log('[VoteEntryPage.handleReinicializar] Clearing form states');
+    if (onFormFinalizedChange) {
+      onFormFinalizedChange(false);
+    } else {
+      setLocalIsFormFinalized(false);
+    }
+
+    if (onMesaDataSavedChange) {
+      onMesaDataSavedChange(false);
+    } else {
+      setLocalIsMesaDataSaved(false);
+    }
+
+    if (onConformidadDownloadedChange) {
+      onConformidadDownloadedChange(false);
+    } else {
+      setLocalIsConformidadDownloaded(false);
+    }
+
+    // Clear location data (both individual handlers AND selectedLocation object)
+    console.log('[VoteEntryPage.handleReinicializar] Clearing location data');
+    onJeeChange('');
+    onDepartamentoChange('');
+    onProvinciaChange('');
+    onDistritoChange('');
+    if (onCircunscripcionElectoralChange) {
+      onCircunscripcionElectoralChange('');
+    }
+
+    // Directly clear selectedLocation in acta data to ensure it's persisted
+    if (onSelectedLocationChange) {
+      onSelectedLocationChange({
+        jee: '',
+        departamento: '',
+        provincia: '',
+        distrito: '',
+        circunscripcionElectoral: ''
+      });
+    }
+
+    // Reset mesa data (this will trigger unlock of mesa fields)
+    console.log('[VoteEntryPage.handleReinicializar] Clearing mesa data');
+    onMesaDataChange(0, '', 0);
+
+    // Clear counterMesa
+    if (onCounterMesaChange) {
+      console.log('[VoteEntryPage.handleReinicializar] Clearing counterMesa');
+      onCounterMesaChange(null);
+    }
+
+    // Unlock mesa fields
+    if (onAreMesaFieldsLockedChange) {
+      console.log('[VoteEntryPage.handleReinicializar] Unlocking mesa fields');
+      onAreMesaFieldsLockedChange(false);
+    }
 
     // Save the cleared state
     if (onSaveActa) {
       await onSaveActa();
     }
 
-    ToastService.success("Recuento reinicializado exitosamente. Puede ingresar votos nuevamente.", '550px', 3000);
+    ToastService.success("Acta reinicializada completamente. Puede comenzar un nuevo recuento desde cero.", '600px', 3000);
   };
 
   // Handle finalize form - disable all inputs permanently
@@ -340,9 +425,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      `¿Está seguro que desea finalizar el recuento de votos?\n\n` +
+    // Show confirmation dialog using Electron dialog API
+    const result = await window.api.showConfirmDialog(
+      'Acta Electoral Recuento Votos',
+      '¿Está seguro que desea finalizar el recuento de votos?',
       `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
       `Acta: ${actaNumber}\n` +
       `Total de votos: ${entries.length}\n\n` +
@@ -350,7 +436,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       `Esta operación NO se puede deshacer.`
     );
 
-    if (!confirmed) {
+    if (!result.confirmed) {
       return;
     }
 

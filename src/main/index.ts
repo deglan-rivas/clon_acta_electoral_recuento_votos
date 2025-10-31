@@ -328,6 +328,30 @@ ipcMain.handle('check-expiration', async () => {
   }
 });
 
+// IPC handler for confirmation dialogs
+ipcMain.handle('show-confirm-dialog', async (_event, title: string, message: string, detail?: string) => {
+  try {
+    log.info(`Showing confirmation dialog: ${title}`);
+    const response = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Cancelar', 'Aceptar'],
+      defaultId: 0,
+      cancelId: 0,
+      title: title,
+      message: message,
+      detail: detail || ''
+    });
+
+    // response.response is 0 for Cancel, 1 for Accept
+    const confirmed = response.response === 1;
+    log.info(`User response: ${confirmed ? 'Confirmed' : 'Cancelled'}`);
+    return { success: true, confirmed };
+  } catch (error) {
+    log.error('Error showing confirmation dialog:', error);
+    return { success: false, confirmed: false, error: (error as Error).message };
+  }
+});
+
 // IPC handlers for PDF operations
 ipcMain.handle('save-pdf', async (_event, pdfBytes: Uint8Array, filename: string) => {
   try {

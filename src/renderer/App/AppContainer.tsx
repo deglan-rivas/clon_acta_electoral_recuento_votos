@@ -291,6 +291,8 @@ function AppLayoutContent() {
       counterMesa={counterMesa}
       onCedulasExcedentesChange={(value) => updateActaData({ cedulasExcedentes: value })}
       onTcvChange={(value) => updateActaData({ tcv: value })}
+      onCounterMesaChange={(value) => updateActaData({ counterMesa: value })}
+      onAreMesaFieldsLockedChange={(value) => updateActaData({ areMesaFieldsLocked: value })}
       selectedLocation={{
         departamento: location.selectedDepartamento,
         provincia: location.selectedProvincia,
@@ -304,6 +306,8 @@ function AppLayoutContent() {
       onDepartamentoChange={location.handleDepartamentoChange}
       onProvinciaChange={location.handleProvinciaChange}
       onDistritoChange={location.handleDistritoChange}
+      onCircunscripcionElectoralChange={location.handleCircunscripcionElectoralChange}
+      onSelectedLocationChange={(location) => updateActaData({ selectedLocation: location })}
       getDepartamentos={getDepartamentos}
       getProvincias={getProvincias}
       getDistritos={getDistritos}
