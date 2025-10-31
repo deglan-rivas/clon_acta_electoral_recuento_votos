@@ -82,6 +82,39 @@ function AppLayoutContent() {
   // Filtered organizations for Settings modal based on current circunscripción
   const [filteredOrganizations, setFilteredOrganizations] = useState(politicalOrganizations);
 
+  // Load partial recount mode from repository for current circunscripción
+  const [isPartialRecountFromRepo, setIsPartialRecountFromRepo] = useState(false);
+
+  // Load partial recount mode when circunscripción or category changes
+  useEffect(() => {
+    const loadPartialRecountMode = async () => {
+      const circunscripcionElectoral = location.selectedCircunscripcionElectoral;
+
+      if (circunscripcionElectoral) {
+        // Check if current category supports preferential voting
+        const hasPreferentialVotes = PREFERENTIAL_VOTE_CONFIG[activeCategory]?.hasPreferential1 ||
+                                      PREFERENTIAL_VOTE_CONFIG[activeCategory]?.hasPreferential2;
+
+        if (hasPreferentialVotes) {
+          const isPartial = await actaRepository.getIsPartialRecount(circunscripcionElectoral);
+          console.log('[AppContainer] Loaded partial recount mode from repository:', {
+            circunscripcionElectoral,
+            activeCategory,
+            hasPreferentialVotes,
+            isPartial
+          });
+          setIsPartialRecountFromRepo(isPartial);
+        } else {
+          setIsPartialRecountFromRepo(false);
+        }
+      } else {
+        setIsPartialRecountFromRepo(false);
+      }
+    };
+
+    loadPartialRecountMode();
+  }, [location.selectedCircunscripcionElectoral, activeCategory, settingsReloadTrigger, actaRepository]);
+
   // Time tracking interval - update currentTime every second
   // Only depend on specific values, not the whole currentActa object
   const startTimeStr = currentActa?.startTime;
@@ -383,6 +416,11 @@ function AppLayoutContent() {
     />;
   };
 
+  // Debug logging for partial recount
+  console.log('[AppContainer] Render - isPartialRecountFromRepo:', isPartialRecountFromRepo);
+  console.log('[AppContainer] Render - currentActa.isPartialRecount:', currentActa?.isPartialRecount);
+  console.log('[AppContainer] Render - selectedCircunscripcionElectoral:', location.selectedCircunscripcionElectoral);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader
@@ -392,6 +430,7 @@ function AppLayoutContent() {
         circunscripcionOptions={getCircunscripcionElectoralOptions()}
         areLocationFieldsDisabled={areLocationFieldsDisabled}
         showLocationDropdowns={showLocationDropdowns}
+        isPartialRecount={isPartialRecountFromRepo}
         onCategoryChange={async (newCategory) => {
           await setActiveCategory(newCategory);
         }}

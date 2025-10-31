@@ -239,8 +239,9 @@ export function ActaHeaderPanel({
       return;
     }
 
-    // Check if mesa is already finalized (skip for partial recounts)
-    if (!isPartialRecount && isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
+    // Check if mesa is already finalized for this category
+    // A mesa can only be registered once per category (whether partial or full recount)
+    if (isMesaAlreadyFinalized && isMesaAlreadyFinalized(mesaNum)) {
       ToastService.error(`La mesa ${localMesaNumber} ya ha sido finalizada para este tipo de elección`, '450px', 4000);
       return;
     }

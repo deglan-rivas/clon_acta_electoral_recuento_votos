@@ -212,6 +212,15 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
         // Only set partial recount if category supports preferential voting
         const effectiveIsPartial = isPartial && hasPreferentialVotes;
+
+        console.log('[VoteEntryPage.loadPartialRecountMode] ========== PARTIAL RECOUNT LOADING ==========');
+        console.log('[VoteEntryPage.loadPartialRecountMode] circunscripcionElectoral:', circunscripcionElectoral);
+        console.log('[VoteEntryPage.loadPartialRecountMode] category:', category);
+        console.log('[VoteEntryPage.loadPartialRecountMode] hasPreferentialVotes:', hasPreferentialVotes);
+        console.log('[VoteEntryPage.loadPartialRecountMode] isPartial from repository:', isPartial);
+        console.log('[VoteEntryPage.loadPartialRecountMode] effectiveIsPartial:', effectiveIsPartial);
+        console.log('[VoteEntryPage.loadPartialRecountMode] ===================================================');
+
         setIsPartialRecount(effectiveIsPartial);
 
         // Reset TCV to null when partial recount is enabled
@@ -237,6 +246,14 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
   // Report entries changes to parent component
   const updateEntries = (newEntries: VoteEntry[]) => {
+    console.log('[VoteEntryPage.updateEntries] ========== TCV UPDATE DEBUG ==========');
+    console.log('[VoteEntryPage.updateEntries] Category:', category);
+    console.log('[VoteEntryPage.updateEntries] New entries length:', newEntries.length);
+    console.log('[VoteEntryPage.updateEntries] Current TCV:', tcv);
+    console.log('[VoteEntryPage.updateEntries] isMesaDataSaved:', isMesaDataSaved);
+    console.log('[VoteEntryPage.updateEntries] counterMesa:', counterMesa);
+    console.log('[VoteEntryPage.updateEntries] isPartialRecount:', isPartialRecount);
+
     setEntries(newEntries);
     onEntriesChange(newEntries);
 
@@ -244,11 +261,22 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // ONLY when this is the FIRST time counting this mesa (counterMesa === 1)
     // EXCEPT for partial recounts where TCV must remain null
     // When counterMesa > 1, TCV is loaded from previous election type and should NOT update
-    // Also ONLY update when TCV is null (not loaded from repository)
-    if (isMesaDataSaved && counterMesa === 1 && !isPartialRecount && tcv === null) {
-      console.log('[VoteEntryPage.updateEntries] Auto-updating TCV to:', newEntries.length, '(counterMesa:', counterMesa, ')');
+    // For first-time counting, always keep TCV in sync with entries count (no need to check if tcv === null)
+    const shouldUpdateTcv = isMesaDataSaved && counterMesa !== null && counterMesa === 1 && !isPartialRecount;
+    console.log('[VoteEntryPage.updateEntries] Should update TCV?', shouldUpdateTcv);
+    console.log('[VoteEntryPage.updateEntries] Condition breakdown:');
+    console.log('[VoteEntryPage.updateEntries]   - isMesaDataSaved:', isMesaDataSaved);
+    console.log('[VoteEntryPage.updateEntries]   - counterMesa !== null:', counterMesa !== null);
+    console.log('[VoteEntryPage.updateEntries]   - counterMesa === 1:', counterMesa === 1);
+    console.log('[VoteEntryPage.updateEntries]   - !isPartialRecount:', !isPartialRecount);
+
+    if (shouldUpdateTcv) {
+      console.log('[VoteEntryPage.updateEntries] ✅ Auto-updating TCV to:', newEntries.length, '(counterMesa:', counterMesa, ')');
       onTcvChange(newEntries.length);
+    } else {
+      console.log('[VoteEntryPage.updateEntries] ❌ NOT updating TCV - conditions not met');
     }
+    console.log('[VoteEntryPage.updateEntries] ==========================================');
   };
 
   // Handle save mesa data with validations
@@ -280,10 +308,28 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // Initialize TCV to 0 for first-time counting (counterMesa === 1)
     // For reused mesas (counterMesa > 1), TCV is already loaded from previous count
     // For partial recounts, TCV remains null
-    if (counterMesa === 1 && !isPartialRecount && tcv === null) {
-      console.log('[VoteEntryPage.handleSaveMesaData] Initializing TCV to 0 for first-time counting');
+    console.log('[VoteEntryPage.handleSaveMesaData] ========== TCV INITIALIZATION DEBUG ==========');
+    console.log('[VoteEntryPage.handleSaveMesaData] Category:', category);
+    console.log('[VoteEntryPage.handleSaveMesaData] Current TCV:', tcv);
+    console.log('[VoteEntryPage.handleSaveMesaData] counterMesa:', counterMesa);
+    console.log('[VoteEntryPage.handleSaveMesaData] isPartialRecount:', isPartialRecount);
+
+    // Only initialize if it's null (not already initialized). This prevents overwriting TCV=0 with entries.
+    const shouldInitializeTcv = counterMesa !== null && counterMesa === 1 && !isPartialRecount && tcv === null;
+    console.log('[VoteEntryPage.handleSaveMesaData] Should initialize TCV?', shouldInitializeTcv);
+    console.log('[VoteEntryPage.handleSaveMesaData] Condition breakdown:');
+    console.log('[VoteEntryPage.handleSaveMesaData]   - counterMesa !== null:', counterMesa !== null);
+    console.log('[VoteEntryPage.handleSaveMesaData]   - counterMesa === 1:', counterMesa === 1);
+    console.log('[VoteEntryPage.handleSaveMesaData]   - !isPartialRecount:', !isPartialRecount);
+    console.log('[VoteEntryPage.handleSaveMesaData]   - tcv === null:', tcv === null);
+
+    if (shouldInitializeTcv) {
+      console.log('[VoteEntryPage.handleSaveMesaData] ✅ Initializing TCV to 0 for first-time counting');
       onTcvChange(0);
+    } else {
+      console.log('[VoteEntryPage.handleSaveMesaData] ❌ NOT initializing TCV - already set or not applicable');
     }
+    console.log('[VoteEntryPage.handleSaveMesaData] ================================================');
 
     // Update saved state
     console.log('[VoteEntryPage.handleSaveMesaData] Setting isMesaDataSaved to true');
@@ -428,7 +474,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // Skip validation for partial recounts (isPartialRecount = true)
     // Skip validation for first-time counting (counterMesa === 1) - TCV auto-updates
     // If counterMesa > 1, TCV was loaded from previous count, so entries must match
-    if (!isPartialRecount && counterMesa > 1 && tcv !== null && entries.length !== tcv) {
+    if (!isPartialRecount && counterMesa !== null && counterMesa > 1 && tcv !== null && entries.length !== tcv) {
       ToastService.error(
         `El número de votos ingresados ${entries.length} no coincide con el TCV esperado ${tcv}.`,
         '550px',

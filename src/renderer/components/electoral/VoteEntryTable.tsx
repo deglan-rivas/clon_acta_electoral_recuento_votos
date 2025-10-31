@@ -145,6 +145,7 @@ export function VoteEntryTable({
       preferentialVote2: isBlankOrNull(newEntry.party || "") ? 0 : pref2,
     };
 
+    console.log('[VoteEntryTable.handleAddEntry] Adding new entry. New entries length:', entries.length + 1);
     onEntriesChange([...entries, entry]);
     setNewEntry({
       tableNumber: getNextTableNumber() + 1,
@@ -226,6 +227,7 @@ export function VoteEntryTable({
     const updatedEntries = entries.map(entry =>
       entry.tableNumber === editingTableNumber ? updatedEntry : entry
     );
+    console.log('[VoteEntryTable.handleSaveEdit] Updating entry. Entries length remains:', updatedEntries.length);
     onEntriesChange(updatedEntries);
 
     setEditingTableNumber(null);

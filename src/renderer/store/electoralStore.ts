@@ -199,6 +199,15 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       const index = currentActaIndex[activeCategory] || 0;
       const actas = [...(categoryActas[activeCategory] || [])];
 
+      // Log TCV changes specifically
+      if ('tcv' in updates) {
+        console.log('[ElectoralStore.updateActaData] ========== TCV UPDATE IN STORE ==========');
+        console.log('[ElectoralStore.updateActaData] Category:', activeCategory);
+        console.log('[ElectoralStore.updateActaData] Current TCV:', actas[index]?.tcv);
+        console.log('[ElectoralStore.updateActaData] New TCV:', updates.tcv);
+        console.log('[ElectoralStore.updateActaData] Other updates:', Object.keys(updates).filter(k => k !== 'tcv'));
+      }
+
       actas[index] = {
         ...actas[index],
         ...updates,
@@ -212,6 +221,12 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       set({
         categoryActas: newCategoryActas,
       });
+
+      // Log TCV after update
+      if ('tcv' in updates) {
+        console.log('[ElectoralStore.updateActaData] TCV after update in store:', actas[index].tcv);
+        console.log('[ElectoralStore.updateActaData] ================================================');
+      }
 
       // Persist to repository (async, non-blocking)
       actaRepository.saveCategoryData(activeCategory, { actas }).catch((error) => {
@@ -365,6 +380,8 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
     // Utilities
     isMesaFinalized: (mesaNumber: number, category: string) => {
       const actas = get().getAllActasForCategory(category);
+      // A mesa can only be registered once per category, regardless of partial/full recount
+      // Once a mesa is finalized (either partial or full), it cannot be reused in the same category
       return actas.some(
         (acta) => acta.mesaNumber === mesaNumber && acta.isFormFinalized
       );

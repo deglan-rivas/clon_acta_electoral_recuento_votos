@@ -1,7 +1,7 @@
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Button } from "../components/ui/button";
-import { Settings, Crown, Building2, Users, Vote, Globe } from "lucide-react";
+import { Settings, Crown, Building2, Users, Vote, Globe, Filter } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import { ELECTORAL_CATEGORIES } from "../config/electoralCategories";
@@ -16,6 +16,9 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   parlamentoAndino: Globe,
 };
 
+// Import category colors utility
+import { getCategoryColors } from "../utils/categoryColors";
+
 interface AppHeaderProps {
   activeCategory: string;
   activeSection: string;
@@ -23,6 +26,7 @@ interface AppHeaderProps {
   circunscripcionOptions: string[];
   areLocationFieldsDisabled: boolean;
   showLocationDropdowns: boolean;
+  isPartialRecount?: boolean;
   onCategoryChange: (category: string) => void;
   onSectionChange: (section: string) => void;
   onCircunscripcionChange: (value: string) => void;
@@ -36,11 +40,17 @@ export function AppHeader({
   circunscripcionOptions,
   areLocationFieldsDisabled,
   showLocationDropdowns,
+  isPartialRecount = false,
   onCategoryChange,
   onSectionChange,
   onCircunscripcionChange,
   onSettingsClick,
 }: AppHeaderProps) {
+  console.log('[AppHeader] Render - isPartialRecount:', isPartialRecount, 'selectedCircunscripcionElectoral:', selectedCircunscripcionElectoral);
+
+  // Get category colors for the badge
+  const categoryColors = getCategoryColors(activeCategory);
+
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -120,6 +130,20 @@ export function AppHeader({
                     ))}
                   </SelectContent>
                 </Select>
+                {isPartialRecount && selectedCircunscripcionElectoral && (
+                  <Badge
+                    variant="secondary"
+                    className="px-2 py-1 text-sm font-medium text-gray-700 flex items-center gap-1 border-2"
+                    style={{
+                      backgroundColor: categoryColors.light,
+                      borderColor: categoryColors.dark
+                    }}
+                    title="Conteo Selectivo: Solo se contarán las organizaciones políticas seleccionadas en Configuración"
+                  >
+                    <Filter className="h-3 w-3" />
+                    Conteo Selectivo
+                  </Badge>
+                )}
               </div>
             )}
           </div>
