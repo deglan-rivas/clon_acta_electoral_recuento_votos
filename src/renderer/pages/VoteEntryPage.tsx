@@ -86,6 +86,7 @@ interface VoteEntryPageProps {
   currentActaIndex?: number;
   politicalOrganizations: PoliticalOrganization[];
   settingsReloadTrigger?: number;
+  onSettingsReloadTrigger?: () => void;
   isMesaAlreadyFinalized?: (mesaNumber: number) => boolean;
   onSaveActa?: () => Promise<void>;
 }
@@ -149,6 +150,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     currentActaIndex = 0,
     politicalOrganizations,
     settingsReloadTrigger = 0,
+    onSettingsReloadTrigger,
     isMesaAlreadyFinalized,
     onSaveActa,
   } = props;
@@ -172,7 +174,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const isConformidadDownloaded = externalIsConformidadDownloaded !== undefined ? externalIsConformidadDownloaded : localIsConformidadDownloaded;
   const isPaused = externalIsPaused !== undefined ? externalIsPaused : localIsPaused;
 
-  // Load selected organizations from repository
+  // Load selected organizations from repository (filtered by category)
   useEffect(() => {
     const loadOrganizations = async () => {
       let orgKeys: string[] = [];
@@ -186,11 +188,11 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
 
         // Only apply partial recount if category supports preferential voting
         if (isPartial && hasPreferentialVotes) {
-          // Load from partial recount organizations key
-          orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral);
+          // Load from partial recount organizations key (filtered by category)
+          orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral, category);
         } else {
-          // Load from full circunscripcion organizations key (CSV data)
-          orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral);
+          // Load from full circunscripcion organizations key (CSV data, filtered by category)
+          orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral, category);
         }
       } else {
         orgKeys = await repository.getSelectedOrganizations();
@@ -508,6 +510,18 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // For reused mesas (counterMesa > 1), TCV was preloaded and should not change
     // For partial recounts, TCV must remain null
     // No need to update TCV here anymore - it's handled automatically!
+
+    // If partial recount mode is enabled, disable it when finalizing
+    if (isPartialRecount && circunscripcionElectoral) {
+      console.log('[VoteEntryPage.handleFinalizeForm] Disabling partial recount mode for:', circunscripcionElectoral);
+      await repository.saveIsPartialRecount(circunscripcionElectoral, false);
+      // Update local state to hide the badge immediately
+      setIsPartialRecount(false);
+      // Trigger reload in AppContainer to update the badge in AppHeader
+      if (onSettingsReloadTrigger) {
+        onSettingsReloadTrigger();
+      }
+    }
 
     // Update isFormFinalized in parent state
     if (onFormFinalizedChange) {

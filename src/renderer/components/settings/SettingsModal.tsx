@@ -43,10 +43,11 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Partial recount mode state
   const [isPartialRecountMode, setIsPartialRecountMode] = useState<boolean>(false);
 
-  // Load organizations with custom hook
+  // Load organizations with custom hook (filtered by category)
   const { selectedOrganizations, setSelectedOrganizations } = useOrganizationLoader(
     open,
     selectedCircunscripcion,
+    category,
     politicalOrganizations
   );
 
@@ -156,10 +157,12 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
         });
 
         // Save selected organizations for partial recount in separate key (without BLANCO/NULO)
-        await repository.savePartialRecountOrganizations(selectedCircunscripcion, filteredOrganizations);
+        // Now passing category to store organizations per circunscripcion AND category
+        await repository.savePartialRecountOrganizations(selectedCircunscripcion, category, filteredOrganizations);
 
         console.log('[SettingsModal.handleSave] Partial recount organizations saved:', {
           circunscripcion: selectedCircunscripcion,
+          category,
           total: filteredOrganizations.length,
           organizations: filteredOrganizations
         });

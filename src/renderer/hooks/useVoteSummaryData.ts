@@ -36,18 +36,18 @@ export function useVoteSummaryData({
         setVoteEntries(actaData.voteEntries || []);
         setTcv(actaData.tcv ?? null);
 
-        // Get selected organizations based on partial recount mode
+        // Get selected organizations based on partial recount mode (filtered by category)
         let orgKeys: string[] = [];
         if (circunscripcionElectoral) {
           // Check if partial recount mode is enabled
           const isPartialRecount = await repository.getIsPartialRecount(circunscripcionElectoral);
 
           if (isPartialRecount) {
-            // Load selected organizations for partial recount
-            orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral);
+            // Load selected organizations for partial recount (filtered by category)
+            orgKeys = await repository.getPartialRecountOrganizations(circunscripcionElectoral, category);
           } else {
-            // Load all organizations from CSV (full recount)
-            orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral);
+            // Load all organizations from CSV (full recount, filtered by category)
+            orgKeys = await repository.getCircunscripcionOrganizations(circunscripcionElectoral, category);
           }
         } else {
           // Fallback to global organizations

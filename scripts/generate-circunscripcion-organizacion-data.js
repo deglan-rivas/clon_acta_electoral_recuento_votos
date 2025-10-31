@@ -101,28 +101,30 @@ class CircunscripcionOrganizacionGenerator {
     return shuffled.slice(0, count);
   }
 
-  // Generate mappings for a circunscripcion
-  generateMappingsForCircunscripcion(circunscripcion, category) {
+  // Generate mappings for a circunscripcion (single category)
+  generateMappingsForCircunscripcion(circunscripcion, category, selectedParties = null) {
     const circName = circunscripcion.circunscripcion_electoral;
-    let selectedParties = [];
+    let parties = selectedParties;
 
-    // Determine which parties participate in this circunscripcion
-    if (CONFIG.FULL_PARTICIPATION.includes(circName)) {
-      // UNICO NACIONAL and LIMA METROPOLITANA get ALL parties
-      selectedParties = [...this.normalParties];
-      console.log(`├── ${circName} (${category || 'all'}): ALL parties (${selectedParties.length})`);
-    } else {
-      // Other circunscripciones get random subset
-      const randomCount = Math.floor(
-        Math.random() * (CONFIG.RANDOM_PARTIES.max - CONFIG.RANDOM_PARTIES.min) +
-        CONFIG.RANDOM_PARTIES.min
-      );
-      selectedParties = this.getRandomParties(randomCount);
-      console.log(`├── ${circName} (${category || 'all'}): ${selectedParties.length} random parties`);
+    // If parties not provided, determine which parties participate
+    if (!parties) {
+      if (CONFIG.FULL_PARTICIPATION.includes(circName)) {
+        // UNICO NACIONAL and LIMA METROPOLITANA get ALL parties
+        parties = [...this.normalParties];
+        console.log(`├── ${circName} (${category || 'all'}): ALL parties (${parties.length})`);
+      } else {
+        // Other circunscripciones get random subset
+        const randomCount = Math.floor(
+          Math.random() * (CONFIG.RANDOM_PARTIES.max - CONFIG.RANDOM_PARTIES.min) +
+          CONFIG.RANDOM_PARTIES.min
+        );
+        parties = this.getRandomParties(randomCount);
+        console.log(`├── ${circName} (${category || 'all'}): ${parties.length} random parties`);
+      }
     }
 
     // Add selected parties with their order
-    selectedParties.forEach((party, index) => {
+    parties.forEach((party, index) => {
       this.mappingData.push({
         circunscripcion_electoral: circName,
         organizacion_key: party.key,
@@ -137,9 +139,68 @@ class CircunscripcionOrganizacionGenerator {
         circunscripcion_electoral: circName,
         organizacion_key: specialVote.key,
         categoria_id: this.getCategoryId(category),
-        orden_visualizacion: selectedParties.length + index + 1
+        orden_visualizacion: parties.length + index + 1
       });
     });
+
+    return parties;
+  }
+
+  // Generate mappings for regional categories with shared organizations
+  generateRegionalMappings(circunscripcion) {
+    const circName = circunscripcion.circunscripcion_electoral;
+    let selectedParties = [];
+
+    // Determine which parties participate in this circunscripcion
+    if (CONFIG.FULL_PARTICIPATION.includes(circName)) {
+      // UNICO NACIONAL and LIMA METROPOLITANA get ALL parties
+      selectedParties = [...this.normalParties];
+      console.log(`├── ${circName} (C & D): ALL parties (${selectedParties.length})`);
+    } else {
+      // Other circunscripciones get random subset
+      const randomCount = Math.floor(
+        Math.random() * (CONFIG.RANDOM_PARTIES.max - CONFIG.RANDOM_PARTIES.min) +
+        CONFIG.RANDOM_PARTIES.min
+      );
+      selectedParties = this.getRandomParties(randomCount);
+      console.log(`├── ${circName} (C & D): ${selectedParties.length} random parties`);
+    }
+
+    // Generate mappings for senadoresRegional (C) with all selected parties
+    this.generateMappingsForCircunscripcion(
+      { circunscripcion_electoral: circName },
+      'senadoresRegional',
+      selectedParties
+    );
+
+    // For diputados (D), use a subset of the selected parties
+    // D should be a subset of C (or equal in case of full participation)
+    let diputadosParties;
+    if (CONFIG.FULL_PARTICIPATION.includes(circName)) {
+      // Full participation: both get all parties
+      diputadosParties = selectedParties;
+    } else {
+      // Random subset: D gets 60-100% of C's parties
+      const subsetPercentage = 0.6 + Math.random() * 0.4; // 60% to 100%
+      const subsetCount = Math.max(
+        Math.floor(selectedParties.length * subsetPercentage),
+        Math.min(5, selectedParties.length) // At least 5 parties or all if less than 5
+      );
+
+      // Randomly select subset from the selected parties
+      diputadosParties = [...selectedParties]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, subsetCount);
+
+      console.log(`│   └── D subset: ${diputadosParties.length} parties (${Math.round(subsetPercentage * 100)}% of C)`);
+    }
+
+    // Generate mappings for diputados (D) with subset
+    this.generateMappingsForCircunscripcion(
+      { circunscripcion_electoral: circName },
+      'diputados',
+      diputadosParties
+    );
   }
 
   // Convert category name to ID
@@ -176,13 +237,9 @@ class CircunscripcionOrganizacionGenerator {
         this.generateMappingsForCircunscripcion(circ, category);
       } else {
         // Regional/district circunscripcion - applies to regional categories
-        // Generate for both senadoresRegional and diputados
-        CONFIG.REGIONAL_CATEGORIES.forEach(regCategory => {
-          this.generateMappingsForCircunscripcion(
-            { circunscripcion_electoral: circName },
-            regCategory
-          );
-        });
+        // Generate for both senadoresRegional (C) and diputados (D) with shared organizations
+        // D will be a subset of C
+        this.generateRegionalMappings({ circunscripcion_electoral: circName });
       }
     });
 

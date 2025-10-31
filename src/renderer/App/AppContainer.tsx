@@ -143,7 +143,7 @@ function AppLayoutContent() {
     }
   }, [circunscripcionElectoral, activeCategory, updateVoteLimits]);
 
-  // Filter organizations based on current circunscripción electoral
+  // Filter organizations based on current circunscripción electoral and category
   useEffect(() => {
     const filterOrganizations = async () => {
       const circunscripcion = location.selectedCircunscripcionElectoral;
@@ -154,7 +154,8 @@ function AppLayoutContent() {
       }
 
       try {
-        const validKeys = await actaRepository.getCircunscripcionOrganizations(circunscripcion);
+        // Pass category to filter organizations by both circunscripcion AND category
+        const validKeys = await actaRepository.getCircunscripcionOrganizations(circunscripcion, activeCategory);
 
         if (validKeys.length === 0) {
           setFilteredOrganizations(politicalOrganizations);
@@ -173,7 +174,7 @@ function AppLayoutContent() {
     };
 
     filterOrganizations();
-  }, [location.selectedCircunscripcionElectoral, politicalOrganizations, actaRepository]);
+  }, [location.selectedCircunscripcionElectoral, activeCategory, politicalOrganizations, actaRepository]);
 
   // Auto-set circunscripción electoral when category changes and data is available
   useEffect(() => {
@@ -349,6 +350,7 @@ function AppLayoutContent() {
       jeeMiembrosData={jeeMiembrosData}
       politicalOrganizations={politicalOrganizations}
       settingsReloadTrigger={settingsReloadTrigger}
+      onSettingsReloadTrigger={() => setSettingsReloadTrigger(prev => prev + 1)}
       onLoadMesaInfo={async (mesa) => {
         await MesaDataHandler.loadMesaInfo({
           mesa,

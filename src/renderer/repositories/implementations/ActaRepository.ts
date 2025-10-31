@@ -300,14 +300,16 @@ export class ActaRepository implements IActaRepository {
     await this.adapter.set(STORAGE_KEYS.SELECTED_ORGANIZATIONS, organizationKeys);
   }
 
-  async getCircunscripcionOrganizations(circunscripcion: string): Promise<string[]> {
+  async getCircunscripcionOrganizations(circunscripcion: string, category: string): Promise<string[]> {
     const allCircOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS);
-    return allCircOrgs?.[circunscripcion] || [];
+    const key = `${circunscripcion}|${category}`;
+    return allCircOrgs?.[key] || [];
   }
 
-  async saveCircunscripcionOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void> {
+  async saveCircunscripcionOrganizations(circunscripcion: string, category: string, organizationKeys: string[]): Promise<void> {
     const allCircOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS) || {};
-    allCircOrgs[circunscripcion] = organizationKeys;
+    const key = `${circunscripcion}|${category}`;
+    allCircOrgs[key] = organizationKeys;
     await this.adapter.set(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS, allCircOrgs);
   }
 
@@ -327,14 +329,16 @@ export class ActaRepository implements IActaRepository {
     await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_MODE, allPartialRecounts);
   }
 
-  async getPartialRecountOrganizations(circunscripcion: string): Promise<string[]> {
+  async getPartialRecountOrganizations(circunscripcion: string, category: string): Promise<string[]> {
     const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS);
-    return allPartialRecountOrgs?.[circunscripcion] || [];
+    const key = `${circunscripcion}|${category}`;
+    return allPartialRecountOrgs?.[key] || [];
   }
 
-  async savePartialRecountOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void> {
+  async savePartialRecountOrganizations(circunscripcion: string, category: string, organizationKeys: string[]): Promise<void> {
     const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS) || {};
-    allPartialRecountOrgs[circunscripcion] = organizationKeys;
+    const key = `${circunscripcion}|${category}`;
+    allPartialRecountOrgs[key] = organizationKeys;
     await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS, allPartialRecountOrgs);
   }
 

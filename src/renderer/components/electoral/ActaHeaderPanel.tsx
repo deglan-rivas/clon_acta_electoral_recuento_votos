@@ -658,7 +658,7 @@ export function ActaHeaderPanel({
                       <FileCheck className="mr-2 h-4 w-4" />
                       Finalizar
                     </DropdownMenuItem>
-                    {entriesLength > 0 && onReinicializar && (
+                    {onReinicializar && (
                       <DropdownMenuItem onClick={onReinicializar}>
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Reinicializar

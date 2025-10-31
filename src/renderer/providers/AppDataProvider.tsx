@@ -59,24 +59,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       groupedMappings[key].push(mapping.organizacion_key);
     });
 
-    // Store in localStorage
-    // For each circunscripcion, we only store once (first category encountered)
-    // since the organizations are the same across categories for a given circunscripcion
-    const circunscripcionOrgs: Record<string, string[]> = {};
-
-    Object.entries(groupedMappings).forEach(([key, orgKeys]) => {
-      const [circunscripcion] = key.split('|');
-      if (!circunscripcionOrgs[circunscripcion]) {
-        circunscripcionOrgs[circunscripcion] = orgKeys;
-      }
-    });
-
-    // Save to localStorage using repository
-    for (const [circunscripcion, orgKeys] of Object.entries(circunscripcionOrgs)) {
-      await repository.saveCircunscripcionOrganizations(circunscripcion, orgKeys);
+    // Store in localStorage - now storing per circunscripcion AND category
+    // This allows filtering organizations by category
+    for (const [key, orgKeys] of Object.entries(groupedMappings)) {
+      const [circunscripcion, categoryName] = key.split('|');
+      await repository.saveCircunscripcionOrganizations(circunscripcion, categoryName, orgKeys);
     }
 
-    console.log('[AppDataProvider] Circunscripcion organizations stored in localStorage:', Object.keys(circunscripcionOrgs).length);
+    console.log('[AppDataProvider] Circunscripcion organizations stored in localStorage (by category):', Object.keys(groupedMappings).length);
   };
 
   useEffect(() => {
