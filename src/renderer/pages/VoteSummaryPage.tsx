@@ -82,29 +82,29 @@ export function VoteSummaryPage({
             {/* Group 2: Tipos de Votos */}
             <StatCard
               label="Votos Válidos"
-              value={stats.totalVotesEmitted}
+              value={tcv !== null ? stats.totalVotesEmitted : "-"}
               colorScheme="green"
             />
             <StatCard
               label="Votos Blancos"
-              value={voteCount['BLANCO'] || 0}
+              value={tcv !== null ? (voteCount['BLANCO'] || 0) : "-"}
               colorScheme="gray"
             />
             <StatCard
               label="Votos Nulos"
-              value={voteCount['NULO'] || 0}
+              value={tcv !== null ? (voteCount['NULO'] || 0) : "-"}
               colorScheme="gray"
             />
 
             {/* Group 3: Porcentajes */}
             <StatCard
               label="% Participación"
-              value={`${stats.participationRate.toFixed(2)}%`}
+              value={tcv !== null ? `${stats.participationRate.toFixed(2)}%` : "-"}
               colorScheme="green"
             />
             <StatCard
               label="% Ausentismo"
-              value={`${stats.absenteeismRate.toFixed(2)}%`}
+              value={tcv !== null ? `${stats.absenteeismRate.toFixed(2)}%` : "-"}
               colorScheme="yellow"
             />
           </div>

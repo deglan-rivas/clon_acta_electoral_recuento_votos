@@ -740,6 +740,8 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
           cedulasExcedentes={cedulasExcedentes}
           tcv={tcv}
           counterMesa={counterMesa}
+          mesaNumber={mesaNumber}
+          activeCategory={category}
           isFormFinalized={isFormFinalized}
           isMesaDataSaved={isMesaDataSaved}
           isPaused={isPaused}

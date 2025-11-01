@@ -402,7 +402,7 @@ export function ActaHeaderPanel({
               <div className="px-3 py-2 rounded-lg border whitespace-nowrap" style={{ backgroundColor: categoryColors.light, borderColor: categoryColors.dark }} title="TOTAL DE CIUDADANOS QUE VOTARON">
                 <span className="text-sm font-medium text-gray-700">TCV:</span>
                 <span className="font-semibold text-gray-800 ml-1">
-                  {isPartialRecount ? "-" : (tcv ?? 0)}
+                  {isPartialRecount ? "-" : (tcv !== null ? tcv : "-")}
                 </span>
               </div>
             </>
@@ -562,8 +562,8 @@ export function ActaHeaderPanel({
               <div className="bg-gray-50 p-2 rounded border border-gray-300 flex flex-row">
                 <label className="text-sm font-medium text-gray-700 flex items-center pr-2" title="TOTAL DE CIUDADANOS QUE VOTARON">TCV</label>
                 <Input
-                  type={isPartialRecount ? "text" : "number"}
-                  value={isPartialRecount ? "" : (tcv ?? 0)}
+                  type="text"
+                  value={isPartialRecount ? "" : (tcv !== null ? tcv : "")}
                   readOnly
                   disabled
                   className="max-w-20 text-center font-semibold bg-gray-200 text-gray-700 cursor-not-allowed"

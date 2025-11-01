@@ -13,6 +13,7 @@ import type { VoteEntry, VoteLimits, PreferentialConfig, CategoryColors } from "
 import type { PoliticalOrganization } from "../../types/organization.types";
 import { ToastService } from "../../services/ui/toastService";
 import { VoteAlert } from "../ui/VoteAlert";
+import { useActaRepository } from "../../hooks/useActaRepository";
 
 interface VoteEntryTableProps {
   entries: VoteEntry[];
@@ -23,6 +24,8 @@ interface VoteEntryTableProps {
   cedulasExcedentes: number;
   tcv: number | null;
   counterMesa: number | null;
+  mesaNumber: number;
+  activeCategory: string;
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
   isPaused?: boolean;
@@ -41,6 +44,8 @@ export function VoteEntryTable({
   cedulasExcedentes,
   tcv,
   counterMesa,
+  mesaNumber,
+  activeCategory,
   isFormFinalized,
   isMesaDataSaved,
   isPaused = false,
@@ -49,6 +54,9 @@ export function VoteEntryTable({
   onCedulasExcedentesChange,
   onSaveActa,
 }: VoteEntryTableProps) {
+  // Repository for loading TCV validation
+  const actaRepository = useActaRepository();
+
   // Block control logic - disable when paused
   const isBloque2Enabled = isMesaDataSaved && !isFormFinalized && !isPaused;
 
@@ -93,13 +101,21 @@ export function VoteEntryTable({
     // Check if adding this entry would exceed TCV when loaded from previous count
     // Only enforce this check when counterMesa > 1 (reused mesa with preloaded TCV)
     // For first-time counting (counterMesa === 1), TCV auto-updates, so no limit
-    if (counterMesa !== null && counterMesa > 1 && tcv !== null && entries.length >= tcv) {
-      ToastService.error(
-        `No se pueden agregar más cédulas. El TCV cargado de un recuento previo es ${tcv} votos.`,
-        '550px',
-        4000
-      );
-      return;
+    // Load the original TCV from repository to validate even in partial recounts
+    if (counterMesa !== null && counterMesa > 1 && mesaNumber > 0) {
+      try {
+        const loadedTcv = await actaRepository.findTcvByMesa(mesaNumber, activeCategory);
+        if (loadedTcv !== null && entries.length >= loadedTcv) {
+          ToastService.error(
+            `No se pueden agregar más cédulas. El TCV cargado de un recuento previo es ${loadedTcv} votos.`,
+            '550px',
+            4000
+          );
+          return;
+        }
+      } catch (error) {
+        console.error('[VoteEntryTable.handleAddEntry] Error loading TCV for validation:', error);
+      }
     }
 
     // Check if adding this entry would exceed total electores
