@@ -47,11 +47,14 @@ function AppLayoutContent() {
     setCedulasExcedentes,
     setMesaDataSaved,
     setFormFinalized,
+    setPaused,
     setMesaFieldsLocked,
     setConformidadDownloaded,
     setStartTime,
     setEndTime,
     setCurrentTime,
+    setPausedDuration,
+    setLastPauseTime,
     setSettingsOpen,
     isMesaFinalized,
     updateVoteLimits,
@@ -76,23 +79,61 @@ function AppLayoutContent() {
   // Reload trigger to force re-loading organizations when settings modal closes
   const [settingsReloadTrigger, setSettingsReloadTrigger] = useState(0);
 
+  // Filtered organizations for Settings modal based on current circunscripción
+  const [filteredOrganizations, setFilteredOrganizations] = useState(politicalOrganizations);
+
+  // Load partial recount mode from repository for current circunscripción
+  const [isPartialRecountFromRepo, setIsPartialRecountFromRepo] = useState(false);
+
+  // Load partial recount mode when circunscripción or category changes
+  useEffect(() => {
+    const loadPartialRecountMode = async () => {
+      const circunscripcionElectoral = location.selectedCircunscripcionElectoral;
+
+      if (circunscripcionElectoral) {
+        // Check if current category supports preferential voting
+        const hasPreferentialVotes = PREFERENTIAL_VOTE_CONFIG[activeCategory]?.hasPreferential1 ||
+                                      PREFERENTIAL_VOTE_CONFIG[activeCategory]?.hasPreferential2;
+
+        if (hasPreferentialVotes) {
+          const isPartial = await actaRepository.getIsPartialRecount(circunscripcionElectoral);
+          console.log('[AppContainer] Loaded partial recount mode from repository:', {
+            circunscripcionElectoral,
+            activeCategory,
+            hasPreferentialVotes,
+            isPartial
+          });
+          setIsPartialRecountFromRepo(isPartial);
+        } else {
+          setIsPartialRecountFromRepo(false);
+        }
+      } else {
+        setIsPartialRecountFromRepo(false);
+      }
+    };
+
+    loadPartialRecountMode();
+  }, [location.selectedCircunscripcionElectoral, activeCategory, settingsReloadTrigger, actaRepository]);
+
   // Time tracking interval - update currentTime every second
   // Only depend on specific values, not the whole currentActa object
   const startTimeStr = currentActa?.startTime;
   const endTimeStr = currentActa?.endTime;
+  const isPausedValue = currentActa?.isPaused || false;
 
   useEffect(() => {
     const startTime = startTimeStr ? new Date(startTimeStr) : null;
     const endTime = endTimeStr ? new Date(endTimeStr) : null;
 
-    if (startTime && !endTime) {
+    // Only update timer if session is active and not paused
+    if (startTime && !endTime && !isPausedValue) {
       const interval = setInterval(() => {
         setCurrentTime(new Date());
       }, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [startTimeStr, endTimeStr, setCurrentTime]);
+  }, [startTimeStr, endTimeStr, isPausedValue, setCurrentTime]);
 
   // Update vote limits when circunscripcion electoral changes
   const circunscripcionElectoral = currentActa?.selectedLocation?.circunscripcionElectoral;
@@ -101,6 +142,39 @@ function AppLayoutContent() {
       updateVoteLimits();
     }
   }, [circunscripcionElectoral, activeCategory, updateVoteLimits]);
+
+  // Filter organizations based on current circunscripción electoral and category
+  useEffect(() => {
+    const filterOrganizations = async () => {
+      const circunscripcion = location.selectedCircunscripcionElectoral;
+
+      if (!circunscripcion) {
+        setFilteredOrganizations(politicalOrganizations);
+        return;
+      }
+
+      try {
+        // Pass category to filter organizations by both circunscripcion AND category
+        const validKeys = await actaRepository.getCircunscripcionOrganizations(circunscripcion, activeCategory);
+
+        if (validKeys.length === 0) {
+          setFilteredOrganizations(politicalOrganizations);
+          return;
+        }
+
+        const filtered = politicalOrganizations.filter(org =>
+          validKeys.includes(org.key)
+        );
+
+        setFilteredOrganizations(filtered);
+      } catch (error) {
+        console.error('[AppContainer] Error filtering organizations:', error);
+        setFilteredOrganizations(politicalOrganizations);
+      }
+    };
+
+    filterOrganizations();
+  }, [location.selectedCircunscripcionElectoral, activeCategory, politicalOrganizations, actaRepository]);
 
   // Auto-set circunscripción electoral when category changes and data is available
   useEffect(() => {
@@ -184,11 +258,15 @@ function AppLayoutContent() {
   const totalElectores = currentActa?.totalElectores || 0;
   const cedulasExcedentes = currentActa?.cedulasExcedentes || 0;
   const tcv = currentActa?.tcv;
+  const counterMesa = currentActa?.counterMesa ?? null;
   const isFormFinalized = currentActa?.isFormFinalized || false;
   const isMesaDataSaved = currentActa?.isMesaDataSaved || false;
+  const isPaused = currentActa?.isPaused || false;
   const isConformidadDownloaded = currentActa?.isConformidadDownloaded || false;
   const startTime = currentActa?.startTime ? new Date(currentActa.startTime) : null;
   const endTime = currentActa?.endTime ? new Date(currentActa.endTime) : null;
+  const pausedDuration = currentActa?.pausedDuration || 0;
+  const lastPauseTime = currentActa?.lastPauseTime ? new Date(currentActa.lastPauseTime) : null;
 
   // Location and TEH fields should be disabled when auto-filled from mesa number, session is started, or finalized
   const areLocationFieldsDisabled = areMesaFieldsLocked || isMesaDataSaved || isFormFinalized;
@@ -244,8 +322,11 @@ function AppLayoutContent() {
       totalElectores={totalElectores}
       cedulasExcedentes={cedulasExcedentes}
       tcv={tcv}
+      counterMesa={counterMesa}
       onCedulasExcedentesChange={(value) => updateActaData({ cedulasExcedentes: value })}
       onTcvChange={(value) => updateActaData({ tcv: value })}
+      onCounterMesaChange={(value) => updateActaData({ counterMesa: value })}
+      onAreMesaFieldsLockedChange={(value) => updateActaData({ areMesaFieldsLocked: value })}
       selectedLocation={{
         departamento: location.selectedDepartamento,
         provincia: location.selectedProvincia,
@@ -259,6 +340,8 @@ function AppLayoutContent() {
       onDepartamentoChange={location.handleDepartamentoChange}
       onProvinciaChange={location.handleProvinciaChange}
       onDistritoChange={location.handleDistritoChange}
+      onCircunscripcionElectoralChange={location.handleCircunscripcionElectoralChange}
+      onSelectedLocationChange={(location) => updateActaData({ selectedLocation: location })}
       getDepartamentos={getDepartamentos}
       getProvincias={getProvincias}
       getDistritos={getDistritos}
@@ -267,6 +350,7 @@ function AppLayoutContent() {
       jeeMiembrosData={jeeMiembrosData}
       politicalOrganizations={politicalOrganizations}
       settingsReloadTrigger={settingsReloadTrigger}
+      onSettingsReloadTrigger={() => setSettingsReloadTrigger(prev => prev + 1)}
       onLoadMesaInfo={async (mesa) => {
         await MesaDataHandler.loadMesaInfo({
           mesa,
@@ -284,6 +368,9 @@ function AppLayoutContent() {
           onTotalElectoresUpdate: setTotalElectores,
           onTcvUpdate: setTcv,
           onCedulasExcedentesUpdate: setCedulasExcedentes,
+          onCounterMesaUpdate: (counterMesa: number) => {
+            updateActaData({ counterMesa });
+          },
           actaRepository: actaRepository
         });
       }}
@@ -309,9 +396,15 @@ function AppLayoutContent() {
       startTime={startTime}
       endTime={endTime}
       currentTime={currentTime}
+      isPaused={isPaused}
+      pausedDuration={pausedDuration}
+      lastPauseTime={lastPauseTime}
       onStartTimeChange={setStartTime}
       onEndTimeChange={setEndTime}
       onCurrentTimeChange={setCurrentTime}
+      onPausedChange={setPaused}
+      onPausedDurationChange={setPausedDuration}
+      onLastPauseTimeChange={setLastPauseTime}
       onViewSummary={() => updateActaData({ activeSection: 'recuento' })}
       onCreateNewActa={handleCreateNewActa}
       onSwitchToActa={handleSwitchToActa}
@@ -325,6 +418,11 @@ function AppLayoutContent() {
     />;
   };
 
+  // Debug logging for partial recount
+  console.log('[AppContainer] Render - isPartialRecountFromRepo:', isPartialRecountFromRepo);
+  console.log('[AppContainer] Render - currentActa.isPartialRecount:', currentActa?.isPartialRecount);
+  console.log('[AppContainer] Render - selectedCircunscripcionElectoral:', location.selectedCircunscripcionElectoral);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader
@@ -334,6 +432,7 @@ function AppLayoutContent() {
         circunscripcionOptions={getCircunscripcionElectoralOptions()}
         areLocationFieldsDisabled={areLocationFieldsDisabled}
         showLocationDropdowns={showLocationDropdowns}
+        isPartialRecount={isPartialRecountFromRepo}
         onCategoryChange={async (newCategory) => {
           await setActiveCategory(newCategory);
         }}
@@ -359,7 +458,7 @@ function AppLayoutContent() {
         }}
         category={activeCategory}
         currentCircunscripcionElectoral={location.selectedCircunscripcionElectoral}
-        politicalOrganizations={politicalOrganizations}
+        politicalOrganizations={filteredOrganizations}
       />
     </div>
   );

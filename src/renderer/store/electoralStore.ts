@@ -57,6 +57,7 @@ interface ElectoralState {
   // Actions - Session State
   setMesaDataSaved: (saved: boolean) => void;
   setFormFinalized: (finalized: boolean) => void;
+  setPaused: (paused: boolean) => void;
   setMesaFieldsLocked: (locked: boolean) => void;
   setConformidadDownloaded: (downloaded: boolean) => void;
 
@@ -64,6 +65,8 @@ interface ElectoralState {
   setStartTime: (time: Date | null) => void;
   setEndTime: (time: Date | null) => void;
   setCurrentTime: (time: Date) => void;
+  setPausedDuration: (duration: number) => void;
+  setLastPauseTime: (time: Date | null) => void;
 
   // Actions - UI
   setSettingsOpen: (open: boolean) => void;
@@ -196,6 +199,15 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       const index = currentActaIndex[activeCategory] || 0;
       const actas = [...(categoryActas[activeCategory] || [])];
 
+      // Log TCV changes specifically
+      if ('tcv' in updates) {
+        console.log('[ElectoralStore.updateActaData] ========== TCV UPDATE IN STORE ==========');
+        console.log('[ElectoralStore.updateActaData] Category:', activeCategory);
+        console.log('[ElectoralStore.updateActaData] Current TCV:', actas[index]?.tcv);
+        console.log('[ElectoralStore.updateActaData] New TCV:', updates.tcv);
+        console.log('[ElectoralStore.updateActaData] Other updates:', Object.keys(updates).filter(k => k !== 'tcv'));
+      }
+
       actas[index] = {
         ...actas[index],
         ...updates,
@@ -209,6 +221,12 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       set({
         categoryActas: newCategoryActas,
       });
+
+      // Log TCV after update
+      if ('tcv' in updates) {
+        console.log('[ElectoralStore.updateActaData] TCV after update in store:', actas[index].tcv);
+        console.log('[ElectoralStore.updateActaData] ================================================');
+      }
 
       // Persist to repository (async, non-blocking)
       actaRepository.saveCategoryData(activeCategory, { actas }).catch((error) => {
@@ -321,6 +339,10 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       get().updateActaData({ isFormFinalized: finalized });
     },
 
+    setPaused: (paused: boolean) => {
+      get().updateActaData({ isPaused: paused });
+    },
+
     setMesaFieldsLocked: (locked: boolean) => {
       get().updateActaData({ areMesaFieldsLocked: locked });
     },
@@ -342,6 +364,14 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
       set({ currentTime: time });
     },
 
+    setPausedDuration: (duration: number) => {
+      get().updateActaData({ pausedDuration: duration });
+    },
+
+    setLastPauseTime: (time: Date | null) => {
+      get().updateActaData({ lastPauseTime: time?.toISOString() || null });
+    },
+
     // UI
     setSettingsOpen: (open: boolean) => {
       set({ isSettingsOpen: open });
@@ -350,6 +380,8 @@ export const useElectoralStore = create<ElectoralState>()((set, get) => {
     // Utilities
     isMesaFinalized: (mesaNumber: number, category: string) => {
       const actas = get().getAllActasForCategory(category);
+      // A mesa can only be registered once per category, regardless of partial/full recount
+      // Once a mesa is finalized (either partial or full), it cannot be reused in the same category
       return actas.some(
         (acta) => acta.mesaNumber === mesaNumber && acta.isFormFinalized
       );

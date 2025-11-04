@@ -48,8 +48,8 @@ export class PdfFieldMapper {
     // Calculate offset: 1 digit = 0, 2 digits = 5, 3+ digits = 10 (for "-" treat as 1 digit)
     const xOffsetTcvTopRight = tcvTopRightStr.length >= 3 ? 10 : tcvTopRightStr.length === 2 ? 5 : 0;
 
-    // TCV Bottom (Total Votos Emitidos): Always show actual count of entries
-    const tcvBottomStr = `${entries.length}`;
+    // TCV Bottom (Total Votos Emitidos): Show TCV instead of actual count of entries
+    const tcvBottomStr = tcvTopRightStr; //`${entries.length}`;
     const xOffsetTcvBottom = tcvBottomStr.length >= 3 ? 10 : tcvBottomStr.length === 2 ? 5 : 0;
 
     const totalElectoresStr = `${totalElectores}`;

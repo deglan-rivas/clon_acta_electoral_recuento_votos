@@ -14,12 +14,14 @@ interface UseOrganizationLoaderResult {
  * Manages loading and state of selected political organizations
  * @param open - Whether the modal is open
  * @param circunscripcion - Selected circumscription
+ * @param category - Current electoral category
  * @param politicalOrganizations - Available political organizations
  * @returns Selected organizations state and setter
  */
 export function useOrganizationLoader(
   open: boolean,
   circunscripcion: string,
+  category: string,
   politicalOrganizations: PoliticalOrganization[]
 ): UseOrganizationLoaderResult {
   const repository = useActaRepository();
@@ -43,10 +45,10 @@ export function useOrganizationLoader(
 
       if (isPartialRecount) {
         // Load selected organizations for partial recount from separate key
-        orgKeys = await repository.getPartialRecountOrganizations(circunscripcion);
+        orgKeys = await repository.getPartialRecountOrganizations(circunscripcion, category);
       } else {
-        // Load all organizations from CSV (full recount mode)
-        orgKeys = await repository.getCircunscripcionOrganizations(circunscripcion);
+        // Load all organizations from CSV (full recount mode) - filtered by category
+        orgKeys = await repository.getCircunscripcionOrganizations(circunscripcion, category);
       }
 
       // Default to BLANCO and NULO if no organizations loaded
@@ -59,6 +61,7 @@ export function useOrganizationLoader(
 
       console.log('[useOrganizationLoader] Loaded organizations:', {
         circunscripcion,
+        category,
         isPartialRecount,
         orgCount: orgKeys.length,
         source: isPartialRecount ? 'PARTIAL_RECOUNT_ORGANIZATIONS' : 'CIRCUNSCRIPCION_ORGANIZATIONS'
@@ -66,7 +69,7 @@ export function useOrganizationLoader(
     };
 
     loadOrganizations();
-  }, [open, circunscripcion, politicalOrganizations, repository]);
+  }, [open, circunscripcion, category, politicalOrganizations, repository]);
 
   return { selectedOrganizations, setSelectedOrganizations };
 }

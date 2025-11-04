@@ -11,6 +11,11 @@ interface Window {
       success: boolean;
       error?: string;
     }>;
+    showConfirmDialog: (title: string, message: string, detail?: string) => Promise<{
+      success: boolean;
+      confirmed: boolean;
+      error?: string;
+    }>;
   };
   clearElectoralData?: () => Promise<void>;
   debugElectoralData?: () => Promise<void>;

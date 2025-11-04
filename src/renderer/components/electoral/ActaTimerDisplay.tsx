@@ -5,6 +5,8 @@ interface ActaTimerDisplayProps {
   startTime: Date | null;
   endTime: Date | null;
   currentTime: Date;
+  isPaused?: boolean;
+  pausedDuration?: number; // Cumulative paused time in milliseconds
 }
 
 // Format time as HH:MM:SS
@@ -17,9 +19,12 @@ const formatTime = (date: Date): string => {
   });
 };
 
-// Format elapsed time as HH:MM:SS
-const formatElapsedTime = (start: Date, end: Date): string => {
-  const elapsed = Math.floor((end.getTime() - start.getTime()) / 1000);
+// Format elapsed time as HH:MM:SS, subtracting paused duration
+const formatElapsedTime = (start: Date, end: Date, pausedDurationMs: number = 0): string => {
+  const elapsedMs = end.getTime() - start.getTime() - pausedDurationMs;
+  // Ensure elapsed time is never negative (can happen briefly after resume before currentTime updates)
+  const safeElapsedMs = Math.max(0, elapsedMs);
+  const elapsed = Math.floor(safeElapsedMs / 1000);
   const hours = Math.floor(elapsed / 3600);
   const minutes = Math.floor((elapsed % 3600) / 60);
   const seconds = elapsed % 60;
@@ -33,6 +38,8 @@ export function ActaTimerDisplay({
   startTime,
   endTime,
   currentTime,
+  isPaused = false,
+  pausedDuration = 0,
 }: ActaTimerDisplayProps) {
   return (
     <div className="flex items-center gap-3">
@@ -52,12 +59,18 @@ export function ActaTimerDisplay({
         </div>
       )}
 
-      {/* Elapsed Time (in progress) */}
+      {/* Elapsed Time (in progress or paused) */}
       {startTime && !endTime && (
-        <div className="bg-yellow-50 text-yellow-700 px-3 py-2 rounded-lg font-medium text-sm text-center">
-          <div className="font-semibold">En Progreso</div>
+        <div
+          className="px-3 py-2 rounded-lg font-medium text-sm text-center"
+          style={{
+            backgroundColor: isPaused ? '#fef3c7' : '#fefce8',
+            color: isPaused ? '#92400e' : '#a16207'
+          }}
+        >
+          <div className="font-semibold">{isPaused ? 'Pausado' : 'En Progreso'}</div>
           <div className="font-semibold">
-            {formatElapsedTime(startTime, currentTime)}
+            {formatElapsedTime(startTime, currentTime, pausedDuration)}
           </div>
         </div>
       )}
@@ -67,7 +80,7 @@ export function ActaTimerDisplay({
         <div className="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium text-sm text-center">
           <div className="font-semibold">Tiempo Total</div>
           <div className="font-semibold">
-            {formatElapsedTime(startTime, endTime)}
+            {formatElapsedTime(startTime, endTime, pausedDuration)}
           </div>
         </div>
       )}

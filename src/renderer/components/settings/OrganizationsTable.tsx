@@ -82,8 +82,9 @@ export function OrganizationsTable({
         <Table>
           <TableBody>
             {organizations.map((org, index) => {
-              const isSpecial = isSpecialOrganization(org);
-              const isBlancoNulo = org.name === 'BLANCO' || org.name === 'NULO';
+              // const isSpecial = isSpecialOrganization(org);
+              // const isBlancoNulo = org.name === 'BLANCO' || org.name === 'NULO';
+              const isBlancoNulo = isSpecialOrganization(org);
               const isSelected = selectedKeys.includes(org.key);
               const showCheckbox = isPartialRecountMode && !isBlancoNulo;
 

@@ -43,10 +43,11 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
   // Partial recount mode state
   const [isPartialRecountMode, setIsPartialRecountMode] = useState<boolean>(false);
 
-  // Load organizations with custom hook
+  // Load organizations with custom hook (filtered by category)
   const { selectedOrganizations, setSelectedOrganizations } = useOrganizationLoader(
     open,
     selectedCircunscripcion,
+    category,
     politicalOrganizations
   );
 
@@ -156,10 +157,12 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
         });
 
         // Save selected organizations for partial recount in separate key (without BLANCO/NULO)
-        await repository.savePartialRecountOrganizations(selectedCircunscripcion, filteredOrganizations);
+        // Now passing category to store organizations per circunscripcion AND category
+        await repository.savePartialRecountOrganizations(selectedCircunscripcion, category, filteredOrganizations);
 
         console.log('[SettingsModal.handleSave] Partial recount organizations saved:', {
           circunscripcion: selectedCircunscripcion,
+          category,
           total: filteredOrganizations.length,
           organizations: filteredOrganizations
         });
@@ -183,7 +186,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[60vw] !max-w-5xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="!w-[60vw] !max-w-5xl max-h-[90vh] flex flex-col gap-0">
         <VisuallyHidden.Root>
           <DialogTitle>Configuración</DialogTitle>
           <DialogDescription>
@@ -191,10 +194,10 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
           </DialogDescription>
         </VisuallyHidden.Root>
 
-        <div className="space-y-3">
-          <div className="text-sm text-gray-600">
+        <div className="space-y-3 overflow-y-auto flex-1 pr-2">
+          {/*<div className="text-sm text-gray-600">
             Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas específicas.
-          </div>
+          </div>*/}
 
           <CircunscripcionSelector
             value={selectedCircunscripcion}
@@ -202,11 +205,11 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
             circunscripciones={uniqueCircunscripciones}
           />
 
-          {!selectedCircunscripcion && (
+          {/*!selectedCircunscripcion && (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">Seleccione una Circunscripción Electoral para configurar sus organizaciones políticas</p>
             </div>
-          )}
+          )*/}
 
           {selectedCircunscripcion && hasPreferentialVotes && (
             <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -230,12 +233,12 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
 
           {selectedCircunscripcion && (
             <>
-              {!isPartialRecountMode && (
+              {(!isPartialRecountMode || !hasPreferentialVotes) && (
                 <div className="p-3 bg-gray-50 border border-gray-300 rounded text-sm text-gray-700">
                   ℹ️ Organizaciones políticas cargadas desde circunscripción electoral (solo lectura)
                 </div>
               )}
-              {isPartialRecountMode && (
+              {isPartialRecountMode && hasPreferentialVotes && (
                 <div className="p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800">
                   ⚠️ Seleccione las organizaciones políticas para el recuento selectivo (BLANCO y NULO no permitidos)
                 </div>
@@ -245,7 +248,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
                 selectedKeys={selectedOrganizations}
                 allToggleableSelected={areAllToggleableSelected(filtered, selectedOrganizations)}
                 searchValue={organizationFilter}
-                isPartialRecountMode={isPartialRecountMode}
+                isPartialRecountMode={isPartialRecountMode && hasPreferentialVotes}
                 onToggle={handleOrganizationToggle}
                 onSelectAll={handleSelectAll}
                 onSearchChange={setOrganizationFilter}
@@ -256,7 +259,7 @@ export function SettingsModal({ open, onOpenChange, category, currentCircunscrip
         </div>
 
       {/* Save/Cancel Buttons */}
-      <div className="flex justify-end space-x-3 pt-6 border-t">
+      <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0">
         <Button
           variant="outline"
           onClick={handleCancel}

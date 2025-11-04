@@ -240,6 +240,56 @@ export class ActaRepository implements IActaRepository {
     return null;
   }
 
+  async countSavedActasByMesa(
+    mesaNumber: number,
+    excludeCategory?: string,
+    excludeActaIndex?: number
+  ): Promise<number> {
+    if (!mesaNumber || mesaNumber <= 0) return 0;
+
+    const allData = await this.getAllCategoryData();
+    const categories = [
+      'presidencial',
+      'senadoresNacional',
+      'senadoresRegional',
+      'diputados',
+      'parlamentoAndino',
+    ];
+
+    let count = 0;
+
+    for (const category of categories) {
+      const categoryData = allData[category];
+      if (categoryData && categoryData.actas) {
+        for (let i = 0; i < categoryData.actas.length; i++) {
+          const acta = categoryData.actas[i];
+
+          // Skip the current acta if specified
+          if (
+            excludeCategory &&
+            excludeActaIndex !== undefined &&
+            category === excludeCategory &&
+            i === excludeActaIndex
+          ) {
+            continue;
+          }
+
+          // Count actas where this mesa has been saved (Iniciar clicked)
+          // EXCLUDE partial recounts from the count
+          if (
+            acta.mesaNumber === mesaNumber &&
+            acta.isMesaDataSaved === true &&
+            acta.isPartialRecount !== true
+          ) {
+            count++;
+          }
+        }
+      }
+    }
+
+    return count;
+  }
+
   // Organization management methods
   async getSelectedOrganizations(): Promise<string[]> {
     const organizations = await this.adapter.get<string[]>(STORAGE_KEYS.SELECTED_ORGANIZATIONS);
@@ -250,14 +300,16 @@ export class ActaRepository implements IActaRepository {
     await this.adapter.set(STORAGE_KEYS.SELECTED_ORGANIZATIONS, organizationKeys);
   }
 
-  async getCircunscripcionOrganizations(circunscripcion: string): Promise<string[]> {
+  async getCircunscripcionOrganizations(circunscripcion: string, category: string): Promise<string[]> {
     const allCircOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS);
-    return allCircOrgs?.[circunscripcion] || [];
+    const key = `${circunscripcion}|${category}`;
+    return allCircOrgs?.[key] || [];
   }
 
-  async saveCircunscripcionOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void> {
+  async saveCircunscripcionOrganizations(circunscripcion: string, category: string, organizationKeys: string[]): Promise<void> {
     const allCircOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS) || {};
-    allCircOrgs[circunscripcion] = organizationKeys;
+    const key = `${circunscripcion}|${category}`;
+    allCircOrgs[key] = organizationKeys;
     await this.adapter.set(STORAGE_KEYS.CIRCUNSCRIPCION_ORGANIZATIONS, allCircOrgs);
   }
 
@@ -277,14 +329,16 @@ export class ActaRepository implements IActaRepository {
     await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_MODE, allPartialRecounts);
   }
 
-  async getPartialRecountOrganizations(circunscripcion: string): Promise<string[]> {
+  async getPartialRecountOrganizations(circunscripcion: string, category: string): Promise<string[]> {
     const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS);
-    return allPartialRecountOrgs?.[circunscripcion] || [];
+    const key = `${circunscripcion}|${category}`;
+    return allPartialRecountOrgs?.[key] || [];
   }
 
-  async savePartialRecountOrganizations(circunscripcion: string, organizationKeys: string[]): Promise<void> {
+  async savePartialRecountOrganizations(circunscripcion: string, category: string, organizationKeys: string[]): Promise<void> {
     const allPartialRecountOrgs = await this.adapter.get<Record<string, string[]>>(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS) || {};
-    allPartialRecountOrgs[circunscripcion] = organizationKeys;
+    const key = `${circunscripcion}|${category}`;
+    allPartialRecountOrgs[key] = organizationKeys;
     await this.adapter.set(STORAGE_KEYS.PARTIAL_RECOUNT_ORGANIZATIONS, allPartialRecountOrgs);
   }
 

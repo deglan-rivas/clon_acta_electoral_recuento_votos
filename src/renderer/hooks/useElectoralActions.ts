@@ -39,6 +39,7 @@ export function useElectoralActions() {
     // Session
     setMesaDataSaved: store.setMesaDataSaved,
     setFormFinalized: store.setFormFinalized,
+    setPaused: store.setPaused,
     setMesaFieldsLocked: store.setMesaFieldsLocked,
     setConformidadDownloaded: store.setConformidadDownloaded,
 
@@ -46,6 +47,8 @@ export function useElectoralActions() {
     setStartTime: store.setStartTime,
     setEndTime: store.setEndTime,
     setCurrentTime: store.setCurrentTime,
+    setPausedDuration: store.setPausedDuration,
+    setLastPauseTime: store.setLastPauseTime,
 
     // UI
     setSettingsOpen: store.setSettingsOpen,

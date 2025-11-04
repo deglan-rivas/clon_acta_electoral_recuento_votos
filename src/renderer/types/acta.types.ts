@@ -12,14 +12,18 @@ export interface ActaData {
   totalElectores: number;
   cedulasExcedentes: number;
   tcv: number | null; // Total de Ciudadanos que Votaron (null means use entries.length, or partial recount)
+  counterMesa: number | null; // Counter for how many times this mesa has been registered (1 = first time, 2+ = reused, null = partial recount)
   isFormFinalized: boolean;
   isMesaDataSaved: boolean;
+  isPaused: boolean; // Track if counting session is paused
   areMesaFieldsLocked: boolean; // Track if location and TEH fields are locked after auto-fill
   isConformidadDownloaded: boolean; // Track if Conformidad document has been downloaded
   isPartialRecount: boolean; // Track if this is a partial recount (only for categories with preferential votes)
   partialRecountOrgs: string[]; // Selected organizations for partial recount (organization keys)
   startTime: string | null; // Store as ISO string
   endTime: string | null; // Store as ISO string
+  pausedDuration: number; // Cumulative paused time in milliseconds
+  lastPauseTime: string | null; // Timestamp when pause was clicked (to calculate pause duration)
   selectedLocation: {
     departamento: string;
     provincia: string;
@@ -134,14 +138,18 @@ export const DEFAULT_ACTA_DATA: ActaData = {
   totalElectores: 0,
   cedulasExcedentes: 0,
   tcv: null,
+  counterMesa: null,
   isFormFinalized: false,
   isMesaDataSaved: false,
+  isPaused: false,
   areMesaFieldsLocked: false,
   isConformidadDownloaded: false,
   isPartialRecount: false,
   partialRecountOrgs: [],
   startTime: null,
   endTime: null,
+  pausedDuration: 0,
+  lastPauseTime: null,
   selectedLocation: {
     departamento: '',
     provincia: '',
