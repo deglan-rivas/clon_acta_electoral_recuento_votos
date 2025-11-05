@@ -40,7 +40,9 @@ export async function savePdfWithFallback(
         return { success: true, filePath: saveResult.filePath };
       } else {
         console.error("Error al guardar PDF:", saveResult.error);
-        ToastService.error("Error al guardar el PDF");
+        // Show the specific error message from backend (includes friendly EBUSY message)
+        const errorMessage = saveResult.error || "Error al guardar el PDF";
+        ToastService.error(errorMessage);
         return { success: false, error: saveResult.error };
       }
     } else {
@@ -61,7 +63,8 @@ export async function savePdfWithFallback(
     }
   } catch (error) {
     console.error("Error en savePdfWithFallback:", error);
-    ToastService.error("Error al guardar el PDF");
+    const errorMessage = error instanceof Error ? error.message : "Error al guardar el PDF";
+    ToastService.error(errorMessage);
     return { success: false, error: String(error) };
   }
 }

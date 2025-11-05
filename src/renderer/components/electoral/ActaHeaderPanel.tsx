@@ -151,33 +151,49 @@ export function ActaHeaderPanel({
     setLocalMesaNumber(newMesaNumber);
     setLocalTotalElectores(totalElectores);
 
+    // Check if actaNumber already exists and is valid (has proper format)
+    const actaRegex = /^\d{6}-\d{2}-[A-E]$/;
+    const hasValidActaNumber = actaNumber && actaRegex.test(actaNumber);
+
     // Auto-generate acta number when:
     // 1. Mesa number is valid (6 digits)
     // 2. JEE is selected
-    // 3. Either (mesa changed OR JEE changed OR localActaNumber is empty AND actaNumber is empty)
+    // 3. JEE options are loaded (to ensure we can find the JEE ID)
+    // 4. Either (mesa changed OR JEE changed) BUT not when loading existing valid acta from localStorage
+    // 5. OR when both localActaNumber and actaNumber are empty (initial entry)
     const shouldGenerateActa = newMesaNumber.length === 6 &&
                               currentJee &&
-                              (newMesaNumber !== prevMesaNumber ||
-                               currentJee !== prevJee ||
+                              jeeOptions.length > 0 &&
+                              ((newMesaNumber !== prevMesaNumber && prevMesaNumber !== '') ||
+                               (currentJee !== prevJee && prevJee !== '') ||
                                (!localActaNumber && !actaNumber));
 
-    if (shouldGenerateActa) {
+    if (shouldGenerateActa && !hasValidActaNumber) {
       // Find the JEE ID from the selected JEE name
       const selectedJeeRecord = jeeOptions.find(jee => jee.jee === selectedLocation.jee);
       const jeeId = selectedJeeRecord?.id || '';
 
-      // Find the category ID
-      const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
-      const categoryId = categoryRecord?.id || '';
+      // Only generate if we found a valid JEE ID
+      if (jeeId) {
+        // Find the category ID
+        const categoryRecord = ELECTORAL_CATEGORIES.find(cat => cat.key === activeCategory);
+        const categoryId = categoryRecord?.id || '';
 
-      // Generate acta number: mesaNumber-jeeId-categoryId
-      const newActaNumber = `${newMesaNumber}-${jeeId}-${categoryId}`;
-      setLocalActaNumber(newActaNumber);
+        // Generate acta number: mesaNumber-jeeId-categoryId
+        const newActaNumber = `${newMesaNumber}-${jeeId}-${categoryId}`;
+        setLocalActaNumber(newActaNumber);
 
-      // Update refs
-      prevJeeRef.current = currentJee;
+        // Save the auto-generated acta number to localStorage immediately
+        const mesaNum = parseInt(newMesaNumber);
+        if (mesaNum > 0) {
+          onMesaDataChange(mesaNum, newActaNumber, totalElectores);
+        }
+
+        // Update refs
+        prevJeeRef.current = currentJee;
+      }
     } else {
-      // Only sync from parent if we're not auto-generating
+      // Sync from parent if not auto-generating
       setLocalActaNumber(actaNumber);
     }
 
@@ -351,13 +367,8 @@ export function ActaHeaderPanel({
 
       // Display the error message from the service
       const errorMessage = error instanceof Error ? error.message : "Error al generar el documento de conformidad";
-
-      // Use a longer toast width and duration for Office installation error
-      if (errorMessage.includes('Microsoft Office Word no está instalado')) {
-        ToastService.error(errorMessage, '550px', 6000);
-      } else {
-        ToastService.error(errorMessage);
-      }
+      ToastService.error(errorMessage);
+      
     } finally {
       setIsGeneratingConformidad(false);
     }
@@ -650,10 +661,11 @@ export function ActaHeaderPanel({
                 ) : (
                   // When not paused, show all options
                   <>
-                    <DropdownMenuItem onClick={onPauseCounting}>
+                    {/* Temporarily hidden - Pausar functionality */}
+                    {/* <DropdownMenuItem onClick={onPauseCounting}>
                       <Pause className="mr-2 h-4 w-4" />
                       Pausar
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem onClick={onFinalizeForm}>
                       <FileCheck className="mr-2 h-4 w-4" />
                       Finalizar
