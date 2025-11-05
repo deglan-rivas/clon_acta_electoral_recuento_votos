@@ -1,7 +1,7 @@
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Button } from "../components/ui/button";
-import { Settings, Crown, Building2, Users, Vote, Globe, Filter } from "lucide-react";
+import { Settings, User, Building2, Users, Vote, Globe, Filter } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import logoJne from '/logo_jne.svg';
 import { ELECTORAL_CATEGORIES } from "../config/electoralCategories";
@@ -9,7 +9,7 @@ import { SECTIONS } from "../config/sections";
 
 // Map category keys to their icons
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  presidencial: Crown,
+  presidencial: User,
   senadoresNacional: Building2,
   senadoresRegional: Users,
   diputados: Vote,
