@@ -487,7 +487,7 @@ export function VoteEntryTable({
 
             {/* Display entries in reverse order (newest first) */}
             {[...entries].reverse().map((entry, index) => {
-              const isLastEntry = index === 0;
+              const isEditableEntry = index < 3; // Allow editing last 3 entries
               const bgColor = index % 2 === 0 ? categoryColors.light : '#f9fafb';
               return (
                 <TableRow key={entries.length - 1 - index} style={{ backgroundColor: bgColor }}>
@@ -505,7 +505,7 @@ export function VoteEntryTable({
                   )}
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-1">
-                      {isLastEntry && (
+                      {isEditableEntry && (
                         <button
                           onClick={() => handleEditEntry(entry)}
                           className={`p-2 rounded-full transition-colors duration-200 ${

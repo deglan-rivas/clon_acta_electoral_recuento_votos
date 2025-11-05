@@ -366,7 +366,17 @@ ipcMain.handle('save-pdf', async (_event, pdfBytes: Uint8Array, filename: string
     return { success: true, filePath }
   } catch (error) {
     log.error('Error saving PDF:', error)
-    return { success: false, error: (error as Error).message }
+    const errorMessage = (error as Error).message
+
+    // Check for EBUSY error (file is open)
+    if (errorMessage.includes('EBUSY') || errorMessage.includes('resource busy') || errorMessage.includes('locked')) {
+      return {
+        success: false,
+        error: 'El archivo PDF ya está abierto. Por favor, cierre el archivo anterior antes de generar uno nuevo.'
+      }
+    }
+
+    return { success: false, error: errorMessage }
   }
 })
 
