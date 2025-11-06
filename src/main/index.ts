@@ -42,6 +42,23 @@ const expirationChecker = getExpirationChecker();
 const expirationResult = expirationChecker.checkExpiration();
 log.info(`Trial status: ${expirationResult.status}, Days remaining: ${expirationResult.daysRemaining}`);
 
+// Single instance lock - prevent multiple instances of the app
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  log.warn('Another instance is already running. Quitting this instance.')
+  app.quit()
+} else {
+  app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance, focus our window
+    log.info('Second instance attempted to start, focusing existing window')
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
 let mainWindow: BrowserWindow;
 
 function createWindow(): BrowserWindow {
@@ -131,12 +148,13 @@ function createWindow(): BrowserWindow {
 
             } catch (error) {
               log.error('Error getting category info:', error);
-              dialog.showErrorBox('Error', 'Error al obtener información de la categoría.');
+              // dialog.showErrorBox('Error', 'Error al obtener información de la categoría.');
               return;
             }
 
             if (!activeCategory) {
-              dialog.showErrorBox('Error', 'No se pudo determinar la categoría actual.');
+              log.error('No se pudo determinar la categoría actual:');
+              // dialog.showErrorBox('Error', 'No se pudo determinar la categoría actual.');
               return;
             }
 
@@ -202,7 +220,7 @@ function createWindow(): BrowserWindow {
                 }
               } catch (error) {
                 log.error('Error clearing category data:', error);
-                dialog.showErrorBox('Error', 'Error al eliminar datos de la categoría. Intente cerrar y reabrir la aplicación.');
+                // dialog.showErrorBox('Error', 'Error al eliminar datos de la categoría. Intente cerrar y reabrir la aplicación.');
               }
             }
           }

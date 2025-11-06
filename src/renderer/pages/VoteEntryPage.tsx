@@ -461,7 +461,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       await onSaveActa();
     }
 
-    ToastService.success("Acta reiniciada completamente. Puede comenzar un nuevo recuento desde cero.", '600px', 3000);
+    ToastService.success("Recuento reiniciado correctamente. Puede comenzar un nuevo recuento desde cero.", '600px', 3000);
   };
 
   // Handle finalize form - disable all inputs permanently
@@ -538,7 +538,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       await onSaveActa();
     }
 
-    ToastService.success("Formulario finalizado exitosamente", '400px', 3000);
+    ToastService.success("Recuento finalizado correctamente", '400px', 3000);
   };
 
   // Handle pause counting

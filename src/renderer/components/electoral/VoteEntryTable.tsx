@@ -308,9 +308,9 @@ export function VoteEntryTable({
                   onCedulasExcedentesChange(value);
                 }
               }}
-              disabled={entries.length !== totalElectores || isFormFinalized}
+              disabled={!isMesaDataSaved || entries.length !== totalElectores || totalElectores === 0 || isFormFinalized}
               className={`max-w-20 text-center font-semibold border border-gray-300 ${
-                entries.length !== totalElectores || isFormFinalized
+                !isMesaDataSaved || entries.length !== totalElectores || totalElectores === 0 || isFormFinalized
                   ? "opacity-50 cursor-not-allowed bg-gray-200"
                   : "bg-white"
               }`}
