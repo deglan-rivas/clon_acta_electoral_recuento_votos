@@ -230,7 +230,7 @@ function AppLayoutContent() {
     if (emptyActaIndex !== -1) {
       switchToActa(emptyActaIndex);
       // Don't modify the empty acta - it should already be in the correct empty state
-      ToastService.info('Cambiado a acta vacía existente');
+      ToastService.info('Nuevo recuento');
       return;
     }
 
