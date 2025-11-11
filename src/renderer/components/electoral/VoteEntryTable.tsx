@@ -63,6 +63,7 @@ export function VoteEntryTable({
   // Alert state
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('Voto ingresado correctamente.');
+  const [showVoteCount, setShowVoteCount] = useState(true);
 
   // Calculate next table number
   const getNextTableNumber = () => {
@@ -79,7 +80,7 @@ export function VoteEntryTable({
   });
 
   const [editingTableNumber, setEditingTableNumber] = useState<number | null>(null);
-  const [_originalEntry, setOriginalEntry] = useState<VoteEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Partial<VoteEntry> | null>(null);
 
   // Update table number when entries change
   useEffect(() => {
@@ -177,13 +178,13 @@ export function VoteEntryTable({
 
     // Show alert instead of toast
     setAlertMessage('Voto ingresado correctamente.');
+    setShowVoteCount(true);
     setShowAlert(true);
   };
 
   const handleEditEntry = (entry: VoteEntry) => {
     setEditingTableNumber(entry.tableNumber);
-    setOriginalEntry(entry);
-    setNewEntry({
+    setEditingEntry({
       tableNumber: entry.tableNumber,
       party: entry.party,
       preferentialVote1: entry.preferentialVote1 || 0,
@@ -193,23 +194,17 @@ export function VoteEntryTable({
 
   const handleCancelEdit = () => {
     setEditingTableNumber(null);
-    setOriginalEntry(null);
-    setNewEntry({
-      tableNumber: getNextTableNumber(),
-      party: "",
-      preferentialVote1: 0,
-      preferentialVote2: 0,
-    });
+    setEditingEntry(null);
   };
 
   const handleConfirmEdit = async () => {
-    if (!newEntry.party) {
+    if (!editingEntry?.party) {
       ToastService.error("Por favor seleccione una organización política");
       return;
     }
 
-    const pref1 = newEntry.preferentialVote1 || 0;
-    const pref2 = newEntry.preferentialVote2 || 0;
+    const pref1 = editingEntry.preferentialVote1 || 0;
+    const pref2 = editingEntry.preferentialVote2 || 0;
 
     if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
       ToastService.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
@@ -221,7 +216,7 @@ export function VoteEntryTable({
       return;
     }
 
-    if (isBlankOrNull(newEntry.party || "") && (pref1 > 0 || pref2 > 0)) {
+    if (isBlankOrNull(editingEntry.party || "") && (pref1 > 0 || pref2 > 0)) {
       ToastService.error("No se pueden ingresar votos preferenciales con BLANCO o NULO", '450px', 4000);
       return;
     }
@@ -233,11 +228,21 @@ export function VoteEntryTable({
       }
     }
 
+    // Find the original entry to compare
+    const originalEntry = entries.find(entry => entry.tableNumber === editingTableNumber);
+
+    // Check if any values actually changed
+    const hasChanges = originalEntry && (
+      originalEntry.party !== editingEntry.party ||
+      (originalEntry.preferentialVote1 || 0) !== pref1 ||
+      (originalEntry.preferentialVote2 || 0) !== pref2
+    );
+
     const updatedEntry: VoteEntry = {
-      tableNumber: newEntry.tableNumber!,
-      party: newEntry.party!,
-      preferentialVote1: isBlankOrNull(newEntry.party || "") ? 0 : pref1,
-      preferentialVote2: isBlankOrNull(newEntry.party || "") ? 0 : pref2,
+      tableNumber: editingEntry.tableNumber!,
+      party: editingEntry.party!,
+      preferentialVote1: isBlankOrNull(editingEntry.party || "") ? 0 : pref1,
+      preferentialVote2: isBlankOrNull(editingEntry.party || "") ? 0 : pref2,
     };
 
     const updatedEntries = entries.map(entry =>
@@ -247,22 +252,20 @@ export function VoteEntryTable({
     onEntriesChange(updatedEntries);
 
     setEditingTableNumber(null);
-    setOriginalEntry(null);
-    setNewEntry({
-      tableNumber: getNextTableNumber(),
-      party: "",
-      preferentialVote1: 0,
-      preferentialVote2: 0,
-    });
+    setEditingEntry(null);
 
-    // Save to repository
-    if (onSaveActa) {
-      await onSaveActa();
+    // Only save and show alert if there were actual changes
+    if (hasChanges) {
+      // Save to repository
+      if (onSaveActa) {
+        await onSaveActa();
+      }
+
+      // Show alert instead of toast (without vote count for edits)
+      setAlertMessage('Voto actualizado correctamente.');
+      setShowVoteCount(false);
+      setShowAlert(true);
     }
-
-    // Show alert instead of toast
-    setAlertMessage('Voto actualizado correctamente.');
-    setShowAlert(true);
   };
 
   return (
@@ -274,6 +277,7 @@ export function VoteEntryTable({
         alertType="with-button"
         position="top"
         message={alertMessage}
+        showVoteCount={showVoteCount}
         onClose={() => setShowAlert(false)}
       />
 
@@ -436,52 +440,21 @@ export function VoteEntryTable({
                 </TableCell>
               )}
               <TableCell className="px-2">
-                {editingTableNumber ? (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={handleConfirmEdit}
-                      disabled={!isBloque2Enabled}
-                      className={`p-3 rounded-full transition-colors duration-200 ${
-                        !isBloque2Enabled
-                          ? "text-gray-400 cursor-not-allowed"
-                          : "text-green-600 hover:text-green-800 hover:bg-green-50"
-                      }`}
-                      title="Confirmar"
-                      aria-label="Confirmar"
-                    >
-                      <Check className="h-6 w-6" />
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      disabled={!isBloque2Enabled}
-                      className={`p-3 rounded-full transition-colors duration-200 ${
-                        !isBloque2Enabled
-                          ? "text-gray-400 cursor-not-allowed"
-                          : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                      }`}
-                      title="Cancelar"
-                      aria-label="Cancelar"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={handleAddEntry}
-                    disabled={!newEntry.party || newEntry.party === "" || !isBloque2Enabled}
-                    className={`px-4 py-3 font-semibold rounded ${
-                      !newEntry.party || newEntry.party === "" || !isBloque2Enabled
-                        ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
-                        : "text-gray-800 hover:cursor-pointer"
-                    }`}
-                    style={!newEntry.party || newEntry.party === "" || !isBloque2Enabled ? {} : {
-                      backgroundColor: categoryColors.dark,
-                    }}
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    AGREGAR
-                  </Button>
-                )}
+                <Button
+                  onClick={handleAddEntry}
+                  disabled={!newEntry.party || newEntry.party === "" || !isBloque2Enabled}
+                  className={`px-4 py-3 font-semibold rounded ${
+                    !newEntry.party || newEntry.party === "" || !isBloque2Enabled
+                      ? "text-gray-400 bg-gray-300 cursor-not-allowed hover:bg-gray-300"
+                      : "text-gray-800 hover:cursor-pointer"
+                  }`}
+                  style={!newEntry.party || newEntry.party === "" || !isBloque2Enabled ? {} : {
+                    backgroundColor: categoryColors.dark,
+                  }}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  AGREGAR
+                </Button>
               </TableCell>
             </TableRow>
 
@@ -489,36 +462,147 @@ export function VoteEntryTable({
             {[...entries].reverse().map((entry, index) => {
               const isEditableEntry = index < 3; // Allow editing last 3 entries
               const bgColor = index % 2 === 0 ? categoryColors.light : '#f9fafb';
+              const isEditing = editingTableNumber === entry.tableNumber;
+
               return (
                 <TableRow key={entries.length - 1 - index} style={{ backgroundColor: bgColor }}>
                   <TableCell className="text-center font-medium w-28">{entry.tableNumber}</TableCell>
-                  <TableCell className="py-3">{entry.party}</TableCell>
+
+                  {/* Party Column */}
+                  <TableCell className="py-3">
+                    {isEditing ? (
+                      <Combobox
+                        value={editingEntry?.party || ""}
+                        onValueChange={(value) => {
+                          if (isBlankOrNull(value)) {
+                            setEditingEntry({
+                              ...editingEntry,
+                              party: value,
+                              preferentialVote1: 0,
+                              preferentialVote2: 0
+                            });
+                          } else {
+                            setEditingEntry({ ...editingEntry, party: value });
+                          }
+                        }}
+                        options={availableOrganizations.map((org) => ({
+                          value: org.order ? `${org.order} | ${org.name}` : org.name,
+                          label: org.order ? `${org.order} | ${org.name}` : org.name,
+                        }))}
+                        placeholder="Seleccionar partido..."
+                        searchPlaceholder="Buscar partido..."
+                        emptyText="No se encontraron partidos"
+                        className="h-12 text-base"
+                      />
+                    ) : (
+                      entry.party
+                    )}
+                  </TableCell>
+
+                  {/* Preferential Vote 1 Column */}
                   {preferentialConfig.hasPreferential1 && (
                     <TableCell className="text-center font-semibold">
-                      {entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1}
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          max={voteLimits.preferential1}
+                          placeholder="0"
+                          value={editingEntry?.preferentialVote1 || ""}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            if (value <= voteLimits.preferential1) {
+                              setEditingEntry({ ...editingEntry, preferentialVote1: value });
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          disabled={isBlankOrNull(editingEntry?.party || "")}
+                          className={`h-12 text-center text-lg font-semibold ${
+                            isBlankOrNull(editingEntry?.party || "")
+                              ? "bg-gray-100 cursor-not-allowed" : ""
+                          }`}
+                        />
+                      ) : (
+                        entry.preferentialVote1 === 0 ? "-" : entry.preferentialVote1
+                      )}
                     </TableCell>
                   )}
+
+                  {/* Preferential Vote 2 Column */}
                   {preferentialConfig.hasPreferential2 && (
                     <TableCell className="text-center font-semibold">
-                      {entry.preferentialVote2 === 0 ? "-" : entry.preferentialVote2}
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          max={voteLimits.preferential2}
+                          placeholder="0"
+                          value={editingEntry?.preferentialVote2 || ""}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            if (value <= voteLimits.preferential2) {
+                              setEditingEntry({ ...editingEntry, preferentialVote2: value });
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          disabled={isBlankOrNull(editingEntry?.party || "")}
+                          className={`h-12 text-center text-lg font-semibold ${
+                            isBlankOrNull(editingEntry?.party || "")
+                              ? "bg-gray-100 cursor-not-allowed" : ""
+                          }`}
+                        />
+                      ) : (
+                        entry.preferentialVote2 === 0 ? "-" : entry.preferentialVote2
+                      )}
                     </TableCell>
                   )}
+
+                  {/* Actions Column */}
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-1">
-                      {isEditableEntry && (
-                        <button
-                          onClick={() => handleEditEntry(entry)}
-                          className={`p-2 rounded-full transition-colors duration-200 ${
-                            editingTableNumber !== null || !isBloque2Enabled
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                          }`}
-                          title="Editar"
-                          aria-label="Editar"
-                          disabled={editingTableNumber !== null || !isBloque2Enabled}
-                        >
-                          <Edit className="h-5 w-5" />
-                        </button>
+                      {isEditing ? (
+                        <>
+                          <button
+                            onClick={handleConfirmEdit}
+                            className="p-2 rounded-full transition-colors duration-200 text-green-600 hover:text-green-800 hover:bg-green-50"
+                            title="Confirmar"
+                            aria-label="Confirmar"
+                          >
+                            <Check className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-2 rounded-full transition-colors duration-200 text-red-600 hover:text-red-800 hover:bg-red-50"
+                            title="Cancelar"
+                            aria-label="Cancelar"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </>
+                      ) : (
+                        isEditableEntry && (
+                          <button
+                            onClick={() => handleEditEntry(entry)}
+                            className={`p-2 rounded-full transition-colors duration-200 ${
+                              editingTableNumber !== null || !isBloque2Enabled
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            }`}
+                            title="Editar"
+                            aria-label="Editar"
+                            disabled={editingTableNumber !== null || !isBloque2Enabled}
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                        )
                       )}
                     </div>
                   </TableCell>

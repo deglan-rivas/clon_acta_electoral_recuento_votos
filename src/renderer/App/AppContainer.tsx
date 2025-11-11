@@ -441,7 +441,7 @@ function AppLayoutContent() {
         onSettingsClick={() => setSettingsOpen(true)}
       />
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-3">
         <div className="space-y-4">
           {renderSection()}
         </div>

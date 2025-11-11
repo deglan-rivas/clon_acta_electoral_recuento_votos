@@ -50,7 +50,7 @@ export function ActaRankingPanel({
   const totalVotes = entries.length;
 
   return (
-    <Card className="w-full">
+    <Card className="w-full gap-2">
       <CardHeader>
         <CardTitle
           className="text-lg font-semibold pb-2"
@@ -59,7 +59,7 @@ export function ActaRankingPanel({
           RESUMEN ACTA - {categoryLabel?.toUpperCase() || 'ORGANIZACIÓN POLÍTICA'}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-1.5">
         {ranking.length === 0 ? (
           // Empty state
           <div className="text-center py-8 text-gray-500">
@@ -75,16 +75,16 @@ export function ActaRankingPanel({
             return (
               <div
                 key={entry.organization}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+                className="flex items-center justify-between p-0 bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md"
               >
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <strong className="text-sm font-semibold">{entry.organization}:</strong>
+                  <div className="flex items-center justify-between mb-0">
+                    <strong className="text-[13px] font-semibold">{entry.organization}:</strong>
                     <span className="text-sm font-semibold" style={{ color: categoryColors.dark }}>
                       {entry.votes} votos
                     </span>
                   </div>
-                  <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden relative">
+                  <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden relative">
                     <div
                       className="h-full transition-all duration-700 ease-out flex items-center justify-end pr-2 text-white text-xs font-semibold"
                       style={{
@@ -95,7 +95,7 @@ export function ActaRankingPanel({
                       {entry.votes}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="text-xs text-gray-600 mt-0">
                     {percentage.toFixed(1)}% del total
                   </div>
                 </div>

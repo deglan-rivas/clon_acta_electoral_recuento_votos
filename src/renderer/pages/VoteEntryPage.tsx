@@ -651,10 +651,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Mesa Data Entry Section */}
       <Card>
-        <CardContent className="p-4 [&:last-child]:pb-4">
+        <CardContent className="p-3 [&:last-child]:pb-4">
           <div className="space-y-4">
             {/* Header Panel with Mesa Info and Action Buttons */}
             <div className="flex justify-between items-center">
