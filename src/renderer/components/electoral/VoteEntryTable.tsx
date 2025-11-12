@@ -8,7 +8,7 @@ import { Input } from "../ui/input";
 import { Combobox } from "../ui/combobox";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Plus, Edit, Check, X } from "lucide-react";
+import { Plus, Edit, Check, RotateCcw } from "lucide-react";
 import type { VoteEntry, VoteLimits, PreferentialConfig, CategoryColors } from "../../types/acta.types";
 import type { PoliticalOrganization } from "../../types/organization.types";
 import { ToastService } from "../../services/ui/toastService";
@@ -81,6 +81,7 @@ export function VoteEntryTable({
 
   const [editingTableNumber, setEditingTableNumber] = useState<number | null>(null);
   const [editingEntry, setEditingEntry] = useState<Partial<VoteEntry> | null>(null);
+  const [isAddingEntry, setIsAddingEntry] = useState(false);
 
   // Update table number when entries change
   useEffect(() => {
@@ -170,6 +171,7 @@ export function VoteEntryTable({
       preferentialVote1: 0,
       preferentialVote2: 0,
     });
+    setIsAddingEntry(false);
 
     // Save to repository
     if (onSaveActa) {
@@ -183,6 +185,18 @@ export function VoteEntryTable({
   };
 
   const handleEditEntry = (entry: VoteEntry) => {
+    // Cancel any active adding operation
+    if (isAddingEntry) {
+      setNewEntry({
+        tableNumber: getNextTableNumber(),
+        party: "",
+        preferentialVote1: 0,
+        preferentialVote2: 0,
+      });
+      setIsAddingEntry(false);
+    }
+
+    // Start editing
     setEditingTableNumber(entry.tableNumber);
     setEditingEntry({
       tableNumber: entry.tableNumber,
@@ -356,6 +370,13 @@ export function VoteEntryTable({
                   value={newEntry.party}
                   onValueChange={(value) => {
                     if (isBloque2Enabled) {
+                      // Cancel any ongoing edit when user starts adding
+                      if (editingTableNumber !== null) {
+                        setEditingTableNumber(null);
+                        setEditingEntry(null);
+                      }
+                      setIsAddingEntry(true);
+
                       if (isBlankOrNull(value)) {
                         setNewEntry({
                           ...newEntry,
@@ -580,11 +601,11 @@ export function VoteEntryTable({
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="p-2 rounded-full transition-colors duration-200 text-red-600 hover:text-red-800 hover:bg-red-50"
+                            className="p-2 rounded-full transition-colors duration-200 text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                             title="Cancelar"
                             aria-label="Cancelar"
                           >
-                            <X className="h-5 w-5" />
+                            <RotateCcw className="h-5 w-5" />
                           </button>
                         </>
                       ) : (
