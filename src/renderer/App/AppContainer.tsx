@@ -230,7 +230,7 @@ function AppLayoutContent() {
     if (emptyActaIndex !== -1) {
       switchToActa(emptyActaIndex);
       // Don't modify the empty acta - it should already be in the correct empty state
-      ToastService.info('Cambiado a acta vacía existente');
+      ToastService.info('Nuevo recuento');
       return;
     }
 
@@ -441,7 +441,7 @@ function AppLayoutContent() {
         onSettingsClick={() => setSettingsOpen(true)}
       />
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-3">
         <div className="space-y-4">
           {renderSection()}
         </div>

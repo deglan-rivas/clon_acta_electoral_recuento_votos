@@ -355,7 +355,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
     // Show confirmation dialog using Electron dialog API
     const result = await window.api.showConfirmDialog(
       'Acta Electoral Recuento Votos',
-      '¿Está seguro que desea reinicializar completamente el acta?',
+      '¿Está seguro que desea reiniciar completamente el acta?',
       `Esta acción eliminará TODOS los datos del acta actual:\n` +
       `- ${entries.length} votos ingresados\n` +
       `- Datos de mesa (N° Mesa, N° Acta, JEE, Ubicación)\n` +
@@ -367,7 +367,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
-    console.log("Reinicializando acta completamente...");
+    console.log("Reiniciando acta completamente...");
 
     // Clear all vote entries
     updateEntries([]);
@@ -461,7 +461,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       await onSaveActa();
     }
 
-    ToastService.success("Acta reinicializada completamente. Puede comenzar un nuevo recuento desde cero.", '600px', 3000);
+    ToastService.success("Recuento reiniciado correctamente. Puede comenzar un nuevo recuento desde cero.", '600px', 3000);
   };
 
   // Handle finalize form - disable all inputs permanently
@@ -538,7 +538,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       await onSaveActa();
     }
 
-    ToastService.success("Formulario finalizado exitosamente", '400px', 3000);
+    ToastService.success("Recuento finalizado correctamente", '400px', 3000);
   };
 
   // Handle pause counting
@@ -651,10 +651,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Mesa Data Entry Section */}
       <Card>
-        <CardContent className="p-4 [&:last-child]:pb-4">
+        <CardContent className="p-3 [&:last-child]:pb-4">
           <div className="space-y-4">
             {/* Header Panel with Mesa Info and Action Buttons */}
             <div className="flex justify-between items-center">

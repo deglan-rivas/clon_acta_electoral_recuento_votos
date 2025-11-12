@@ -13,10 +13,11 @@ interface VoteAlertProps {
   alertType: AlertType;
   position?: AlertPosition;
   message?: string;
+  showVoteCount?: boolean;
   onClose: () => void;
 }
 
-export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', message = 'Voto ingresado correctamente.', onClose }: VoteAlertProps) {
+export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', message = 'Voto ingresado correctamente.', showVoteCount = true, onClose }: VoteAlertProps) {
   const onCloseRef = useRef(onClose);
 
   // Keep the ref updated
@@ -38,13 +39,13 @@ export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', m
   if (!isOpen) return null;
 
   const containerClass = position === 'top'
-    ? 'fixed inset-0 z-50 flex items-start justify-center pt-8 pointer-events-none'
-    : 'fixed inset-0 z-50 flex items-center justify-center pointer-events-none';
+    ? 'fixed inset-0 z-50 flex items-start justify-center pt-8'
+    : 'fixed inset-0 z-50 flex items-center justify-center';
 
   return (
     <div className={containerClass}>
       <div
-        className="bg-white rounded-lg shadow-xl p-6 w-[400px] border-4 pointer-events-auto border-red-800"
+        className="bg-white rounded-lg shadow-xl p-6 w-[400px] border-4 border-red-800"
       >
         {/* Header */}
         <div
@@ -56,9 +57,11 @@ export function VoteAlert({ isOpen, voteCount, alertType, position = 'center', m
         {/* Message */}
         <div className="text-center text-gray-800 mb-6 text-base">
           <p className="font-semibold">{message}</p>
-          <p className="mt-2">
-            <span className="font-bold text-lg">{voteCount}</span> votos registrados
-          </p>
+          {showVoteCount && (
+            <p className="mt-2">
+              <span className="font-bold text-lg">{voteCount}</span> votos registrados
+            </p>
+          )}
         </div>
 
         {/* Button (only show if alertType is 'with-button') */}

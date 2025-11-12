@@ -115,7 +115,7 @@ export class ToastService {
    * Show new acta created success
    */
   static newActaCreated() {
-    this.success("Nueva acta creada exitosamente", '400px', 2000);
+    this.success("Nuevo recuento", '400px', 2000);
   }
 
   /**

@@ -383,7 +383,7 @@ export function ActaHeaderPanel({
     selectedLocation.distrito !== '';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* First Row: Mesa info and action buttons */}
       <div className="flex gap-4 items-center justify-between">
         <div className="flex gap-4 items-center">
@@ -673,7 +673,7 @@ export function ActaHeaderPanel({
                     {onReinicializar && (
                       <DropdownMenuItem onClick={onReinicializar}>
                         <RotateCcw className="mr-2 h-4 w-4" />
-                        Reinicializar
+                        Reiniciar
                       </DropdownMenuItem>
                     )}
                   </>

@@ -15,6 +15,7 @@ export interface ConformidadData {
   currentTime: string;
   currentDay: string;
   currentMonth: string;
+  currentYear: string;
   // JEE Presidente fields
   PRESIDENTE_NOMBRES: string;
   PRESIDENTE_APELLIDOPATERNO: string;
@@ -33,7 +34,7 @@ export class ConformidadDocumentService {
   /**
    * Get current date and time formatted for the document
    */
-  private static getCurrentDateTime(): { currentTime: string; currentDay: string; currentMonth: string } {
+  private static getCurrentDateTime(): { currentTime: string; currentDay: string; currentMonth: string; currentYear: string } {
     const now = new Date();
 
     // Format time in 24-hour format (HH:MM)
@@ -51,13 +52,16 @@ export class ConformidadDocumentService {
     ];
     const currentMonth = months[now.getMonth()];
 
-    return { currentTime, currentDay, currentMonth };
+    // Get year
+    const currentYear = now.getFullYear().toString();
+
+    return { currentTime, currentDay, currentMonth, currentYear };
   }
 
   /**
    * Generate a filled Word document from the template
    */
-  static async generateConformidadDocument(data: Omit<ConformidadData, 'currentTime' | 'currentDay' | 'currentMonth'>): Promise<Blob> {
+  static async generateConformidadDocument(data: Omit<ConformidadData, 'currentTime' | 'currentDay' | 'currentMonth' | 'currentYear'>): Promise<Blob> {
     try {
       // Add current date/time to data
       const dateTime = this.getCurrentDateTime();
@@ -174,7 +178,7 @@ export class ConformidadDocumentService {
    * Generate and open conformidad PDF directly (like "Ver Acta" button)
    */
   static async generateAndDownload(
-    data: Omit<ConformidadData, 'currentTime' | 'currentDay' | 'currentMonth'>,
+    data: Omit<ConformidadData, 'currentTime' | 'currentDay' | 'currentMonth' | 'currentYear'>,
     filename?: string
   ): Promise<void> {
     try {
