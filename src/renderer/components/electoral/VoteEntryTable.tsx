@@ -65,6 +65,10 @@ export function VoteEntryTable({
   const [alertMessage, setAlertMessage] = useState('Voto ingresado correctamente.');
   const [showVoteCount, setShowVoteCount] = useState(true);
 
+  // Validation alert state
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+
   // Calculate next table number
   const getNextTableNumber = () => {
     if (entries.length === 0) return 1;
@@ -135,12 +139,14 @@ export function VoteEntryTable({
     const pref2 = newEntry.preferentialVote2 || 0;
 
     if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
-      ToastService.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      setValidationMessage(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      setShowValidationAlert(true);
       return;
     }
 
     if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
-      ToastService.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      setValidationMessage(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      setShowValidationAlert(true);
       return;
     }
 
@@ -221,12 +227,14 @@ export function VoteEntryTable({
     const pref2 = editingEntry.preferentialVote2 || 0;
 
     if (preferentialConfig.hasPreferential1 && pref1 > voteLimits.preferential1) {
-      ToastService.error(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      setValidationMessage(`El Voto Preferencial 1 no puede exceder ${voteLimits.preferential1}`);
+      setShowValidationAlert(true);
       return;
     }
 
     if (preferentialConfig.hasPreferential2 && pref2 > voteLimits.preferential2) {
-      ToastService.error(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      setValidationMessage(`El Voto Preferencial 2 no puede exceder ${voteLimits.preferential2}`);
+      setShowValidationAlert(true);
       return;
     }
 
@@ -293,6 +301,17 @@ export function VoteEntryTable({
         message={alertMessage}
         showVoteCount={showVoteCount}
         onClose={() => setShowAlert(false)}
+      />
+
+      {/* Validation Alert */}
+      <VoteAlert
+        isOpen={showValidationAlert}
+        voteCount={0}
+        alertType="with-button"
+        position="top"
+        message={validationMessage}
+        showVoteCount={false}
+        onClose={() => setShowValidationAlert(false)}
       />
 
       <Card className="w-full col-span-8">
@@ -405,15 +424,12 @@ export function VoteEntryTable({
                   <Input
                     type="number"
                     min={0}
-                    max={voteLimits.preferential1}
                     placeholder="0"
                     value={newEntry.preferentialVote1 || ""}
                     onChange={(e) => {
                       if (isBloque2Enabled) {
                         const value = parseInt(e.target.value) || 0;
-                        if (value <= voteLimits.preferential1) {
-                          setNewEntry({ ...newEntry, preferentialVote1: value });
-                        }
+                        setNewEntry({ ...newEntry, preferentialVote1: value });
                       }
                     }}
                     onKeyDown={(e) => {
@@ -435,15 +451,12 @@ export function VoteEntryTable({
                   <Input
                     type="number"
                     min={0}
-                    max={voteLimits.preferential2}
                     placeholder="0"
                     value={newEntry.preferentialVote2 || ""}
                     onChange={(e) => {
                       if (isBloque2Enabled) {
                         const value = parseInt(e.target.value) || 0;
-                        if (value <= voteLimits.preferential2) {
-                          setNewEntry({ ...newEntry, preferentialVote2: value });
-                        }
+                        setNewEntry({ ...newEntry, preferentialVote2: value });
                       }
                     }}
                     onKeyDown={(e) => {
@@ -527,14 +540,11 @@ export function VoteEntryTable({
                         <Input
                           type="number"
                           min={0}
-                          max={voteLimits.preferential1}
                           placeholder="0"
                           value={editingEntry?.preferentialVote1 || ""}
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
-                            if (value <= voteLimits.preferential1) {
-                              setEditingEntry({ ...editingEntry, preferentialVote1: value });
-                            }
+                            setEditingEntry({ ...editingEntry, preferentialVote1: value });
                           }}
                           onKeyDown={(e) => {
                             if (['e', 'E', '+', '-', '.'].includes(e.key)) {
@@ -560,14 +570,11 @@ export function VoteEntryTable({
                         <Input
                           type="number"
                           min={0}
-                          max={voteLimits.preferential2}
                           placeholder="0"
                           value={editingEntry?.preferentialVote2 || ""}
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
-                            if (value <= voteLimits.preferential2) {
-                              setEditingEntry({ ...editingEntry, preferentialVote2: value });
-                            }
+                            setEditingEntry({ ...editingEntry, preferentialVote2: value });
                           }}
                           onKeyDown={(e) => {
                             if (['e', 'E', '+', '-', '.'].includes(e.key)) {
