@@ -197,6 +197,9 @@ export function ActaHeaderPanel({
     } else if (!shouldGenerateActa && hasValidActaNumber) {
       // Sync from parent if not auto-generating but has valid acta (loading from storage)
       setLocalActaNumber(actaNumber);
+    } else if (!shouldGenerateActa && !actaNumber) {
+      // Clear local acta number when parent actaNumber is empty (e.g., after clicking "Nuevo")
+      setLocalActaNumber('');
     }
 
     // Update refs for next comparison
@@ -316,6 +319,7 @@ export function ActaHeaderPanel({
       const presidente = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'PRESIDENTE');
       const segundoMiembro = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'SEGUNDO MIEMBRO');
       const tercerMiembro = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'TERCER MIEMBRO');
+      const secretario = jeeMiembrosData.find(m => m.jee_id === jeeId && m.CARGO === 'SECRETARIO (A)');
 
       // Prepare data for the document
       const data = {
@@ -337,6 +341,10 @@ export function ActaHeaderPanel({
         TERCER_MIEMBRO_NOMBRES: tercerMiembro?.NOMBRES || '',
         TERCER_MIEMBRO_APELLIDOPATERNO: tercerMiembro?.APELLIDOPATERNO || '',
         TERCER_MIEMBRO_APELLIDOMATERNO: tercerMiembro?.APELLIDOMATERNO || '',
+        // Secretario fields
+        SECRETARIO_NOMBRES: secretario?.NOMBRES || '',
+        SECRETARIO_APELLIDOPATERNO: secretario?.APELLIDOPATERNO || '',
+        SECRETARIO_APELLIDOMATERNO: secretario?.APELLIDOMATERNO || '',
       };
 
       // Get category label for filename

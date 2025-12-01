@@ -125,13 +125,22 @@ export class MesaDataHandler {
             console.log('[MesaDataHandler.loadMesaInfo] Partial recount mode - TCV forced to null');
             onTcvUpdate(null);
             // counterMesa can remain at default value (null) for partial recounts - not tracked
+          } else if (activeCategory === 'presidencial') {
+            // Presidencial is always the first category counted
+            // No need to check repository - TCV will be bound to entries.length
+            console.log('[MesaDataHandler.loadMesaInfo] Presidencial category - TCV will be bound to entries.length');
+            onTcvUpdate(null);
+
+            // First time using this mesa - counterMesa = 1
+            console.log('[MesaDataHandler.loadMesaInfo] First time using this mesa - counterMesa = 1');
+            onCounterMesaUpdate(1);
           } else {
-            // Normal logic - load TCV from repository if exists
-            const tcvFromRepository = await actaRepository.findTcvByMesa(mesa, activeCategory);
-            console.log('[MesaDataHandler.loadMesaInfo] TCV from repository:', tcvFromRepository);
+            // Other categories - load TCV from finalized Presidencial acta
+            const tcvFromRepository = await actaRepository.findTcvByMesa(mesa);
+            console.log('[MesaDataHandler.loadMesaInfo] TCV from repository (Presidencial):', tcvFromRepository);
 
             if (tcvFromRepository !== null) {
-              // Mesa found in another category - use that TCV value
+              // Finalized Presidencial acta found - use that TCV value
               console.log('[MesaDataHandler.loadMesaInfo] Setting TCV from repository:', tcvFromRepository);
               onTcvUpdate(tcvFromRepository);
 
@@ -144,8 +153,8 @@ export class MesaDataHandler {
               console.log('[MesaDataHandler.loadMesaInfo] Setting counterMesa to:', newCounterMesa);
               onCounterMesaUpdate(newCounterMesa);
             } else {
-              // Mesa not found in repository - TCV will remain null (bound to entries.length)
-              console.log('[MesaDataHandler.loadMesaInfo] Mesa not found in repository, TCV will be bound to entries.length');
+              // No finalized Presidencial acta found - TCV will remain null (bound to entries.length)
+              console.log('[MesaDataHandler.loadMesaInfo] No finalized Presidencial acta found, TCV will be bound to entries.length');
               onTcvUpdate(null);
 
               // First time using this mesa - counterMesa = 1

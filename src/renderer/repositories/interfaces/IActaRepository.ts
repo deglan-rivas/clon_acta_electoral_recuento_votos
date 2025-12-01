@@ -21,7 +21,7 @@ export interface IActaRepository {
   findActasByMesa(mesaNumber: number): Promise<ActaData[]>;
   isMesaFinalized(mesaNumber: number, category: string, excludeActaIndex?: number): Promise<boolean>;
   findCedulasExcedentesByMesa(mesaNumber: number, excludeCategory?: string, excludeActaIndex?: number): Promise<number | null>;
-  findTcvByMesa(mesaNumber: number, excludeCategory?: string, excludeActaIndex?: number): Promise<number | null>;
+  findTcvByMesa(mesaNumber: number): Promise<number | null>;
 
   // Active category
   getActiveCategory(): Promise<string>;

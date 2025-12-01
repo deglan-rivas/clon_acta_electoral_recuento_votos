@@ -110,7 +110,7 @@ export function VoteEntryTable({
     // Load the original TCV from repository to validate even in partial recounts
     if (counterMesa !== null && counterMesa > 1 && mesaNumber > 0) {
       try {
-        const loadedTcv = await actaRepository.findTcvByMesa(mesaNumber, activeCategory);
+        const loadedTcv = await actaRepository.findTcvByMesa(mesaNumber);
         if (loadedTcv !== null && entries.length >= loadedTcv) {
           ToastService.error(
             `No se pueden agregar más cédulas. El TCV cargado de un recuento previo es ${loadedTcv} votos.`,

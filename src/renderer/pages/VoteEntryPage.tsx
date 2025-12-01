@@ -7,6 +7,7 @@ import { ActaHeaderPanel } from "../components/electoral/ActaHeaderPanel";
 import { ActaTimerDisplay } from "../components/electoral/ActaTimerDisplay";
 import { ActaRankingPanel } from "../components/electoral/ActaRankingPanel";
 import { VoteEntryTable } from "../components/electoral/VoteEntryTable";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import {
   type VoteEntry,
   type VoteLimits,
@@ -168,6 +169,21 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   const [localIsPaused, setLocalIsPaused] = useState<boolean>(false);
   const [selectedOrganizationKeys, setSelectedOrganizationKeys] = useState<string[]>([]);
   const [isPartialRecount, setIsPartialRecount] = useState<boolean>(false);
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    details?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    details: '',
+    onConfirm: () => {},
+  });
 
   const isFormFinalized = externalIsFormFinalized !== undefined ? externalIsFormFinalized : localIsFormFinalized;
   const isMesaDataSaved = externalIsMesaDataSaved !== undefined ? externalIsMesaDataSaved : localIsMesaDataSaved;
@@ -351,21 +367,25 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   };
 
   // Handle reinicializar - clear ALL acta data to start from scratch
-  const handleReinicializar = async () => {
-    // Show confirmation dialog using Electron dialog API
-    const result = await window.api.showConfirmDialog(
-      'Acta Electoral Recuento Votos',
-      '¿Está seguro que desea reiniciar completamente el acta?',
-      `Esta acción eliminará TODOS los datos del acta actual:\n` +
-      `- ${entries.length} votos ingresados\n` +
-      `- Datos de mesa (N° Mesa, N° Acta, JEE, Ubicación)\n` +
-      `El acta volverá a estado inicial completamente limpio.\n` +
-      `Esta operación NO se puede deshacer.`
-    );
+  const handleReinicializar = () => {
+    // Show confirmation dialog using custom ConfirmDialog component
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Acta Electoral Recuento Votos',
+      message: '¿Está seguro que desea reiniciar completamente el acta?',
+      details:
+        `Esta acción eliminará TODOS los datos del acta actual:\n` +
+        `- ${entries.length} votos ingresados\n` +
+        `- Datos de mesa (N° Mesa, N° Acta, JEE, Ubicación)\n` +
+        `El acta volverá a estado inicial completamente limpio.\n` +
+        `Esta operación NO se puede deshacer.`,
+      onConfirm: handleReinicializarConfirmed,
+    });
+  };
 
-    if (!result.confirmed) {
-      return;
-    }
+  const handleReinicializarConfirmed = async () => {
+    // Close dialog
+    setConfirmDialog({ ...confirmDialog, isOpen: false });
 
     console.log("Reiniciando acta completamente...");
 
@@ -465,7 +485,7 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
   };
 
   // Handle finalize form - disable all inputs permanently
-  const handleFinalizeForm = async () => {
+  const handleFinalizeForm = () => {
     // Validate that there are entries
     if (entries.length === 0) {
       ToastService.error("No se puede finalizar el recuento sin votos registrados. Ingrese al menos un voto.", '500px', 4000);
@@ -485,20 +505,24 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
-    // Show confirmation dialog using Electron dialog API
-    const result = await window.api.showConfirmDialog(
-      'Acta Electoral Recuento Votos',
-      '¿Está seguro que desea finalizar el recuento de votos?',
-      `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
-      `Acta: ${actaNumber}\n` +
-      `Total de votos: ${entries.length}\n\n` +
-      `Una vez finalizada, no podrá realizar más cambios.\n` +
-      `Esta operación NO se puede deshacer.`
-    );
+    // Show confirmation dialog using custom ConfirmDialog component
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Acta Electoral Recuento Votos',
+      message: '¿Está seguro que desea finalizar el recuento de votos?',
+      details:
+        `Mesa: ${mesaNumber.toString().padStart(6, '0')}\n` +
+        `Acta: ${actaNumber}\n` +
+        `Total de votos: ${entries.length}\n\n` +
+        `Una vez finalizada, no podrá realizar más cambios.\n` +
+        `Esta operación NO se puede deshacer.`,
+      onConfirm: handleFinalizeFormConfirmed,
+    });
+  };
 
-    if (!result.confirmed) {
-      return;
-    }
+  const handleFinalizeFormConfirmed = async () => {
+    // Close dialog
+    setConfirmDialog({ ...confirmDialog, isOpen: false });
 
     console.log("Finalizando formulario...");
     const now = new Date();
@@ -751,6 +775,16 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
           onSaveActa={onSaveActa}
         />
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        details={confirmDialog.details}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+      />
     </div>
   );
 }
