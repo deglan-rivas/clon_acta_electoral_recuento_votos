@@ -492,10 +492,10 @@ export function VoteEntryPage(props: VoteEntryPageProps) {
       return;
     }
 
-    // Validate TCV matches entries when mesa is reused (counterMesa > 1)
-    // Skip validation for partial recounts (isPartialRecount = true)
-    // Skip validation for first-time counting (counterMesa === 1) - TCV auto-updates
-    // If counterMesa > 1, TCV was loaded from previous count, so entries must match
+    // Validar que TCV coincida con las entradas cuando se reutiliza la mesa (counterMesa > 1)
+    // Omitir la validación para recuentos parciales (isPartialRecount = true)
+    // Omitir la validación para el conteo por primera vez (counterMesa === 1) - TCV auto-updates
+    // If counterMesa > 1, TCV se cargó desde el conteo anterior, por lo que las entradas deben coincidir
     if (!isPartialRecount && counterMesa !== null && counterMesa > 1 && tcv !== null && entries.length !== tcv) {
       ToastService.error(
         `El número de votos ingresados ${entries.length} no coincide con el TCV esperado ${tcv}.`,
