@@ -72,7 +72,7 @@ export class VoteValidator {
   }
 
   /**
-   * Validate if more entries can be added
+   * No se pueden añadir más votos que electores
    */
   static canAddEntry(currentEntriesCount: number, totalElectores: number): ValidationResult {
     const errors: string[] = [];

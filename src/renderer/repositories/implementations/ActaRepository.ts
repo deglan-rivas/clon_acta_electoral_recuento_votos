@@ -195,48 +195,31 @@ export class ActaRepository implements IActaRepository {
     return null;
   }
 
-  async findTcvByMesa(
-    mesaNumber: number,
-    excludeCategory?: string,
-    excludeActaIndex?: number
-  ): Promise<number | null> {
+  async findTcvByMesa(mesaNumber: number): Promise<number | null> {
     if (!mesaNumber || mesaNumber <= 0) return null;
 
     const allData = await this.getAllCategoryData();
-    const categories = [
-      'presidencial',
-      'senadoresNacional',
-      'senadoresRegional',
-      'diputados',
-      'parlamentoAndino',
-    ];
 
-    for (const category of categories) {
-      const categoryData = allData[category];
-      if (categoryData && categoryData.actas) {
-        for (let i = 0; i < categoryData.actas.length; i++) {
-          const acta = categoryData.actas[i];
+    // Only read TCV from Presidencial category (first category counted)
+    // This is the authoritative source for TCV across all categories
+    // Note: This should only be called from non-Presidencial categories
+    // Presidencial is always the first recount, so it has no previous TCV to load
+    const presidencialData = allData['presidencial'];
 
-          if (
-            excludeCategory &&
-            excludeActaIndex !== undefined &&
-            category === excludeCategory &&
-            i === excludeActaIndex
-          ) {
-            continue;
-          }
-
-          if (
-            acta.mesaNumber === mesaNumber &&
-            acta.tcv !== null &&
-            acta.tcv !== undefined
-          ) {
-            return acta.tcv;
-          }
+    if (presidencialData && presidencialData.actas) {
+      for (const acta of presidencialData.actas) {
+        if (
+          acta.mesaNumber === mesaNumber &&
+          acta.isFormFinalized &&
+          acta.tcv !== null &&
+          acta.tcv !== undefined
+        ) {
+          return acta.tcv;
         }
       }
     }
 
+    // Return null if no finalized presidencial acta found
     return null;
   }
 
