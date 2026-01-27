@@ -61,38 +61,6 @@ if (!gotTheLock) {
 
 let mainWindow: BrowserWindow;
 
-// Check if system is provisioned before allowing app to run
-// SECURITY: Main app can ONLY check provisioning status, CANNOT provision
-async function checkProvisioning(): Promise<boolean> {
-  try {
-    const { ProvisioningChecker } = await import('../services/ProvisioningChecker');
-    const provisioningChecker = new ProvisioningChecker();
-    const status = await provisioningChecker.checkStatus();
-
-    if (!status.isProvisioned) {
-      log.error('System not provisioned - blocking startup');
-      dialog.showErrorBox(
-        'Sistema No Aprovisionado',
-        'Este sistema no ha sido aprovisionado correctamente.\n' +
-        'Por favor contacte al administrador para aprovisionar el sistema.\n\n' +
-        'Use provision-tool.exe para aprovisionar el sistema.'
-      );
-      return false;
-    }
-
-    log.info(`System provisioned for JEE: ${status.jeeNombre}`);
-    return true;
-  } catch (error) {
-    log.error('Error checking provisioning:', error);
-    dialog.showErrorBox(
-      'Error de Configuración',
-      'Error al verificar el aprovisionamiento del sistema.\n' +
-      'Por favor contacte al administrador.'
-    );
-    return false;
-  }
-}
-
 function createWindow(): BrowserWindow {
   // Check expiration before creating window
   const status = getExpirationStatus();
@@ -613,14 +581,6 @@ try {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  // SECURITY CHECK: Verify system is provisioned before allowing app to start
-  const isProvisioned = await checkProvisioning();
-  if (!isProvisioned) {
-    log.error('Provisioning check failed - exiting application');
-    app.quit();
-    return;
-  }
-
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 

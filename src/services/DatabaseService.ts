@@ -1,21 +1,27 @@
 /**
  * Servicio de Base de Datos con SQLCipher - DatabaseService
  *
- * Proporciona acceso a la base de datos SQLite encriptada usando SQLCipher.
+ * Proporciona acceso a la base de datos SQLite (encriptada o no encriptada).
  * Maneja:
- * - Inicialización de base de datos encriptada
- * - Derivación de claves vinculadas a la máquina
+ * - Inicialización de base de datos
  * - Gestión de conexiones
  * - Migraciones de esquema
  *
- * Basado en SECURITY_IMPLEMENTATION_PLAN.md
+ * MODO ACTUAL: NO ENCRIPTADO (Temporal - para desarrollo)
+ * Para activar encriptación: Descomentar secciones marcadas con [ENCRYPTION]
  */
 
-import Database from 'better-sqlite3-multiple-ciphers';
+// [ENCRYPTION] - Importar better-sqlite3-multiple-ciphers para encriptación
+// import Database from 'better-sqlite3-multiple-ciphers';
+// [NO-ENCRYPTION] - Importar better-sqlite3 regular (sin encriptación)
+import Database from 'better-sqlite3';
+
 import * as fs from 'fs';
 import * as path from 'path';
-import { CryptoService } from './CryptoService';
-import { MachineIdService } from './MachineIdService';
+
+// [ENCRYPTION] - Descomentar para usar encriptación
+// import { CryptoService } from './CryptoService';
+// import { MachineIdService } from './MachineIdService';
 
 // ============================================================================
 // Interfaces
@@ -23,8 +29,9 @@ import { MachineIdService } from './MachineIdService';
 
 export interface DatabaseConfig {
   dbPath: string;                        // Ruta al archivo de base de datos
-  appSecret: string;                     // Secreto de aplicación (hex 64 chars)
-  useMachineBinding?: boolean;           // Usar machine binding para derivar clave
+  // [ENCRYPTION] - Descomentar para usar encriptación
+  // appSecret?: string;                 // Secreto de aplicación (hex 64 chars)
+  // useMachineBinding?: boolean;        // Usar machine binding para derivar clave
   readOnly?: boolean;                    // Abrir en modo solo lectura
 }
 
@@ -33,7 +40,8 @@ export interface DatabaseInfo {
   exists: boolean;
   encrypted: boolean;
   size: number;
-  machineId?: string;
+  // [ENCRYPTION] - Descomentar para mostrar machineId
+  // machineId?: string;
 }
 
 // ============================================================================
@@ -41,27 +49,30 @@ export interface DatabaseInfo {
 // ============================================================================
 
 export class DatabaseService {
-  private db: Database | null = null;
+  private db: Database.Database | null = null;
   private config: DatabaseConfig;
-  private machineIdService: MachineIdService;
-  private encryptionKey: string | null = null;
+  // [ENCRYPTION] - Descomentar para usar encriptación
+  // private machineIdService: MachineIdService;
+  // private encryptionKey: string | null = null;
 
   constructor(config: DatabaseConfig) {
     this.config = config;
-    this.machineIdService = new MachineIdService();
 
-    // Validar que appSecret tenga el formato correcto
-    if (!CryptoService.validateKey(config.appSecret)) {
-      throw new Error('appSecret debe ser un string hexadecimal de 64 caracteres (256 bits)');
-    }
+    // [ENCRYPTION] - Descomentar para validar appSecret
+    // this.machineIdService = new MachineIdService();
+    // if (config.appSecret && !CryptoService.validateKey(config.appSecret)) {
+    //   throw new Error('appSecret debe ser un string hexadecimal de 64 caracteres (256 bits)');
+    // }
   }
 
   /**
    * Inicializar y abrir base de datos
    */
   async initialize(): Promise<void> {
-    // Generar clave de encriptación
-    this.encryptionKey = await this.deriveEncryptionKey();
+    // [ENCRYPTION] - Descomentar para derivar clave de encriptación
+    // if (this.config.appSecret) {
+    //   this.encryptionKey = await this.deriveEncryptionKey();
+    // }
 
     // Verificar si la base de datos existe
     const dbExists = fs.existsSync(this.config.dbPath);
@@ -74,36 +85,47 @@ export class DatabaseService {
       }
     }
 
-    // Abrir base de datos con better-sqlite3-multiple-ciphers
+    // Abrir base de datos
     try {
       this.db = new Database(this.config.dbPath, {
         readonly: this.config.readOnly || false,
         fileMustExist: false
       });
 
+      // ====================================================================
+      // [ENCRYPTION] - SECCIÓN DE ENCRIPTACIÓN (COMENTADA)
+      // Descomentar para activar encriptación con SQLCipher
+      // ====================================================================
+      /*
       // Configurar cipher explícitamente (SQLCipher para compatibilidad con DB Browser)
       this.db.pragma("cipher='sqlcipher'");
       this.db.pragma('legacy = 4');  // SQLCipher 4 compatibility mode
 
       // Configurar SQLCipher con la clave de encriptación
-      this.db.pragma(`key='${this.encryptionKey}'`);
+      if (this.encryptionKey) {
+        this.db.pragma(`key='${this.encryptionKey}'`);
+      }
 
       // Configurar parámetros de SQLCipher para mejor seguridad
       this.db.pragma('cipher_page_size = 4096');
       this.db.pragma('kdf_iter = 256000');          // Iterations para PBKDF2 (high security)
       this.db.pragma('cipher_hmac_algorithm = HMAC_SHA512');
       this.db.pragma('cipher_kdf_algorithm = PBKDF2_HMAC_SHA512');
+      */
+      // ====================================================================
 
       // Habilitar foreign keys y WAL mode
       this.db.pragma('foreign_keys = ON');
       this.db.pragma('journal_mode = WAL');
 
-      // Verificar que la base de datos se puede leer (clave correcta)
+      // Verificar que la base de datos se puede leer
       if (dbExists) {
         try {
           this.db.prepare('SELECT count(*) FROM sqlite_master').get();
         } catch (error) {
-          throw new Error('Error al abrir base de datos: clave de encriptación incorrecta o archivo corrupto');
+          throw new Error('Error al abrir base de datos: archivo corrupto o inaccesible');
+          // [ENCRYPTION] - Mensaje con encriptación
+          // throw new Error('Error al abrir base de datos: clave de encriptación incorrecta o archivo corrupto');
         }
       }
 
@@ -112,17 +134,23 @@ export class DatabaseService {
         await this.initializeSchema();
       }
 
-      console.log('✓ Base de datos encriptada inicializada correctamente');
+      console.log('✓ Base de datos inicializada correctamente (modo NO ENCRIPTADO)');
+      // [ENCRYPTION] - Mensaje con encriptación
+      // console.log('✓ Base de datos encriptada inicializada correctamente');
     } catch (error: any) {
       console.error('Error al inicializar base de datos:', error);
       throw error;
     }
   }
 
+  // ====================================================================
+  // [ENCRYPTION] - MÉTODO DE DERIVACIÓN DE CLAVE (COMENTADO)
+  // ====================================================================
+  /*
   /**
    * Derivar clave de encriptación
    * K = HKDF(appSecret + machineId)
-   */
+   *\/
   private async deriveEncryptionKey(): Promise<string> {
     const params: any = {
       appSecret: this.config.appSecret,
@@ -139,6 +167,8 @@ export class DatabaseService {
     const key = CryptoService.deriveMasterKey(params);
     return key;
   }
+  */
+  // ====================================================================
 
   /**
    * Inicializar esquema de base de datos desde archivo SQL
@@ -164,12 +194,14 @@ export class DatabaseService {
       this.db.exec(schemaSql);
       console.log('✓ Esquema de base de datos creado');
 
-      // Registrar inicialización en configuración del sistema
+      // [ENCRYPTION] - Registrar machineId en configuración
+      /*
       const machineId = await this.machineIdService.getMachineId();
       this.db.prepare(`
         INSERT OR REPLACE INTO configuracion_sistema (clave, valor, descripcion)
         VALUES (?, ?, ?)
       `).run('id_maquina', machineId, 'ID único de la máquina donde se inicializó la base de datos');
+      */
 
     } catch (error: any) {
       console.error('Error al crear esquema:', error);
@@ -180,7 +212,7 @@ export class DatabaseService {
   /**
    * Obtener instancia de base de datos
    */
-  getDatabase(): Database {
+  getDatabase(): Database.Database {
     if (!this.db) {
       throw new Error('Base de datos no inicializada. Llamar a initialize() primero.');
     }
@@ -199,24 +231,30 @@ export class DatabaseService {
       size = stats.size;
     }
 
-    let machineId: string | undefined;
-    if (this.config.useMachineBinding !== false) {
-      machineId = await this.machineIdService.getMachineId();
-    }
+    // [ENCRYPTION] - Obtener machineId
+    // let machineId: string | undefined;
+    // if (this.config.useMachineBinding !== false) {
+    //   machineId = await this.machineIdService.getMachineId();
+    // }
 
     return {
       path: this.config.dbPath,
       exists,
-      encrypted: true,  // Siempre encriptado con SQLCipher
+      encrypted: false,  // [ENCRYPTION] Cambiar a true cuando se active encriptación
       size,
-      machineId
+      // [ENCRYPTION] - Descomentar para incluir machineId
+      // machineId
     };
   }
 
+  // ====================================================================
+  // [ENCRYPTION] - MÉTODOS DE ENCRIPTACIÓN (COMENTADOS)
+  // ====================================================================
+  /*
   /**
    * Cambiar clave de encriptación (rekey)
    * ADVERTENCIA: Operación costosa, requiere reescribir toda la DB
-   */
+   *\/
   async rekeyDatabase(newAppSecret: string): Promise<void> {
     if (!this.db) {
       throw new Error('Base de datos no inicializada');
@@ -255,7 +293,7 @@ export class DatabaseService {
   /**
    * Exportar base de datos a formato no encriptado (para backup)
    * ADVERTENCIA: El archivo resultante NO estará encriptado
-   */
+   *\/
   async exportUnencrypted(outputPath: string): Promise<void> {
     if (!this.db) {
       throw new Error('Base de datos no inicializada');
@@ -281,9 +319,11 @@ export class DatabaseService {
       throw error;
     }
   }
+  */
+  // ====================================================================
 
   /**
-   * Hacer backup encriptado de la base de datos
+   * Hacer backup de la base de datos
    */
   async backup(backupPath: string): Promise<void> {
     if (!this.db) {
@@ -295,7 +335,9 @@ export class DatabaseService {
       backup.step(-1);  // -1 = copiar todo
       backup.finish();
 
-      console.log(`✓ Backup encriptado creado: ${backupPath}`);
+      console.log(`✓ Backup creado: ${backupPath}`);
+      // [ENCRYPTION] - Mensaje con encriptación
+      // console.log(`✓ Backup encriptado creado: ${backupPath}`);
     } catch (error: any) {
       console.error('Error al crear backup:', error);
       throw error;
@@ -344,7 +386,8 @@ export class DatabaseService {
       try {
         this.db.close();
         this.db = null;
-        this.encryptionKey = null;
+        // [ENCRYPTION] - Limpiar clave de encriptación
+        // this.encryptionKey = null;
         console.log('✓ Base de datos cerrada');
       } catch (error: any) {
         console.error('Error al cerrar base de datos:', error);
@@ -361,13 +404,17 @@ export class DatabaseService {
       throw new Error('Base de datos no inicializada');
     }
 
-    return {
+    const stats: any = {
       pageCount: this.db.pragma('page_count', { simple: true }),
       pageSize: this.db.pragma('page_size', { simple: true }),
       encoding: this.db.pragma('encoding', { simple: true }),
       journalMode: this.db.pragma('journal_mode', { simple: true }),
-      cipherVersion: this.db.pragma('cipher_version', { simple: true })
     };
+
+    // [ENCRYPTION] - Agregar versión del cipher
+    // stats.cipherVersion = this.db.pragma('cipher_version', { simple: true });
+
+    return stats;
   }
 }
 
